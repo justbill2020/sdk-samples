@@ -12,6 +12,7 @@ import shutil
 import requests
 import subprocess
 import configparser
+import unittest
 
 from requests.auth import HTTPDigestAuth
 
@@ -52,10 +53,9 @@ def get_auth():
 # in DEV mode
 def is_NCOS_device_in_DEV_mode():
     sdk_status = json.loads(get('/status/system/sdk')).get('data')
-    if sdk_status.get('mode') == 'devmode':
-        return True
-    else:
-        return False
+    if sdk_status.get('mode') in ['devmode', 'standard']:
+        return True if sdk_status.get('mode') == 'devmode' else False
+    raise('Unknown SDK mode (%s)' % sdk_status.get('mode'))
 
 
 # Returns the app package name based on the global app name.
@@ -157,32 +157,22 @@ def clean_all():
         clean(app)
 
 
-# Build, just validates, the application code and package.
-def build():
-    print("Building {}".format(g_app_name))
-    success = True
-    validate_script_path = os.path.join('tools', 'bin', 'validate_application.py')
-    app_path = os.path.join(g_app_name)
-    try:
-        if sys.platform == 'win32':
-            subprocess.check_output('{} {} {}'.format(g_python_cmd, validate_script_path, app_path))
-        else:
-            subprocess.check_output('{} {} {}'.format(g_python_cmd, validate_script_path, app_path), shell=True)
-
-    except subprocess.CalledProcessError as err:
-        print('Error building {}: {}'.format(g_app_name, err))
-        success = False
-    finally:
-        return success
-
+def scan_for_cr(path):
+    scanfiles = ('.py', '.sh')
+    for root, _, files in os.walk(path):
+        for fl in files:
+            with open(os.path.join(root, fl), 'rb') as f:
+                if b'\r' in f.read() and [x for x in scanfiles if fl.endswith(x)]:
+                    raise Exception('Carriage return (\\r) found in file %s' % (os.path.join(root, fl)))
 
 # Package the app files into a tar.gz archive.
 def package():
-    success = True
     print("Packaging {}".format(g_app_name))
+    success = True
     package_dir = os.path.join('tools', 'bin')
     package_script_path = os.path.join('tools', 'bin', 'package_application.py')
     app_path = os.path.join(g_app_name)
+    scan_for_cr(app_path)
 
     try:
         subprocess.check_output('{} {} {}'.format(g_python_cmd, package_script_path, app_path), shell=True)
@@ -203,6 +193,7 @@ def package_all():
     package_script_path = os.path.join('tools', 'bin', 'package_application.py')
     for app in app_dirs:
         app_path = os.path.join(app)
+        scan_for_cr(app_path)
         try:
             print('Build app: {}'.format(app_path))
             subprocess.check_output('{} {} {}'.format(g_python_cmd, package_script_path, app_path), shell=True)
@@ -297,21 +288,25 @@ def purge():
 
 # Prints the help information
 def output_help():
-    print('Command format is: {} make.py <action>'.format(g_python_cmd))
-    print('clean: Clean all project artifacts.\n')
-    print('                  To clean all the apps, add the option "all" (i.e. clean all).')
+    print('Command format is: {} make.py <action>\n'.format(g_python_cmd))
+    print('Actions include:')
+    print('================')
+    print('clean: Clean all project artifacts.')
+    print('\tTo clean all the apps, add the option "all" (i.e. clean all).\n')
     print('build or package: Create the app archive tar.gz file.')
-    print('                  To build all the apps, add the option "all" (i.e. build all).')
-    print('                  Any directory containing a package.ini file is considered and app.\n')
+    print('\tTo build all the apps, add the option "all" (i.e. build all).')
+    print('\tAny directory containing a package.ini file is considered an app.\n')
     print('status: Fetch and print current app status from the locally connected NCOS device.\n')
     print('install: Secure copy the app archive to a locally connected NCOS device.')
-    print('         The NCOS device must already be in SDK DEV mode via registration ')
-    print('         and licensing using NCM.\n')
+    print('\tThe NCOS device must already be in SDK DEV mode via registration ')
+    print('\tand licensing using NCM.\n')
     print('start: Start the app on the locally connected NCOS device.\n')
     print('stop: Stop the app on the locally connected NCOS device.\n')
     print('uninstall: Uninstall the app from the locally connected NCOS device.\n')
     print('purge: Purge all apps from the locally connected NCOS device.\n')
     print('uuid: Create a UUID for the app and save it to the package.ini file.\n')
+    print('unit: Run any unit tests associated with selected app.\n')
+    print('system: Run any system tests associated with selected app.\n')
     print('help: Print this help information.\n')
 
 
@@ -427,14 +422,7 @@ if __name__ == "__main__":
         else:
             clean()
 
-    elif utility_name == 'build':
-        # build()
-        if option == 'all':
-            package_all()
-        else:
-            package()
-
-    elif utility_name == 'package':
+    elif utility_name in ['package', 'build']:
         if option == 'all':
             package_all()
         else:
@@ -461,6 +449,49 @@ if __name__ == "__main__":
     elif utility_name == 'uuid':
         # This is handled in init()
         pass
+
+    elif utility_name == 'unit':
+        # load any tests in app/test/unit
+        app_test_path = os.path.join(g_app_name, 'test', 'unit')
+        suite = unittest.defaultTestLoader.discover(app_test_path)
+        # change to the app dir so app files can be properly imported
+        os.chdir(g_app_name)
+        # add the current path to sys path so we can directly import
+        sys.path.append(os.getcwd())
+        # run suite
+        unittest.TextTestRunner().run(suite)
+
+    elif utility_name == 'system':
+        # load any tests in app/test/unit
+        app_test_path = os.path.join(g_app_name, 'test', 'system')
+        suite = unittest.defaultTestLoader.discover(app_test_path)
+
+        # try to add IP and auth info to system test classes
+        def iterate_tests(test_suite_or_case):
+            try:
+                suite = iter(test_suite_or_case)
+            except TypeError:
+                yield test_suite_or_case
+            else:
+                for test in suite:
+                    for subtest in iterate_tests(test):
+                        yield subtest
+
+        for test in iterate_tests(suite):
+            try:
+                test.DEV_CLIENT_IP = g_dev_client_ip
+                test.DEV_CLIENT_USER = g_dev_client_username
+                test.DEV_CLIENT_PASS = g_dev_client_password
+            except Exception as e:
+                # if classes don't accept it ignore
+                pass
+
+        # change to the app dir so app files can be properly imported
+        os.chdir(g_app_name)
+        # add the current path to sys path so we can directly import
+        sys.path.append(os.getcwd())
+        # run suite
+        unittest.TextTestRunner().run(suite)
 
     else:
         output_help()

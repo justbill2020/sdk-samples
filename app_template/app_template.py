@@ -1,5 +1,8 @@
 """
-An app template that can be used to create a new application
+An app template that can be used to create a new application.
+This template covers several aspect of an application that
+my not be needed in every case. It is meant as a guide and not
+a must.
 """
 
 # A try/except is wrapped around the imports to catch an
@@ -27,22 +30,22 @@ log = AppLogger()
 
 
 # Add functionality to execute when the app is started
-def start_router_app():
+def start_app():
     try:
-        log.debug('start_router_app()')
+        log.debug('start_app()')
 
     except Exception as e:
-        log.error('Exception during start_router_app()! exception: {}'.format(e))
+        log.error('Exception during start_app()! exception: {}'.format(e))
         raise
 
 
 # Add functionality to execute when the app is stopped
-def stop_router_app():
+def stop_app():
     try:
-        log.debug('stop_router_app()')
+        log.debug('stop_app()')
 
     except Exception as e:
-        log.error('Exception during stop_router_app()! exception: {}'.format(e))
+        log.error('Exception during stop_app()! exception: {}'.format(e))
         raise
 
 
@@ -54,18 +57,18 @@ def action(command):
 
         if command == 'start':
             # Call the start function when the app is started.
-            start_router_app()
+            start_app()
 
         elif command == 'stop':
             # Call the stop function when the app is stopped.
-            stop_router_app()
+            stop_app()
 
     except Exception as e:
         log.error('Exception during {}! exception: {}'.format(command, e))
         raise
 
 
-# The main entry point for hello_world.py This will be executed when the
+# The main entry point for app_template.py This will be executed when the
 # application is started or stopped as defined in the start.sh and stop.sh
 # scripts. It expects either a 'start' or 'stop' argument.
 if __name__ == "__main__":

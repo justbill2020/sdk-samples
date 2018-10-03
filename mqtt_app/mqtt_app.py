@@ -18,7 +18,6 @@ try:
     import os
     import sys
     import traceback
-    import argparse
     import settings
     import json
     import time
@@ -45,7 +44,7 @@ mqtt_client = None
 
 # Called when the broker responds to our connection request.
 def on_connect(client, userdata, flags, rc):
-    log.debug("MQTT Client connection results: {}".format(mqtt.connack_string(rc)))
+    log.debug('MQTT Client connection results: {}'.format(mqtt.connack_string(rc)))
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
@@ -148,7 +147,7 @@ def publish_thread():
 
             time.sleep(10)
         except Exception as ex:
-            log.error('Exception in send_gps(). ex: {}'.format(ex))
+            log.error('Exception in publish_thread(). ex: {}'.format(ex))
 
 
 def start_mqtt():
@@ -186,9 +185,9 @@ def start_mqtt():
         raise
 
 
-def start_router_app():
+def start_app():
     try:
-        log.debug('start_router_app()')
+        log.debug('start_app()')
 
         # Start the MQTT client thread.
         mqtt_thread = Thread(target=start_mqtt, args=())
@@ -197,44 +196,9 @@ def start_router_app():
         publish_thread()
 
     except Exception as ex:
-        log.error('Exception during start_router_app()! exception: {}'.format(ex))
-        raise
-
-
-def stop_router_app():
-    try:
-        log.debug('stop_router_app()')
-
-    except Exception as ex:
-        log.error('Exception during stop_router_app()! exception: {}'.format(ex))
-        raise
-
-
-def action(command):
-    try:
-        log.debug('action({})'.format(command))
-
-        if command == 'start':
-            start_router_app()
-
-        elif command == 'stop':
-            stop_router_app()
-
-    except Exception as ex:
-        log.error('Exception during {}! exception: {}'.format(command, ex))
+        log.error('Exception during start_app()! exception: {}'.format(ex))
         raise
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('opt')
-    args = parser.parse_args()
-
-    opt = args.opt.strip()
-    if opt not in ['start', 'stop']:
-        log.debug('Failed to run command: {}'.format(opt))
-        exit()
-
-    action(opt)
-
-    log.debug('App is exiting')
+    start_app()

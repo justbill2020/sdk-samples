@@ -7,6 +7,7 @@ Application Version
 ===================
 1.0
 
+
 NCOS Devices Supported
 ======================
 ALL
@@ -26,8 +27,8 @@ creating a new application are:
 2. Rename the directory to your application name. I'll use
    'new_app_name' as an example in these instructions.
 3. Rename the app_template.py file to new_app_name.py.
-4. Edit install.py, start.sh, and stop.sh and replace all
-   'app_template' occurrences with 'new_app_name'.
+4. Edit start.sh and stop.sh. Replace all 'app_template'
+   occurrences with 'new_app_name'.
 5. Edit package.ini and replace 'app_template' with 'new_app_name'. Also,
    delete the UUID so that the entry is 'uuid ='. When the application is
    built, a new UUID will be created.
@@ -38,5 +39,6 @@ Your 'new_app_name' is now ready for your new code.
 
 Expected Output
 ===============
-None
+Logs will be output indicating that the application has been started
+or stopped.
 
