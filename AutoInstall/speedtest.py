@@ -1074,7 +1074,7 @@ class Speedtest(object):
     """Class for performing standard speedtest.net testing operations"""
 
     def __init__(self, config=None, source_address=None, timeout=10,
-                 secure=True, shutdown_event=None):
+                 secure=False, shutdown_event=None):
         self.config = {}
 
         self._source_address = source_address

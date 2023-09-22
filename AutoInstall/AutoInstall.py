@@ -8,7 +8,6 @@ The app can be manually triggered again by clearing out the description field in
 from csclient import EventingCSClient
 from speedtest import Speedtest
 import time
-import re
 import datetime
 
 
@@ -37,51 +36,17 @@ class AutoInstall(object):
     MIN_DOWNLOAD_SPD = 0.0  # Mbps
     MIN_UPLOAD_SPD = 0.0  # Mbps
     SCHEDULE = 0  # Run AutoInstall every {SCHEDULE} minutes. 0 = Only run on boot.
-    NUM_ACTIVE_SIMS = 1  # Number of fastest (download) SIMs to keep active.  0 = all; do not disable SIMs
+    NUM_ACTIVE_SIMS = 0  # Number of fastest (download) SIMs to keep active.  0 = all; do not disable SIMs
     ONLY_RUN_ONCE = False  # True means do not run if AutoInstall has been run on this device before.
 
     STATUS_DEVS_PATH = '/status/wan/devices'
     CFG_RULES2_PATH = '/config/wan/rules2'
     CTRL_WAN_DEVS_PATH = '/control/wan/devices'
     API_URL = 'https://www.cradlepointecm.com/api/v2'
-    CONNECTION_STATE_TIMEOUT = 8 * 60  # 7 Min
+    CONNECTION_STATE_TIMEOUT = 15 * 60  # 7 Min
     NETPERF_TIMEOUT = 5 * 60  # 5 Min
     sims = {}
 
-    currAPN = {}
-
-    APN_LIST = {
-        'att': [
-            {
-                'match': '/diagnostics/ICCID',
-                'regex':'/(?>^.{4})(?:.{3})?170/gm',
-                'env': 'pod1',
-                'apn':'ComcastMES5G'
-            },
-            {
-                'match': '/diagnostics/ICCID',
-                'regex':'/(?>^.{4})(?:.{3})?030/gm',
-                'env': 'pod11/19',
-                'apn':'11200.mcs'
-            }
-        ],
-        'vzw': [
-            {
-                'match': '/diagnostics/CARRID',
-                'regex':'Verizon',
-                'env': 'Thingspace',
-                'apn': 'mw01.vzwstatic'
-            }
-        ],
-        'tmo': [
-                {
-                'match':'/diagnostics/CARRID',
-                'regex':'T-Mobile',
-                'env': 'Netcracker Wholesale',
-                'apn':'iot.tmowholesale.static'
-                }
-        ]
-    }
     def __init__(self):
         self.client = EventingCSClient('AutoInstall')
         self.speedtest = Speedtest()
@@ -192,22 +157,16 @@ class AutoInstall(object):
                     self.sims[dev_UID]["sim"] = dev_status.get('info', {}).get('sim')
                     i = 0.1
                     found_self = False
-                    isNone = self.sims[dev_UID]["rule_id"] == None
                     repeat = False
                     for dev, stat in self.sims.items():
                         if stat.get('config', {}).get('_id_') == self.sims[dev_UID]["rule_id"]:
-                            if not found_self and not isNone:
+                            if not found_self:
                                 found_self = True
                             else:  # Two SIMs using same WAN profile
                                 config = self.client.get(
                                     f'config/wan/rules2/'
                                     f'{self.sims[dev_UID]["rule_id"]}')
-                                if not config:
-                                    config = {'priority':1.1,'trigger_name':'','trigger_string':''}
-                                else:
-                                    if not isNone:
-                                        self.client.log(f'Detatching Duplicate Rules')
-                                        config.pop('_id_')
+                                config.pop('_id_')
                                 config['priority'] += i
                                 i += 0.1
                                 config['trigger_name'] = f'{stat["info"]["port"]} {stat["info"]["sim"]}'
@@ -235,8 +194,7 @@ class AutoInstall(object):
             if conn_state == state:
                 break
             if timeout_counter > self.CONNECTION_STATE_TIMEOUT:
-                self.client.log(f'Timeout waiting on {self.port_sim(sim)}. Testing Alternate APNs')
-                self.update_apn(sim)
+                self.client.log(f'Timeout waiting on {self.port_sim(sim)}')
                 raise Timeout(conn_path)
             time.sleep(min(sleep_seconds, 45))
             timeout_counter += sleep_seconds
@@ -264,19 +222,7 @@ class AutoInstall(object):
         down = self.speedtest.results.download / 1000 / 1000
         up = self.speedtest.results.upload / 1000 / 1000
         self.client.log(f'Speedtest complete for {sim}.')
-        if up != None and down != None:
-            return down, up
-        else:
-            self.update_apn(sim)
-            return self.do_speedtest(sim)
-
-    def update_apn(self, sim):
-        
-        for carr in self.APN_LIST:
-            self.currAPN[sim] = self.sims[sim]
-            test = re.match(carr.regex,self.sims[sim].get(carr.match))
-            result = test
-        return
+        return down, up
 
     def test_sim(self, device):
         """Get diagnostics, run speedtests, and verify minimums."""
