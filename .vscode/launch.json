@@ -20,6 +20,16 @@
       "processId":"${command:pickProcess}",
       "justMyCode": true
 
+    },
+    {
+      "name": "Python: Debug Make",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/make.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "args": ["install"],
+      "justMyCode": false
     }
   ]
 }
