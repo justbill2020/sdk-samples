@@ -6,10 +6,13 @@ Results are written to the log, set as the description field, and sent as a cust
 The app can be manually triggered again by clearing out the description field in NCM."""
 
 """
-    todo: if there's less than a 10% variance use best RSRP value
+    todo: only 1 sim found time out notify for next steps
+    todone: will not run on blank description unless it's the first time running
+    todone: min up and down enforcement
+    todo: differentiate between 5G and LTE speeds
+    todo: if there's less than a 10% variance of dl use upload then best RSRP value
     todo: create a logging webhook in powerautomate to track progress
     todo: create a local webpage for techs 
-
 """
 
 from csclient import EventingCSClient
@@ -41,8 +44,8 @@ class RunBefore(SimSelectorException):
 
 class SimSelector(object):
     """Main Application."""
-    MIN_DOWNLOAD_SPD = 0.0  # Mbps
-    MIN_UPLOAD_SPD = 0.0  # Mbps
+    MIN_DOWNLOAD_SPD = {'5G':30.0,'LTE':10.0} # Mbps
+    MIN_UPLOAD_SPD = {'5G':2.0,'LTE':1.0}  # Mbps
     SCHEDULE = 0  # Run SimSelector every {SCHEDULE} minutes. 0 = Only run on boot.
     NUM_ACTIVE_SIMS = 1  # Number of fastest (download) SIMs to keep active.  0 = all; do not disable SIMs
     ONLY_RUN_ONCE = False  # True means do not run if SimSelector has been run on this device before.
@@ -53,8 +56,9 @@ class SimSelector(object):
     CFG_RULES2_PATH = '/config/wan/rules2'
     CTRL_WAN_DEVS_PATH = '/control/wan/devices'
     API_URL = 'https://www.cradlepointecm.com/api/v2'
-    CONNECTION_STATE_TIMEOUT = 15 * 60  # 7 Min
+    CONNECTION_STATE_TIMEOUT = 7 * 60  # 7 Min
     NETPERF_TIMEOUT = 5 * 60  # 5 Min
+    low_speed = False
     sims = {}
     wan_devs = {}
     rules_map = {}
@@ -66,7 +70,9 @@ class SimSelector(object):
                 {"carrier": "310170", "apn": "ComcastMES5G"},
                 {"carrier": "310030", "apn": "contingent.net"},
                 {"carrier": "311882", "apn": "iot.tmowholesale.static"},
-                {"carrier": "311480", "apn": "mw01.vzwstatic"}
+                {"carrier": "311882", "apn": "iot.tmowholesale"},
+                {"carrier": "311480", "apn": "mw01.vzwstatic"},
+                {"carrier": "311480", "apn": "we01.vzwstatic"}
             ]
         }
 
@@ -106,14 +112,18 @@ class SimSelector(object):
         self.client = EventingCSClient('SimSelector')
         self.speedtest = Speedtest()
 
-    def check_if_run_before(self):
+    def check_if_run_before(self, raise_err = True):
         """Check if SimSelector has been run before and return boolean."""
+
         if self.ONLY_RUN_ONCE:
             if self.client.get('config/system/snmp/persisted_config') == f'{self.APP_NAME}':
                 self.client.log(
-                    f'ERROR - {self.APP_NAME} has been run before!')
-                raise RunBefore(
-                    f'ERROR - {self.APP_NAME} has been run before!')
+                    f'{self.APP_NAME} has been run before!')
+                if test_only:
+                    raise RunBefore(
+                        f'ERROR - {self.APP_NAME} has been run before!')
+                else:
+                    return True
         return False
 
     def wait_for_ncm_sync(self):
@@ -121,9 +131,9 @@ class SimSelector(object):
         # WAN connection_state
         if self.client.get('status/wan/connection_state') != 'connected':
             self.client.log('Waiting until WAN is connected...')
-        timeout_count = 500
+        timeout_count = self.CONNECTION_STATE_TIMEOUT
         while self.client.get('/status/wan/connection_state') != 'connected':
-            timeout_count -= 1
+            timeout_count -= 2
             if not timeout_count:
                 raise Timeout('WAN not connecting')
             time.sleep(2)
@@ -132,9 +142,9 @@ class SimSelector(object):
         if self.client.get('status/ecm/state') != 'connected':
             self.client.log('Waiting until NCM is connected...')
             self.client.put('/control/ecm', {'start': True})
-        timeout_count = 500
+        timeout_count = self.CONNECTION_STATE_TIMEOUT
         while self.client.get('/status/ecm/state') != 'connected':
-            timeout_count -= 1
+            timeout_count -= 2
             if not timeout_count:
                 raise Timeout('NCM not connecting')
             time.sleep(2)
@@ -143,10 +153,10 @@ class SimSelector(object):
         if self.client.get('status/ecm/sync') != 'ready':
             self.client.log('Waiting until NCM is synced...')
             self.client.put('/control/ecm', {'start': True})
-        timeout_count = 500
+        timeout_count = self.CONNECTION_STATE_TIMEOUT
         while self.client.get('/status/ecm/sync') != 'ready':
             self.client.put('/control/ecm', {'start': True})
-            timeout_count -= 1
+            timeout_count -= 2
             if not timeout_count:
                 raise Timeout('NCM not syncing')
             time.sleep(2)
@@ -269,7 +279,7 @@ class SimSelector(object):
                 break
             if timeout_counter > self.CONNECTION_STATE_TIMEOUT:
                 self.client.log(f'Timeout waiting on {self.port_sim(sim)}. Testing Alternate APNs')
-                self.update_apn(sim)
+                self.update_custom(sim)
                 raise Timeout(conn_path)
             time.sleep(min(sleep_seconds, 45))
             timeout_counter += sleep_seconds
@@ -377,12 +387,14 @@ class SimSelector(object):
                     f'{self.sims[device]["download"]}Mbps TCP Upload: {self.sims[device]["upload"]}Mbps')
 
                 # Verify minimum speeds
+                #  if device is 5G use 5G speeds if not use LTE speeds
                 if self.sims[device].get('download', 0.0) > self.MIN_DOWNLOAD_SPD and \
                         self.sims[device].get('upload', 0.0) > self.MIN_UPLOAD_SPD:
                     return True
                 else:  # Did not meet minimums
                     self.client.log(f'{self.port_sim(device)} Failed to meet minimums! MIN_DOWNLOAD_SPD: {self.MIN_DOWNLOAD_SPD} MIN_UPLOAD_SPD: {self.MIN_UPLOAD_SPD}')
-                    return False
+                    self.sims[device]['low-speed'] = True
+                    return True
         except Timeout:
             message = f'Timed out running speedtest on {self.port_sim(device)}'
             self.client.log(message)
@@ -465,7 +477,7 @@ class SimSelector(object):
         self.NCM_suspend()
 
         success = False  # SimSelector Success Status - Becomes True when a SIM meets minimum speeds
-
+        self.low_speed = False
         # Test the connected SIM first
         primary_device = self.client.get('status/wan/primary_device')
         if 'mdm-' in primary_device:  # make sure its a modem
@@ -494,7 +506,7 @@ class SimSelector(object):
                 self.client.put(f'config/wan/rules2/{rule_id}/disabled', True)
 
         # Prioritizes SIMs based on download speed
-        sorted_results = sorted(self.sims, key=lambda x: self.sims[x]['download'], reverse=True)
+        sorted_results = sorted(self.sims, key=lambda x: (self.sims[x]['upload'], self.sims[x]['download']) if self.sims[x]['low-speed'] else (self.sims[x]['download'], self.sims[x]['upload']), reverse=True)
 
         # Configure WAN Profiles
         self.client.log(f'Prioritizing SIMs: {sorted_results}')
@@ -538,9 +550,11 @@ class SimSelector(object):
 
 def manual_test(path, desc, *args):
     """Callback function for triggering manual tests."""
-    if not desc or desc.startswith(SimSelector.APP_NAME):  # blank description, run app
+    # if desc is blank and first run, or starts with APP_NAME or contains "start" (case insensitive)
+    if "start" in f'{desc.lower()}':
         try:
-            if not simselector.isRunning:
+            devUptime = simselector.client.get('status/system/uptime')
+            if not simselector.isRunning and ( devUptime >= 15*60):
                 simselector.run()
         except Exception as e:
             simselector.isRunning=False
