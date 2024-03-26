@@ -22,7 +22,7 @@ import re
 import datetime
 import traceback
 import sys
-import configparser
+# import configparser
 
 
 class SimSelectorException(Exception):
