@@ -5,7 +5,7 @@ SimSelector
 
 Application Version
 ===================
-2.5.9
+0.8
 
 NCOS Devices Supported
 ======================

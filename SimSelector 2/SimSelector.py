@@ -54,7 +54,7 @@ class SimSelector(object):
     ONLY_RUN_ONCE = False  # True means do not run if SimSelector has been run on this device before.
 
     
-    APP_NAME = "SimSelector 2.5.9"
+    APP_NAME = "SimSelector 2.5.8"
 
     STATUS_DEVS_PATH = '/status/wan/devices'
     CFG_RULES2_PATH = '/config/wan/rules2'
@@ -67,7 +67,6 @@ class SimSelector(object):
     wan_devs = {}
     rules_map = {}
     isRunning = False
-    staging = False
     pending_updates = []
 
     DEBUG = {
@@ -128,6 +127,7 @@ class SimSelector(object):
                 {"carrier": "310170", "apn": "ComcastMES5G"},
                 {"carrier": "310030", "apn": "contingent.net"},
                 {"carrier": "311882", "apn": "iot.tmowholesale.static"},
+                {"carrier": "311882", "apn": "iot.tmowholesale"},
                 {"carrier": "311480", "apn": "mw01.vzwstatic"},
                 {"carrier": "311480", "apn": "we01.vzwstatic"}
             ]
@@ -138,7 +138,7 @@ class SimSelector(object):
         global DYN_APP_NAME
         self.client = EventingCSClient('SimSelector')
         self.speedtest = Speedtest()
-        DYN_APP_NAME = get_app_version()
+        DYN_APP_NAME = get_app_version
 
     def check_if_run_before(self, raise_err = True):
         """Check if SimSelector has been run before and return boolean."""
@@ -242,12 +242,10 @@ class SimSelector(object):
         return True
 
     def reset_dsdm(self):
-        int_dsdm = cp.get('/config/wan/dual_sim_disable_mask')
-        rem_dsdm = cp.get('/config/wan/rem_dual_sim_disable_mask')
-        if int_dsdm != '' and int_dsdm != None:
+        if cp.get('/config/wan/dual_sim_disable_mask') != '':
             self.send_update('Resetting Dual Sim Mask')
             cp.put("/config/wan/dual_sim_disable_mask","")
-        if rem_dsdm != '' and rem_dsdm != None:
+        if cp.get('/config/wan/rem_dual_sim_disable_mask') != '':
             self.send_update('Resetting Remote Dual Sim Mask')
             cp.put("/config/wan/rem_dual_sim_disable_mask","")
         time.sleep(5)
@@ -325,7 +323,7 @@ class SimSelector(object):
         """Return port value for sim."""
         return f'{self.sims[sim]["info"]["port"]} {self.sims[sim]["info"]["sim"]}'
 
-    def do_speedtest(self, sim, staging):
+    def do_speedtest(self, sim):
         """Run Ookla speedtests and return TCP down and TCP up in Mbps."""
         servers = []
         self.speedtest.get_servers(servers)
@@ -423,28 +421,27 @@ class SimSelector(object):
             self.update_custom(self, new_customs)
         found_manuals = self.check_manual(self)
         if len(found_manuals) > 0:
-            self.clear_apn(self, found_manuals)    
+            self.clear_apn(self, found_manuals)
         
 
-    def test_sim(self, device,staging = False):
+
+    def test_sim(self, device):
         """Get diagnostics, run speedtests, and verify minimums."""
         try:
             if self.modem_state(device, 'connected'):
-                self.sims[device]['OK'] = True
+
                 # Get diagnostics and log it
                 diagnostics = self.client.get(f'{self.STATUS_DEVS_PATH}/{device}/diagnostics')
                 self.sims[device]['diagnostics'] = diagnostics
                 self.send_update(
                     f'Modem Diagnostics: {self.port_sim(device)} RSRP:{diagnostics.get("RSRP")}',1)
 
-                    # Do speedtest and log results
-                if not staging:
-                    self.sims[device]['download'], self.sims[device]['upload'] = self.do_speedtest(device)
-                    self.send_update(
-                        f'Speedtest Results: {self.port_sim(device)} TCP Download: '
-                        f'{self.sims[device]["download"]}Mbps TCP Upload: {self.sims[device]["upload"]}Mbps',1)
+                # Do speedtest and log results
+                self.sims[device]['download'], self.sims[device]['upload'] = self.do_speedtest(device)
+                self.send_update(
+                    f'Speedtest Results: {self.port_sim(device)} TCP Download: '
+                    f'{self.sims[device]["download"]}Mbps TCP Upload: {self.sims[device]["upload"]}Mbps',1)
 
-            
                 tech = self.sims[device]['info'].get('tech',"LTE")
                 # Verify minimum speeds
                 #  if device is 5G use 5G speeds if not use LTE speeds
@@ -452,17 +449,15 @@ class SimSelector(object):
                         self.sims[device].get('upload', 0.0) > self.MIN_UPLOAD_SPD.get(tech,1):
                     self.sims[device]['low-speed'] = False
                     return True
-                elif not staging:  # Did not meet minimums
+                else:  # Did not meet minimums
                     self.send_update(f'{self.port_sim(device)} Failed to meet minimums! MIN_DOWNLOAD_SPD: {self.MIN_DOWNLOAD_SPD} MIN_UPLOAD_SPD: {self.MIN_UPLOAD_SPD}',
                     1)
                     self.sims[device]['low-speed'] = True
                     return True
-
         except Timeout:
             message = f'Timed out running speedtest on {self.port_sim(device)}'
             self.send_update(message,7)
             self.sims[device]['download'] = self.sims[device]['upload'] = 0.0
-            self.sims[device]['OK'] = False
             return False
 
     def create_message(self, uid, *args):
@@ -514,7 +509,6 @@ class SimSelector(object):
 
     def run(self):
         """Start of Main Application."""
-        staging = self.staging
         self.isRunning = True
         self.send_update(
             f'{self.APP_NAME} Starting... MIN_DOWNLOAD_SPD:{self.MIN_DOWNLOAD_SPD} MIN_UPLOAD_SPD:{self.MIN_UPLOAD_SPD} '
@@ -545,7 +539,7 @@ class SimSelector(object):
         # Test the connected SIM first
         primary_device = self.client.get('status/wan/primary_device')
         if 'mdm-' in primary_device:  # make sure its a modem
-            if self.test_sim(primary_device,staging):
+            if self.test_sim(primary_device):
                 rule_id = self.client.get(f'status/wan/devices/{primary_device}/config/_id_')
                 self.rules_map[rule_id] = {"uid": primary_device, "port": self.sims[primary_device]['port']}
                 success = True
@@ -555,7 +549,7 @@ class SimSelector(object):
 
         # test remaining SIMs
         for sim in self.sims:
-            if not self.sims[sim].get('OK'):
+            if not self.sims[sim].get('download'):
                 rule_id = self.client.get(f'status/wan/devices/{sim}/config/_id_')
                 if rule_id is not None:
                     self.client.put(f'config/wan/rules2/{rule_id}/disabled', False)
@@ -563,7 +557,7 @@ class SimSelector(object):
                     self.set_all_rule_states(False)
                     self.run()
                     break
-                if self.test_sim(sim,staging):
+                if self.test_sim(sim):
                     rule_id = self.client.get(f'status/wan/devices/{sim}/config/_id_')
                     self.rules_map[rule_id] = {"uid": sim, "port": self.sims[sim]['port']}
                     success = True
@@ -666,17 +660,6 @@ def get_app_version(ceate_new_uuid=False):
     else:
         print('ERROR: The APP_NAME section does not exist in {}'.format(app_config_file))
 
-def find_string_in_text(text, strings, index=0):
-    # Base case: If index reaches the length of the strings array, return False
-    if index == len(strings):
-        return False
-    
-    # Check if the current string in the array is in the text
-    if strings[index] in text:
-        return True
-    
-    # Recurse to the next string in the array
-    return find_string_in_text(text, strings, index + 1)
 
 if __name__ == '__main__':
     cp = EventingCSClient('SimSelector')
@@ -708,8 +691,6 @@ if __name__ == '__main__':
     try:
         # Setup callback for manual testing:
         # simselector.client.on('put', '/config/system/desc', manual_test)
-        if not find_string_in_text(simselector.client.get('/config/system/asset_id'), [f'{SimSelector.APP_NAME}']):
-            simselector.client.put('/config/system/asset_id', f'{SimSelector.APP_NAME} Installed')
         desc = ""
         # RUN SIMSELECTOR:
         # desc = simselector.client.get('/config/system/desc')
@@ -725,7 +706,7 @@ if __name__ == '__main__':
             else:
                 count = count -1
 
-                if (lastDesc != desc and "start" in f'{desc.lower()}') or find_string_in_text(desc.lower(), ["force", "stage", "staging"]):
+                if (lastDesc != desc and "start" in f'{desc.lower()}') or "force" in f'{desc.lower()}':
                     count = 10
                     manual_test(None, desc)
     except Exception as err:
