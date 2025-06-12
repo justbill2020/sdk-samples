@@ -329,7 +329,7 @@ class CSClient(object):
             print('Alert is only available when running the app in NCOS.')
             print('Alert Text: {}'.format(value))
 
-    def log(self, value=''):
+    def log(self, value='',trace=False):
         """
         Adds an INFO log to the device SYSLOG.
 
@@ -341,7 +341,10 @@ class CSClient(object):
         """
         if self.ncos:
             # Running in NCOS so write to the logger
-            self.logger.info(value)
+            if trace:
+                self.logger.info(value)
+            else:    
+                self.logger.info(value,exc_info=True)
         elif 'linux' in sys.platform:
             # Running in Linux (container?) so write to stdout
             with open('/dev/stdout', 'w') as log:

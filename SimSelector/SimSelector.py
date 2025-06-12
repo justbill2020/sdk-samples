@@ -9,7 +9,7 @@ The app can be manually triggered again by clearing out the description field in
     todo: only 1 sim found time out notify for next steps
     todone: will not run on blank description unless it's the first time running
     todone: min up and down enforcement
-    todo: differentiate between 5G and LTE speeds
+    todone: differentiate between 5G and LTE speeds
     todo: if there's less than a 10% variance of dl use upload then best RSRP value
     todo: create a logging webhook in powerautomate to track progress
     todo: create a local webpage for techs 
@@ -22,6 +22,7 @@ import re
 import datetime
 import traceback
 import sys
+import logging
 # import configparser
 
 
@@ -62,7 +63,6 @@ class SimSelector(object):
     API_URL = 'https://www.cradlepointecm.com/api/v2'
     CONNECTION_STATE_TIMEOUT = 7 * 60  # 7 Min
     NETPERF_TIMEOUT = 5 * 60  # 5 Min
-    low_speed = False
     sims = {}
     wan_devs = {}
     rules_map = {}
@@ -70,57 +70,6 @@ class SimSelector(object):
     staging = False
     pending_updates = []
 
-    DEBUG = {
-    "DEFAULT":1,
-    "Process_Pending":{
-      "val": 0, "desc": "post pending updates"
-    },
-    "Local": {
-      "val": 1,"desc": "Logs locally"
-    },
-    "Alert": {
-      "val": 2, "desc": "Sends an alert to NCM"
-    },
-    "Notify": {
-      "val": 3, "desc": "Combines local logging and sending an alert"
-    },
-    "Update": {
-      "val": 4, "desc": "Sends an update to the device description"
-    },
-    "Track": {
-      "val": 5, "desc": "Combines local logging and device description updates"
-    },
-    "Signal": {
-      "val": 6, "desc": "Sends alerts and updates device description"
-    },
-    "Sync": {
-      "val": 7, "desc": "Combines local logging, alerting, and device updates"
-    },
-    "Assign": {
-      "val": 8, "desc": "Sends a message to Asset ID"
-    },
-    "Identify": {
-      "val": 9, "desc": "Combines local logging and asset ID messaging"
-    },
-    "Command": {
-      "val": 10, "desc": "Sends alerts and asset ID messages"
-    },
-    "Register": {
-      "val": 11, "desc": "Combines local logging, alerting, and asset ID messaging"
-    },
-    "Revise": {
-      "val": 12, "desc": "Updates device description and sends asset ID message"
-    },
-    "Modify": {
-      "val": 13, "desc": "Combines local logging, device updates, and asset ID messaging"
-    },
-    "Broadcast": {
-      "val": 14, "desc": "Sends alerts, updates device description, and asset ID messages"
-    },
-    "Integrate": {
-      "val": 15, "desc": "Combines all four actions"
-    }
-  }
 
     ADV_APN = {"custom_apns": 
             [ 
@@ -139,6 +88,7 @@ class SimSelector(object):
         self.client = EventingCSClient('SimSelector')
         self.speedtest = Speedtest()
         DYN_APP_NAME = get_app_version()
+        self.APP_NAME = DYN_APP_NAME
 
     def check_if_run_before(self, raise_err = True):
         """Check if SimSelector has been run before and return boolean."""
@@ -292,7 +242,7 @@ class SimSelector(object):
                                 self.sims[dev_UID]["config"]["_id_"] = new_id
                                 repeat = True
                 except Exception as e:
-                    self.client.log(f'Exception: {e}')
+                    self.client.log(f'Exception: {e} trace: {sys.exc_info}')
                     continue
 
     def modem_state(self, sim, state):
@@ -341,9 +291,10 @@ class SimSelector(object):
             return down, up
         else:
             return self.do_speedtest(sim)
-
-    def send_update (self,message,level=7):
-
+    @staticmethod
+    def send_update (message,level=7):
+        global g_app_name
+        global g_app_version
         # if level == 0:
         #     cp.log(f'{self.APP_NAME}: {message}')
         #     for x in self.pending_updates:
@@ -371,9 +322,9 @@ class SimSelector(object):
         #         cp.alert(f'{self.APP_NAME}: {message}')
         #     if level & 4:
         #         cp.put('config/system/desc', f'{self.APP_NAME}: {message}'[:1023])
-        cp.log(f'{self.APP_NAME}: {message}')
-        cp.alert(f'{self.APP_NAME}: {message}')
-        cp.put('config/system/desc', f'{self.APP_NAME}: {message}'[:1023])
+        # cp.log(f'{self.APP_NAME}: {message}',True)
+        # cp.alert(f'{self.APP_NAME}: {message}')
+        # cp.put('config/system/desc', f'{self.APP_NAME}: {message}'[:1023])
 
 
     def clear_apn(self,sims):
@@ -483,7 +434,7 @@ class SimSelector(object):
                     message = "{}:{}".format(arg, self.sims[uid]['diagnostics'].get(arg)) if not message else ' '.join(
                         [message, "{}:{}".format(arg, self.sims[uid]['diagnostics'].get(arg))])
         except Exception as e:
-            self.send_update(e,1)
+            self.send_update({"e":e,"info":sys.exc_info},1)
         return message
 
     def prioritize_rules(self, sim_list):
@@ -541,7 +492,6 @@ class SimSelector(object):
         self.NCM_suspend()
 
         success = False  # SimSelector Success Status - Becomes True when a SIM meets minimum speeds
-        self.low_speed = False
         # Test the connected SIM first
         primary_device = self.client.get('status/wan/primary_device')
         if 'mdm-' in primary_device:  # make sure its a modem
@@ -633,7 +583,7 @@ def manual_test(path, desc, *args):
         finally:
             simselector.client.put('/control/ecm', {'start': 'true'})
             # simselector.send_update('Updating all pending messages', 0)
-
+@staticmethod
 def get_app_version(ceate_new_uuid=False):
     global g_app_uuid
     global g_app_name
@@ -653,14 +603,8 @@ def get_app_version(ceate_new_uuid=False):
     if g_app_name in config:
         if uuid_key in config[g_app_name]:
             g_app_uuid = config[g_app_name][uuid_key]
-
-            if ceate_new_uuid or g_app_uuid == '':
-                # Create a UUID if it does not exist
-                _uuid = str(uuid.uuid4())
-                config.set(g_app_name, uuid_key, _uuid)
-                with open(app_config_file, 'w') as configfile:
-                    config.write(configfile)
-                print('INFO: Created and saved uuid {} in {}'.format(_uuid, app_config_file))
+            g_app_version = f"v{config[g_app_name][major_key]}.{config[g_app_name][minor_key]}.{config[g_app_name][patch_key]}"
+            return f"{g_app_name} {g_app_version}"
         else:
             print('ERROR: The uuid key does not exist in {}'.format(app_config_file))
     else:
@@ -695,15 +639,12 @@ if __name__ == '__main__':
     
     while True:
         try:
-            SimSelector.check_apn(SimSelector)
             simselector = SimSelector()
             break
         except Exception as err0:
             # SimSelector.send_update('Error getting http://www.speedtest.net/speedtest-config.php - will try again in 5 seconds.')
             SimSelector.send_update('Error accessing speedtest config page - will try again in 5 seconds.')
             time.sleep(5)
-            SimSelector.check_apn(SimSelector)
-
 
     try:
         # Setup callback for manual testing:
@@ -729,4 +670,4 @@ if __name__ == '__main__':
                     count = 10
                     manual_test(None, desc)
     except Exception as err:
-        simselector.client.log(f"Failed with exception={type(err)} err={str(err)}")
+        simselector.client.log(f"Failed with exception={type(err)} err={str(err)} trace={str(sys.exc_info.traceback)}")
