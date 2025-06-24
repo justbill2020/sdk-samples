@@ -1,0 +1,26 @@
+# ===================================================
+# Cradlepoint SDK Settings Template
+# ===================================================
+# IMPORTANT: This is a template file. 
+# Copy this file to 'sdk_settings.ini' and fill in your actual values.
+# NEVER commit the actual 'sdk_settings.ini' file to version control!
+# ===================================================
+
+[sdk]
+# Application name - this should match your application directory name
+app_name=SimSelector
+
+# Device access credentials for development/testing
+# Replace these with your actual device credentials
+dev_client_username=admin
+dev_client_ip=192.168.0.1
+dev_client_password=YOUR_DEVICE_PASSWORD_HERE
+
+# ===================================================
+# SETUP INSTRUCTIONS:
+# ===================================================
+# 1. Copy this file to 'sdk_settings.ini'
+# 2. Replace YOUR_DEVICE_PASSWORD_HERE with your actual device password
+# 3. Update dev_client_ip with your device's IP address if different
+# 4. The 'sdk_settings.ini' file is automatically ignored by .gitignore
+# =================================================== 

@@ -1,0 +1,34 @@
+{
+    "app": {
+        "app_type": 0,
+        "auto_start": true,
+        "date": "2024-03-25T14:51:36.788453",
+        "files": {
+            "SimSelector.py": "d656031a211861b0b5525dceb5e702d468453ac4868821918e30cc72a05b8220",
+            "_csv.py": "b778711ec11f2d4e9395436fc369710cdacc49fdbfa762e66443a6e24d542bd1",
+            "csclient.py": "d854270f11d142bdc645517f5d76fced9ed670a8c2bbab038bc9692f7ee50baa",
+            "csv.py": "0f46b397bda6998a4b7083478f22cd02bd6454a3dd1219a5874562eb3784244d",
+            "package.ini": "b839588bee6ef4bdc7fab422d98aa1bb362e1dbbabb2106fb418652364379c88",
+            "readme.txt": "ffb07b86e1a94e59afa6d7413c97a9fb514f3712c220d5eea71cda636e475090",
+            "speedtest.py": "ce06c92314dbe8b313d52d5125534295e2d1465ff22109ed9f0705929bb2fa80",
+            "start.sh": "f953808b05021dba24fc4b9fee614bd861f10a53ab1f7d563582ef837af9b9ef",
+            "timeit.py": "d0884d28561a0dafce6492e8f526ad53b0ad49f38e9f124573c749a4941447f4"
+        },
+        "firmware_major": 7,
+        "firmware_minor": 23,
+        "name": "SimSelector",
+        "notes": "SimSelector v2.5.7 (beta-start)",
+        "reboot": true,
+        "restart": true,
+        "uuid": "b5a5af76-b726-436c-9852-ada0db8ab320",
+        "vendor": "Cradlepoint",
+        "version_major": 2,
+        "version_minor": 5,
+        "version_patch": 7
+    },
+    "pmf": {
+        "version_major": 1,
+        "version_minor": 0,
+        "version_patch": 0
+    }
+}
