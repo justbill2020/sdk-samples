@@ -1,0 +1,165 @@
+# ==============================================
+# Cradlepoint SDK - SimSelector .gitignore
+# ==============================================
+
+# ============================================== 
+# SENSITIVE CONFIGURATION FILES
+# ==============================================
+# Never commit files containing passwords, keys, or device-specific credentials
+sdk_settings.ini
+*/sdk_settings.ini
+config.ini
+*.config
+settings.ini
+*.env
+.env*
+secrets.json
+credentials.json
+
+# ==============================================
+# DEVICE/DEVELOPMENT SPECIFIC FILES
+# ==============================================
+# State files and runtime data
+/data/
+*/data/
+simselector_state.json
+*_state.json
+*.state
+*.cache
+
+# Device logs and temporary files
+*.log
+*.tmp
+*.temp
+log/
+logs/
+temp/
+
+# ==============================================
+# PYTHON SPECIFIC
+# ==============================================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ==============================================
+# DEVELOPMENT TOOLS
+# ==============================================
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ==============================================
+# CRADLEPOINT/NCOS SPECIFIC
+# ==============================================
+# Build and packaging files
+*.tar.gz
+*.tar
+*.zip
+built_apps/
+METADATA/
+*.cpkg
+
+# Device-specific certificates or keys
+*.pem
+*.key
+*.crt
+*.cert
+*.p12
+
+# ==============================================
+# DOCUMENTATION ARTIFACTS
+# ==============================================
+# Generated documentation
+docs/_build/
+*.pdf
+*.docx
+
+# ==============================================
+# TESTING AND DEBUGGING
+# ==============================================
+# Test results and debug files
+test_results/
+debug/
+*.debug
+core.*
+*.dump
+
+# ==============================================
+# BACKUP FILES  
+# ==============================================
+# Backup files
+*.bak
+*.backup
+*.old
+*~
+*.orig
+
+# ==============================================
+# CUSTOM SENSITIVE FILES
+# ==============================================
+# Add any project-specific sensitive files here
+# Example: customer-specific configuration files
+*customer*.ini
+*production*.ini
+*prod*.ini 
