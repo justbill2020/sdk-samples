@@ -80,9 +80,50 @@ class SimSelector(object):
     def __init__(self):
         global DYN_APP_NAME
         self.client = EventingCSClient('SimSelector')
-        self.speedtest = Speedtest()
+        
+        # Initialize speedtest with proper error handling
+        try:
+            # Ensure we have internet connectivity before initializing speedtest
+            self._wait_for_internet_connectivity()
+            self.speedtest = Speedtest()
+            self.client.log("Speedtest library initialized successfully")
+        except Exception as e:
+            self.client.log(f"Warning: Speedtest initialization failed: {e}")
+            self.client.log("Will retry speedtest initialization when needed")
+            self.speedtest = None
+        
         DYN_APP_NAME = get_app_version()
         self.APP_NAME = DYN_APP_NAME
+
+    def _wait_for_internet_connectivity(self, timeout=60):
+        """Wait for internet connectivity before initializing speedtest."""
+        import socket
+        import time
+        
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            try:
+                # Try to connect to Ookla's speedtest server
+                socket.create_connection(("www.speedtest.net", 80), timeout=5)
+                self.client.log("Internet connectivity confirmed for speedtest")
+                return True
+            except (socket.error, OSError):
+                self.client.log("Waiting for internet connectivity...")
+                time.sleep(2)
+        
+        raise Exception("Internet connectivity timeout - cannot initialize speedtest")
+
+    def _ensure_speedtest_ready(self):
+        """Ensure speedtest is initialized and ready for use."""
+        if self.speedtest is None:
+            try:
+                self._wait_for_internet_connectivity()
+                self.speedtest = Speedtest()
+                self.client.log("Speedtest library initialized on demand")
+            except Exception as e:
+                self.client.log(f"Failed to initialize speedtest: {e}")
+                raise Exception(f"Speedtest unavailable: {e}")
+        return self.speedtest
 
     def check_if_run_before(self, raise_err=True):
         """Check if SimSelector has been run before and return boolean."""
@@ -271,14 +312,14 @@ class SimSelector(object):
     def do_speedtest(self, sim, staging):
         """Run Ookla speedtests and return TCP down and TCP up in Mbps."""
         servers = []
-        self.speedtest.get_servers(servers)
-        self.speedtest.get_best_server()
+        self._ensure_speedtest_ready().get_servers(servers)
+        self._ensure_speedtest_ready().get_best_server()
         self.client.log(f'Running TCP Download test on {sim}...')
-        self.speedtest.download()
+        self._ensure_speedtest_ready().download()
         self.client.log(f'Running TCP Upload test on {sim}...')
-        self.speedtest.upload(pre_allocate=False)
-        down = self.speedtest.results.download / 1000 / 1000
-        up = self.speedtest.results.upload / 1000 / 1000
+        self._ensure_speedtest_ready().upload(pre_allocate=False)
+        down = self._ensure_speedtest_ready().results.download / 1000 / 1000
+        up = self._ensure_speedtest_ready().results.upload / 1000 / 1000
         self.client.log(f'Speedtest complete for {sim}.')
         if up is not None and down is not None:
             return down, up
