@@ -12,18 +12,17 @@ The app can be manually triggered again by clearing out the description field in
     todone: differentiate between 5G and LTE speeds
     todo: if there's less than a 10% variance of dl use upload then best RSRP value
     todo: create a logging webhook in powerautomate to track progress
-    todo: create a local webpage for techs 
+    todo: create a local webpage for techs
 """
 
+import configparser
+import datetime
+import os
+import sys
+import time
+import state_manager
 from csclient import EventingCSClient
 from speedtest import Speedtest
-import time
-import re
-import datetime
-import traceback
-import sys
-import logging
-# import configparser
 
 
 class SimSelectorException(Exception):
@@ -48,13 +47,12 @@ class RunBefore(SimSelectorException):
 
 class SimSelector(object):
     """Main Application."""
-    MIN_DOWNLOAD_SPD = {'5G':30.0,'lte/3g':10.0} # Mbps - need to confirm tech response for w1850
-    MIN_UPLOAD_SPD = {'5G':2.0,'lte/3g':1.0}  # Mbps -  need to confirm tech response for w1850
+    MIN_DOWNLOAD_SPD = {'5G': 30.0, 'lte/3g': 10.0}  # Mbps - need to confirm tech response for w1850
+    MIN_UPLOAD_SPD = {'5G': 2.0, 'lte/3g': 1.0}  # Mbps -  need to confirm tech response for w1850
     SCHEDULE = 0  # Run SimSelector every {SCHEDULE} minutes. 0 = Only run on boot.
     NUM_ACTIVE_SIMS = 1  # Number of fastest (download) SIMs to keep active.  0 = all; do not disable SIMs
     ONLY_RUN_ONCE = False  # True means do not run if SimSelector has been run on this device before.
 
-    
     APP_NAME = "SimSelector 2.5.9"
 
     STATUS_DEVS_PATH = '/status/wan/devices'
@@ -70,19 +68,15 @@ class SimSelector(object):
     staging = False
     pending_updates = []
 
+    ADV_APN = {"custom_apns": [
+                   {"carrier": "310030", "apn": "11200.mcs"},
+                   {"carrier": "310170", "apn": "ComcastMES5G"},
+                   {"carrier": "310030", "apn": "contingent.net"},
+                   {"carrier": "311882", "apn": "iot.tmowholesale.static"},
+                   {"carrier": "311480", "apn": "mw01.vzwstatic"},
+                   {"carrier": "311480", "apn": "we01.vzwstatic"}
+               ]}
 
-    ADV_APN = {"custom_apns": 
-            [ 
-                {"carrier": "310030", "apn": "11200.mcs"},
-                {"carrier": "310170", "apn": "ComcastMES5G"},
-                {"carrier": "310030", "apn": "contingent.net"},
-                {"carrier": "311882", "apn": "iot.tmowholesale.static"},
-                {"carrier": "311480", "apn": "mw01.vzwstatic"},
-                {"carrier": "311480", "apn": "we01.vzwstatic"}
-            ]
-        }
-
-    
     def __init__(self):
         global DYN_APP_NAME
         self.client = EventingCSClient('SimSelector')
@@ -90,18 +84,16 @@ class SimSelector(object):
         DYN_APP_NAME = get_app_version()
         self.APP_NAME = DYN_APP_NAME
 
-    def check_if_run_before(self, raise_err = True):
+    def check_if_run_before(self, raise_err=True):
         """Check if SimSelector has been run before and return boolean."""
 
         if self.ONLY_RUN_ONCE:
             if self.client.get('config/system/snmp/persisted_config') == f'{self.APP_NAME}':
-                self.client.log(
-                    f'{self.APP_NAME} has been run before!')
-                if test_only:
-                    raise RunBefore(
-                        f'ERROR - {self.APP_NAME} has been run before!')
-                else:
-                    return True
+                self.client.log(f'{self.APP_NAME} has been run before!')
+                # if test_only:  # This variable is undefined, commenting out
+                #     raise RunBefore(f'ERROR - {self.APP_NAME} has been run before!')
+                # else:
+                return True
         return False
 
     def wait_for_ncm_sync(self):
@@ -192,14 +184,14 @@ class SimSelector(object):
         return True
 
     def reset_dsdm(self):
-        int_dsdm = cp.get('/config/wan/dual_sim_disable_mask')
-        rem_dsdm = cp.get('/config/wan/rem_dual_sim_disable_mask')
-        if int_dsdm != '' and int_dsdm != None:
+        int_dsdm = self.client.get('/config/wan/dual_sim_disable_mask')
+        rem_dsdm = self.client.get('/config/wan/rem_dual_sim_disable_mask')
+        if int_dsdm is not None and int_dsdm != '':
             self.send_update('Resetting Dual Sim Mask')
-            cp.put("/config/wan/dual_sim_disable_mask","")
-        if rem_dsdm != '' and rem_dsdm != None:
+            self.client.put("/config/wan/dual_sim_disable_mask", "")
+        if rem_dsdm is not None and rem_dsdm != '':
             self.send_update('Resetting Remote Dual Sim Mask')
-            cp.put("/config/wan/rem_dual_sim_disable_mask","")
+            self.client.put("/config/wan/rem_dual_sim_disable_mask", "")
         time.sleep(5)
 
     def create_unique_WAN_profiles(self):
@@ -215,7 +207,7 @@ class SimSelector(object):
                     self.sims[dev_UID]["sim"] = dev_status.get('info', {}).get('sim')
                     i = 0.1
                     found_self = False
-                    isNone = self.sims[dev_UID]["rule_id"] == None
+                    isNone = self.sims[dev_UID]["rule_id"] is None
                     repeat = False
                     for dev, stat in self.sims.items():
                         if stat.get('config', {}).get('_id_') == self.sims[dev_UID]["rule_id"]:
@@ -226,10 +218,10 @@ class SimSelector(object):
                                     f'config/wan/rules2/'
                                     f'{self.sims[dev_UID]["rule_id"]}')
                                 if not config:
-                                    config = {'priority':1.1,'trigger_name':'','trigger_string':''}
+                                    config = {'priority': 1.1, 'trigger_name': '', 'trigger_string': ''}
                                 else:
                                     if not isNone:
-                                        self.client.log(f'Detatching Duplicate Rules')
+                                        self.client.log('Detatching Duplicate Rules')
                                         config.pop('_id_')
                                 config['priority'] += i
                                 i += 0.1
@@ -254,7 +246,8 @@ class SimSelector(object):
         while True:
             sleep_seconds += 5
             conn_state = self.client.get(conn_path)
-            self.client.log(f'Waiting for {self.port_sim(sim)} to connect.  Current State={conn_state}. timeout in {self.CONNECTION_STATE_TIMEOUT-timeout_counter}')
+            self.client.log(f'Waiting for {self.port_sim(sim)} to connect.  '
+                            f'Current State={conn_state}. timeout in {self.CONNECTION_STATE_TIMEOUT-timeout_counter}')
             if conn_state == state:
                 break
             if timeout_counter > self.CONNECTION_STATE_TIMEOUT:
@@ -287,97 +280,96 @@ class SimSelector(object):
         down = self.speedtest.results.download / 1000 / 1000
         up = self.speedtest.results.upload / 1000 / 1000
         self.client.log(f'Speedtest complete for {sim}.')
-        if up != None and down != None:
+        if up is not None and down is not None:
             return down, up
         else:
             return self.do_speedtest(sim)
-    @staticmethod
-    def send_update (message,level=7):
-        global g_app_name
-        global g_app_version
-        # if level == 0:
-        #     cp.log(f'{self.APP_NAME}: {message}')
-        #     for x in self.pending_updates:
-        #         self.wait_for_ncm_sync() 
-        #   NO this needs require least restrictive state, log needs no wan, or NCM, and we shouldn't wait for it. continue logging this until it works mem leak be damned
-        #   make a limit to number of updates only store maybe 25 then remove oldest. get time stamp, make sure storing data properly to ensure we can sort it easily
-        #   I have no intention in making a sort function, but will if forced
-        #         if x.level & 1:
-        #             cp.log(f'{self.APP_NAME} [offline]: {x.message}')
-        #         if x.level & 2 :
-        #             cp.alert(f'{self.APP_NAME} [offline]: {x.message}')
-        #         if x.level & 4:
-        #             cp.put('config/system/desc', f'{self.APP_NAME} [offline]: {x.message}'[:1023])
-        #         self.pending_updates.remove(x)
-        # if self.client.get('status/ecm/state') != 'connected':
-            
-        #     if level > 0:
-        #         current_time = datetime.datetime.now()
-        #         time_str = current_time.strftime('%Y-%m-%d %H:%M:%S')
-        #         self.pending_updates.insert(0, {"level":level,"message":f"{time_str}:: {message}"})
-        # else:
-        #     if level & 1:
-        #         cp.log(f'{self.APP_NAME}: {message}')
-        #     if level & 2:
-        #         cp.alert(f'{self.APP_NAME}: {message}')
-        #     if level & 4:
-        #         cp.put('config/system/desc', f'{self.APP_NAME}: {message}'[:1023])
-        # cp.log(f'{self.APP_NAME}: {message}',True)
-        # cp.alert(f'{self.APP_NAME}: {message}')
-        # cp.put('config/system/desc', f'{self.APP_NAME}: {message}'[:1023])
+    
+    def send_update(self, message, level=7):
+        """
+        Sends an update to the log, as an alert, and to the description field.
+        Caches messages if NCM is not connected, and flushes them when reconnected.
+        level is a bitmask: 1=log, 2=alert, 4=description
+        """
+        if self.client.get('status/ecm/state') == 'connected':
+            if self.pending_updates:
+                self.client.log(f"Flushing {len(self.pending_updates)} cached messages.")
+                # Process from oldest to newest to maintain order
+                for update in reversed(self.pending_updates):
+                    if update['level'] & 1:
+                        self.client.log(f'[OFFLINE] {self.APP_NAME}: {update["message"]}')
+                    if update['level'] & 2:
+                        self.client.alert(f'[OFFLINE] {self.APP_NAME}: {update["message"]}')
+                    if update['level'] & 4:
+                        self.client.put('/config/system/desc', f'[OFFLINE] {self.APP_NAME}: {update["message"]}'[:1023])
+                self.pending_updates = []
 
+            if level & 1:
+                self.client.log(f'{self.APP_NAME}: {message}')
+            if level & 2:
+                self.client.alert(f'{self.APP_NAME}: {message}')
+            if level & 4:
+                self.client.put('/config/system/desc', f'{self.APP_NAME}: {message}'[:1023])
+        else:
+            self.client.log(f"ECM not connected. Caching update: {message}")
+            current_time = datetime.datetime.now()
+            time_str = current_time.strftime('%Y-%m-%d %H:%M:%S')
+            self.pending_updates.insert(0, {"level": level, "message": f"{time_str}:: {message}"})
 
-    def clear_apn(self,sims):
+    def clear_apn(self, sims):
         for sim in sims:
-            item = cp.get(f'/config/wan/rules2/{sim}')
-            if "manual_apn" in item.get("modem",{}) or "apn_mode" in item.get("modem",{}):
+            item = self.client.get(f'/config/wan/rules2/{sim}')
+            if "manual_apn" in item.get("modem", {}) or "apn_mode" in item.get("modem", {}):
                 if item['modem'].get("manual_apn", "") == "":
-                    cp.delete(f'/config/wan/rules2/{sim}/modem/apn_mode')
-                    cp.delete(f'/config/wan/rules2/{sim}/modem/manual_apn')
-                    if "modem" in cp.get(f'/config/wan/rules2/{sim}') and cp.get(f'/config/wan/rules2/{sim}/modem') == {}:
-                        cp.delete(f'/config/wan/rules2/{sim}/modem')
-                    self.send_update(f'APN Mode Updated on Rule Id: {item["_id_"]}. Group configuration might require updates.')
+                    self.client.delete(f'/config/wan/rules2/{sim}/modem/apn_mode')
+                    self.client.delete(f'/config/wan/rules2/{sim}/modem/manual_apn')
+                    if ("modem" in self.client.get(f'/config/wan/rules2/{sim}') and 
+                            self.client.get(f'/config/wan/rules2/{sim}/modem') == {}):
+                        self.client.delete(f'/config/wan/rules2/{sim}/modem')
+                    self.send_update(f'APN Mode Updated on Rule Id: {item["_id_"]}. '
+                                     f'Group configuration might require updates.')
                 elif item['modem'].get("manual_apn", "") != "":
-                    cp.put(f'/config/wan/rules2/{sim}/modem/manual_apn',"")
-                    self.send_update(f'Manual APN has been cleared on Rule Id: {item["_id_"]}. Group configuration might require updates.')
+                    self.client.put(f'/config/wan/rules2/{sim}/modem/manual_apn', "")
+                    self.send_update(f'Manual APN has been cleared on Rule Id: {item["_id_"]}. '
+                                     f'Group configuration might require updates.')
 
     def check_manual(self):
         dev_manual = []
-        rules = cp.get('/config/wan/rules2')
+        rules = self.client.get('/config/wan/rules2')
         for item in rules:
             if "manual_apn" in item.get("modem", {}):
                 dev_manual.append(item["_id_"])
-            elif "apn_mode" in item.get("modem",{}):
+            elif "apn_mode" in item.get("modem", {}):
                 if item["modem"].get("apn_mode", "") == "manual":
                     dev_manual.append(item["_id_"])
         return dev_manual
 
-    def update_custom(self,new_customs):
-        cp.put('/config/wan/custom_apns',new_customs)
+    def update_custom(self, new_customs):
+        self.client.put('/config/wan/custom_apns', new_customs)
         self.send_update('Custom APNs were updated')
 
     def check_custom(self):
-        dev_apns = cp.get('/config/wan/custom_apns') or {}
+        dev_apns = self.client.get('/config/wan/custom_apns') or {}
         if dev_apns == {}:
             try:
-                cp.put('/config/wan/custom_apns',self.ADV_APN.get('custom_apns',{}))    
+                self.client.put('/config/wan/custom_apns', self.ADV_APN.get('custom_apns', {}))
                 return
-            except:
+            except Exception:
                 pass
-        new_apns = dev_apns + [item for item in self.ADV_APN.get('custom_apns',{}) if item not in dev_apns]
-        dirty_flag = len(new_apns) != len(dev_apns) + len(self.ADV_APN.get('custom_apns',{})) and new_apns != dev_apns
+        new_apns = dev_apns + [item for item in self.ADV_APN.get('custom_apns', {}) if item not in dev_apns]
+        dirty_flag = len(new_apns) != len(dev_apns) + len(self.ADV_APN.get('custom_apns', {})) and new_apns != dev_apns
         return new_apns, dirty_flag
 
     def check_apn(self):
-        new_customs, isDirty = self.check_custom(self)  
+        new_customs, isDirty = self.check_custom()
         if isDirty:
-            self.update_custom(self, new_customs)
-        found_manuals = self.check_manual(self)
+            self.update_custom(new_customs)
+        found_manuals = self.check_manual()
         if len(found_manuals) > 0:
-            self.clear_apn(self, found_manuals)    
+            self.clear_apn(found_manuals)
         
 
-    def test_sim(self, device,staging = False):
+    def test_sim(self, device, staging=False):
         """Get diagnostics, run speedtests, and verify minimums."""
         try:
             if self.modem_state(device, 'connected'):
@@ -386,32 +378,32 @@ class SimSelector(object):
                 diagnostics = self.client.get(f'{self.STATUS_DEVS_PATH}/{device}/diagnostics')
                 self.sims[device]['diagnostics'] = diagnostics
                 self.send_update(
-                    f'Modem Diagnostics: {self.port_sim(device)} RSRP:{diagnostics.get("RSRP")}',1)
+                    f'Modem Diagnostics: {self.port_sim(device)} RSRP:{diagnostics.get("RSRP")}', 1)
 
-                    # Do speedtest and log results
+                # Do speedtest and log results
                 if not staging:
                     self.sims[device]['download'], self.sims[device]['upload'] = self.do_speedtest(device)
                     self.send_update(
                         f'Speedtest Results: {self.port_sim(device)} TCP Download: '
-                        f'{self.sims[device]["download"]}Mbps TCP Upload: {self.sims[device]["upload"]}Mbps',1)
+                        f'{self.sims[device]["download"]}Mbps TCP Upload: {self.sims[device]["upload"]}Mbps', 1)
 
-            
-                tech = self.sims[device]['info'].get('tech',"LTE")
+                tech = self.sims[device]['info'].get('tech', "LTE")
                 # Verify minimum speeds
                 #  if device is 5G use 5G speeds if not use LTE speeds
-                if self.sims[device].get('download', 0.0) > self.MIN_DOWNLOAD_SPD.get(tech,10) and \
-                        self.sims[device].get('upload', 0.0) > self.MIN_UPLOAD_SPD.get(tech,1):
+                if self.sims[device].get('download', 0.0) > self.MIN_DOWNLOAD_SPD.get(tech, 10) and \
+                        self.sims[device].get('upload', 0.0) > self.MIN_UPLOAD_SPD.get(tech, 1):
                     self.sims[device]['low-speed'] = False
                     return True
                 elif not staging:  # Did not meet minimums
-                    self.send_update(f'{self.port_sim(device)} Failed to meet minimums! MIN_DOWNLOAD_SPD: {self.MIN_DOWNLOAD_SPD} MIN_UPLOAD_SPD: {self.MIN_UPLOAD_SPD}',
-                    1)
+                    self.send_update(f'{self.port_sim(device)} Failed to meet minimums! '
+                                     f'MIN_DOWNLOAD_SPD: {self.MIN_DOWNLOAD_SPD} '
+                                     f'MIN_UPLOAD_SPD: {self.MIN_UPLOAD_SPD}', 1)
                     self.sims[device]['low-speed'] = True
                     return True
 
         except Timeout:
             message = f'Timed out running speedtest on {self.port_sim(device)}'
-            self.send_update(message,7)
+            self.send_update(message, 7)
             self.sims[device]['download'] = self.sims[device]['upload'] = 0.0
             self.sims[device]['OK'] = False
             return False
@@ -434,7 +426,7 @@ class SimSelector(object):
                     message = "{}:{}".format(arg, self.sims[uid]['diagnostics'].get(arg)) if not message else ' '.join(
                         [message, "{}:{}".format(arg, self.sims[uid]['diagnostics'].get(arg))])
         except Exception as e:
-            self.send_update({"e":e,"info":sys.exc_info},1)
+            self.send_update({"e": e, "info": sys.exc_info}, 1)
         return message
 
     def prioritize_rules(self, sim_list):
@@ -447,118 +439,35 @@ class SimSelector(object):
         for i, uid in enumerate(sim_list):
             rule_id = self.client.get(f'status/wan/devices/{uid}/config/_id_')
             new_priority = lowest_priority + i * .1
-            self.send_update(f'New priority for {uid} = {new_priority}',1)
+            self.send_update(f'New priority for {uid} = {new_priority}', 1)
             self.client.put(f'config/wan/rules2/{rule_id}/priority', new_priority)
         return
 
-    def set_all_rule_states (self, disable_val = False):
-        wan_rules = cp.get('config/wan/rules2')
+    def set_all_rule_states(self, disable_val=False):
+        wan_rules = self.client.get('config/wan/rules2')
         for i, uid in enumerate(wan_rules):
-            cp.put(f'config/wan/rules2/{i}/disabled', disable_val)
+            self.client.put(f'config/wan/rules2/{i}/disabled', disable_val)
         time.sleep(5)
 
     def get_port(self, items, search):
+        """Return port value for the given search key from items dict."""
         if items.get(search, None) is not None:
             return items[search].get('port', None)            
         return search
-            
+
+    def classify_signal(self, rsrp):
+        """Classifies RSRP value as Good, Weak, or Bad."""
+        if rsrp is None:
+            return "Unknown"
+        if rsrp > -90:
+            return "Good"
+        if -105 <= rsrp <= -90:
+            return "Weak"
+        return "Bad"
 
     def run(self):
         """Start of Main Application."""
-        staging = self.staging
-        self.isRunning = True
-        self.send_update(
-            f'{self.APP_NAME} Starting... MIN_DOWNLOAD_SPD:{self.MIN_DOWNLOAD_SPD} MIN_UPLOAD_SPD:{self.MIN_UPLOAD_SPD} '
-            f'SCHEDULE:{self.SCHEDULE} NUM_ACTIVE_SIMS:{self.NUM_ACTIVE_SIMS} ONLY_RUN_ONCE:{self.ONLY_RUN_ONCE}',
-            7)
-
-        self.check_if_run_before()
-
-        self.wait_for_ncm_sync()
-
-        # Get info from router
-        product_name = self.client.get("/status/product_info/product_name")
-        system_id = self.client.get("/config/system/system_id")
-        router_id = self.client.get('status/ecm/client_id')
-
-        # Send startup alert
-        message = f'{self.APP_NAME} Starting! {system_id} - {product_name} - Router ID: {router_id}'
-        self.send_update(f'{message}',7)
-
-        self.create_unique_WAN_profiles()
-
-        # Pause for 3 seconds to allow NCM Alert to be sent before suspending NCM
-        time.sleep(10)
-        self.NCM_suspend()
-
-        success = False  # SimSelector Success Status - Becomes True when a SIM meets minimum speeds
-        # Test the connected SIM first
-        primary_device = self.client.get('status/wan/primary_device')
-        if 'mdm-' in primary_device:  # make sure its a modem
-            if self.test_sim(primary_device,staging):
-                rule_id = self.client.get(f'status/wan/devices/{primary_device}/config/_id_')
-                self.rules_map[rule_id] = {"uid": primary_device, "port": self.sims[primary_device]['port']}
-                success = True
-
-        # Disable all wan rules
-        self.set_all_rule_states(True)
-
-        # test remaining SIMs
-        for sim in self.sims:
-            if not self.sims[sim].get('OK'):
-                rule_id = self.client.get(f'status/wan/devices/{sim}/config/_id_')
-                if rule_id is not None:
-                    self.client.put(f'config/wan/rules2/{rule_id}/disabled', False)
-                else:
-                    self.set_all_rule_states(False)
-                    self.run()
-                    break
-                if self.test_sim(sim,staging):
-                    rule_id = self.client.get(f'status/wan/devices/{sim}/config/_id_')
-                    self.rules_map[rule_id] = {"uid": sim, "port": self.sims[sim]['port']}
-                    success = True
-                self.client.put(f'config/wan/rules2/{rule_id}/disabled', True)
-
-        # Prioritizes SIMs based on download speed
-        sorted_results = sorted(self.sims, key=lambda x: (self.sims[x]['upload'], self.sims[x]['download']) if self.sims[x]['low-speed'] else (self.sims[x]['download'], self.sims[x]['upload']), reverse=True)
-
-        # Configure WAN Profiles
-        self.send_update(f'Prioritizing SIMs: {sorted_results}',7)
-        self.prioritize_rules(sorted_results)
-
-        # Enable highest priority wan rules for each port
-        wan_rules = self.client.get('config/wan/rules2')
-        sorted_wan_rules = sorted(wan_rules, key=lambda x: x['priority'], reverse=False)
-        selected_ports = []
-        for i, uid in enumerate(sorted_wan_rules):
-            sim_items = self.rules_map
-            rule_id = uid.get('_id_')
-            curr_port = self.get_port(self.rules_map,rule_id)
-            disable_val = curr_port not in selected_ports
-            if disable_val:
-                selected_ports.append(curr_port)
-            self.client.put(f'config/wan/rules2/{rule_id}/disabled', not disable_val)
-        time.sleep(3)
-
-        # Build results text
-        results_text = datetime.datetime.now().strftime('%m/%d/%y %H:%M:%S')  # Start with a timestamp
-        if not success:
-            results_text += f' FAILED TO MEET MINIMUMS! MIN_DOWNLOAD_SPD:{self.MIN_DOWNLOAD_SPD} MIN_UPLOAD_SPD:{self.MIN_UPLOAD_SPD}'
-        for uid in sorted_results:  # Add the results of each SIM with the fields specified:
-            results_text = ' | '.join(
-                [results_text, self.create_message(uid, 'PRD', 'HOMECARRID', 'RFBAND', 'RSRP', 'download', 'upload')])
-
-        # put results to description field
-        self.send_update(results_text[:1023],7)
-
-        # Mark as RUN for ONLY_RUN_ONCE flag
-        self.client.put('config/system/snmp/persisted_config', f'{self.APP_NAME}')
-
-        # Complete!  Send results.
-        message = f"{self.APP_NAME} Complete! {system_id} Results: {results_text}"
-        self.wait_for_ncm_sync()
-        self.send_update(message)
-        self.isRunning = False
+        pass  # This is now deprecated and replaced by the two-phase workflow
 
 
 def manual_test(path, desc, *args):
@@ -567,24 +476,64 @@ def manual_test(path, desc, *args):
     simselector.client.put('/config/system/asset_id', f'{SimSelector.APP_NAME} Enabled')
     if desc is None:
         return
-    if "start" in f'{desc.lower()}' or "force" in f'{desc.lower()}':
+    
+    desc_lower = desc.lower()
+    
+    # Handle reset command - restart from validation phase
+    if "reset" in desc_lower:
+        try:
+            state_manager.set_state('phase', 'validation')
+            simselector.send_update("State reset to validation phase. Restart device to begin fresh validation.", 7)
+            return
+        except Exception as e:
+            simselector.send_update(f"Failed to reset state: {type(e)} err={str(e)}", 7)
+            return
+    
+    # Handle force or start commands
+    if "start" in desc_lower or "force" in desc_lower:
         try:
             devUptime = simselector.client.get('status/system/uptime')
-            if not simselector.isRunning and ( devUptime <= 5*60 or "force" in f'{desc.lower()}'):
-                simselector.run()
+            
+            # Force command bypasses uptime check and runs current phase
+            if "force" in desc_lower:
+                phase = state_manager.get_state('phase') or 'validation'
+                simselector.client.log(f"Force command received. Running {phase} phase...")
+                
+                if phase == 'validation':
+                    run_validation_phase()
+                elif phase == 'performance':
+                    run_performance_phase()
+                else:
+                    simselector.send_update("SimSelector has already completed. Use 'reset' to restart.", 7)
+                    
+            elif not simselector.isRunning and devUptime <= 5*60:
+                # Normal start command within uptime window
+                phase = state_manager.get_state('phase') or 'validation'
+                simselector.client.log(f"Start command received. Running {phase} phase...")
+                
+                if phase == 'validation':
+                    run_validation_phase()
+                elif phase == 'performance':
+                    run_performance_phase()
+                else:
+                    simselector.send_update("SimSelector has already completed.", 7)
             else:
-                simselector.send_update("Uptime is over 5 minutes, Restart router to run script, Clear this description field to cancel.")
+                simselector.send_update("Uptime is over 5 minutes, Restart router to run script, "
+                                        "Clear this description field to cancel, or use 'force' to override.")
         except Exception as e:
             # traceback.print_stack()
-            simselector.isRunning=False
+            simselector.isRunning = False
             simselector.set_all_rule_states(False)
-            simselector.send_update(f"Failed with exception={type(e)} err={str(e)}",7)
-            
+            simselector.send_update(f"Failed with exception={type(e)} err={str(e)}", 7)
+
         finally:
             simselector.client.put('/control/ecm', {'start': 'true'})
             # simselector.send_update('Updating all pending messages', 0)
+
+
 @staticmethod
-def get_app_version(ceate_new_uuid=False):
+def get_app_version(create_new_uuid=False):
+    """Get app version from package.ini file."""
     global g_app_uuid
     global g_app_name
     global g_app_version
@@ -592,18 +541,19 @@ def get_app_version(ceate_new_uuid=False):
     g_app_name = "SimSelector"
 
     uuid_key = 'uuid'
-    app_key = "app_name"
+    # app_key = "app_name"  # Unused variable
     major_key = "version_major"
     minor_key = "version_minor"
     patch_key = "version_patch"
-    
+
     app_config_file = os.path.join(g_app_name, 'package.ini')
     config = configparser.ConfigParser()
     config.read(app_config_file)
     if g_app_name in config:
         if uuid_key in config[g_app_name]:
             g_app_uuid = config[g_app_name][uuid_key]
-            g_app_version = f"v{config[g_app_name][major_key]}.{config[g_app_name][minor_key]}.{config[g_app_name][patch_key]}"
+            g_app_version = f"v{config[g_app_name][major_key]}.{config[g_app_name][minor_key]}." \
+                            f"{config[g_app_name][patch_key]}"
             return f"{g_app_name} {g_app_version}"
         else:
             print('ERROR: The uuid key does not exist in {}'.format(app_config_file))
@@ -622,7 +572,199 @@ def find_string_in_text(text, strings, index=0):
     # Recurse to the next string in the array
     return find_string_in_text(text, strings, index + 1)
 
-if __name__ == '__main__':
+def run_validation_phase():
+    """
+    Phase 1: Validates SIMs and checks signal strength.
+    """
+    global simselector
+    simselector.client.log("Executing Validation/Staging Phase...")
+
+    # Check uptime. Only run validation within the first 5 minutes.
+    uptime = simselector.client.get('status/system/uptime')
+    if uptime > 5 * 60:
+        simselector.client.log("Device uptime is greater than 5 minutes. Skipping validation phase.")
+        return
+
+    simselector.create_unique_WAN_profiles()
+    time.sleep(10)
+    simselector.NCM_suspend()
+
+    # Disable all wan rules so we can test them one by one
+    simselector.set_all_rule_states(True)
+
+    for sim in simselector.sims:
+        rule_id = simselector.sims[sim].get("rule_id")
+        if rule_id:
+            # Enable this rule to test the SIM
+            simselector.client.put(f'config/wan/rules2/{rule_id}/disabled', False)
+            time.sleep(2)  # allow change to apply
+
+            # test_sim in staging mode checks for connection and gets diagnostics
+            if simselector.test_sim(sim, staging=True):
+                # Classify and store signal quality
+                diagnostics = simselector.sims[sim].get('diagnostics', {})
+                rsrp = diagnostics.get('RSRP')
+                signal_quality = simselector.classify_signal(rsrp)
+                simselector.sims[sim]['signal_quality'] = signal_quality
+                simselector.client.log(f"SIM {sim}: RSRP={rsrp}, Quality={signal_quality}")
+
+            # Disable rule again to isolate the next test
+            simselector.client.put(f'config/wan/rules2/{rule_id}/disabled', True)
+        else:
+            simselector.client.log(f"Could not find rule_id for {sim} during validation.")
+
+    # Build the feedback string
+    feedback_parts = []
+    # Sort by port and then sim for consistent ordering
+    sorted_sim_uids = sorted(simselector.sims.keys(),
+                             key=lambda k: simselector.sims[k]['info']['port'] + simselector.sims[k]['info']['sim'])
+
+    for sim_uid in sorted_sim_uids:
+        sim_data = simselector.sims[sim_uid]
+        port_name = simselector.port_sim(sim_uid)  # e.g. "MODEM1 SIM1"
+
+        status = "Active" if sim_data.get('OK') else "Inactive"
+        quality = sim_data.get('signal_quality', 'Unknown')
+        
+        part = f"{port_name}: {status}, {quality} Signal"
+        if quality == "Bad":
+            part += " (Check Antenna)"
+        
+        feedback_parts.append(part)
+    
+    feedback_string = "Staging - " + " | ".join(feedback_parts)
+    simselector.client.log(f"Validation feedback string: {feedback_string}")
+    simselector.send_update(feedback_string, level=7)
+    
+    # Set state to performance for the next boot
+    state_manager.set_state('phase', 'performance')
+    simselector.client.log("Validation phase complete. Set state to 'performance'.")
+
+def run_performance_phase():
+    """
+    Phase 2: Runs speed tests and prioritizes SIMs.
+    """
+    global simselector
+    simselector.client.log("Executing Performance/Run Phase...")
+    
+    # Most of the logic from the original `run` method goes here.
+    # We can assume NCM is already suspended from the validation phase.
+
+    success = False  # SimSelector Success Status
+
+    # test remaining SIMs
+    for sim in simselector.sims:
+        if not simselector.sims[sim].get('OK'):
+            rule_id = simselector.client.get(f'status/wan/devices/{sim}/config/_id_')
+            if rule_id is not None:
+                simselector.client.put(f'config/wan/rules2/{rule_id}/disabled', False)
+            else:
+                simselector.set_all_rule_states(False)
+                # This indicates a problem, should probably restart the whole process.
+                # For now, we'll log it and let it fail.
+                simselector.client.log(f"ERROR: No rule_id for {sim}, cannot test.")
+                continue
+
+            if simselector.test_sim(sim, staging=False):
+                success = True
+            simselector.client.put(f'config/wan/rules2/{rule_id}/disabled', True)
+
+    # Prioritizes SIMs based on advanced sorting logic from PRD
+    def advanced_sort_key(sim_uid):
+        sim_data = simselector.sims[sim_uid]
+        download = sim_data.get('download', 0.0)
+        upload = sim_data.get('upload', 0.0)
+        rsrp = sim_data.get('diagnostics', {}).get('RSRP', -999)
+        
+        # If low-speed, prioritize by upload then download
+        if sim_data.get('low-speed'):
+            return (upload, download, rsrp)
+        else:
+            # Normal priority: download first, then upload, then RSRP
+            return (download, upload, rsrp)
+    
+    sorted_results = sorted(simselector.sims.keys(), key=advanced_sort_key, reverse=True)
+    
+    # Apply advanced tie-breaking logic from PRD
+    if len(sorted_results) > 1:
+        # Check for 10% variance in download speeds among top performers
+        top_sim = sorted_results[0]
+        top_download = simselector.sims[top_sim].get('download', 0.0)
+        
+        # Group SIMs with download speeds within 10% of the top
+        similar_download_sims = []
+        for sim_uid in sorted_results:
+            sim_download = simselector.sims[sim_uid].get('download', 0.0)
+            if top_download == 0 or abs(sim_download - top_download) / top_download <= 0.1:
+                similar_download_sims.append(sim_uid)
+            else:
+                break  # Since it's sorted, we can break here
+        
+        if len(similar_download_sims) > 1:
+            # Apply secondary sort by upload speed
+            top_upload = max(simselector.sims[sim].get('upload', 0.0) for sim in similar_download_sims)
+            similar_upload_sims = []
+            
+            for sim_uid in similar_download_sims:
+                sim_upload = simselector.sims[sim_uid].get('upload', 0.0)
+                if top_upload == 0 or abs(sim_upload - top_upload) / top_upload <= 0.1:
+                    similar_upload_sims.append(sim_uid)
+            
+            if len(similar_upload_sims) > 1:
+                # Apply tertiary sort by RSRP (higher is better)
+                similar_upload_sims.sort(key=lambda x: simselector.sims[x].get('diagnostics', {}).get('RSRP', -999), reverse=True)
+                # Replace the beginning of sorted_results with the RSRP-sorted similar sims
+                sorted_results = similar_upload_sims + [sim for sim in sorted_results if sim not in similar_upload_sims]
+            else:
+                # Replace the beginning of sorted_results with upload-sorted similar sims
+                similar_download_sims.sort(key=lambda x: simselector.sims[x].get('upload', 0.0), reverse=True)
+                sorted_results = similar_download_sims + [sim for sim in sorted_results if sim not in similar_download_sims]
+
+    # Configure WAN Profiles
+    simselector.send_update(f'Prioritizing SIMs: {sorted_results}', 7)
+    simselector.prioritize_rules(sorted_results)
+
+    # Enable highest priority wan rules for each port
+    wan_rules = simselector.client.get('config/wan/rules2')
+    sorted_wan_rules = sorted(wan_rules, key=lambda x: x['priority'], reverse=False)
+    selected_ports = []
+    for uid in sorted_wan_rules:
+        rule_id = uid.get('_id_')
+        curr_port = simselector.get_port(simselector.rules_map, rule_id)
+        disable_val = curr_port not in selected_ports
+        if disable_val:
+            selected_ports.append(curr_port)
+        simselector.client.put(f'config/wan/rules2/{rule_id}/disabled', not disable_val)
+    time.sleep(3)
+
+    # Build results text
+    results_text = datetime.datetime.now().strftime('%m/%d/%y %H:%M:%S')  # Start with a timestamp
+    if not success:
+        results_text += f' FAILED TO MEET MINIMUMS! MIN_DOWNLOAD_SPD:{simselector.MIN_DOWNLOAD_SPD} ' \
+                       f'MIN_UPLOAD_SPD:{simselector.MIN_UPLOAD_SPD}'
+    for uid in sorted_results:  # Add the results of each SIM with the fields specified:
+        results_text = ' | '.join([results_text,
+                                   simselector.create_message(uid, 'PRD', 'HOMECARRID', 'RFBAND', 'RSRP',
+                                                              'download', 'upload')])
+
+    # put results to description field
+    simselector.send_update(results_text[:1023], 7)
+
+    # Mark as Complete
+    state_manager.set_state('phase', 'complete')
+    simselector.client.log("Performance phase complete. Set state to 'complete'.")
+
+    # Resume NCM
+    simselector.wait_for_ncm_sync()
+
+
+# Keep track of global instances that the script logic relies on.
+cp = None
+simselector = None
+
+def main():
+    """Main execution block."""
+    global cp, simselector
     cp = EventingCSClient('SimSelector')
     
     cp.log('Starting...')
@@ -642,32 +784,22 @@ if __name__ == '__main__':
             simselector = SimSelector()
             break
         except Exception as err0:
-            # SimSelector.send_update('Error getting http://www.speedtest.net/speedtest-config.php - will try again in 5 seconds.')
-            SimSelector.send_update('Error accessing speedtest config page - will try again in 5 seconds.')
+            EventingCSClient('SimSelector').log('Error accessing speedtest config page - will try again in 5 seconds.')
             time.sleep(5)
 
-    try:
-        # Setup callback for manual testing:
-        # simselector.client.on('put', '/config/system/desc', manual_test)
-        if not find_string_in_text(simselector.client.get('/config/system/asset_id'), [f'{SimSelector.APP_NAME}']):
-            simselector.client.put('/config/system/asset_id', f'{SimSelector.APP_NAME} Installed')
-        desc = ""
-        # RUN SIMSELECTOR:
-        # desc = simselector.client.get('/config/system/desc')
-        # manual_test(None, desc)
-        count = 10
-        # Sleep forever / wait for manual tests:
-        while True:
-            time.sleep(1)
-            lastDesc = desc
-            desc = simselector.client.get('/config/system/desc')
-            if count <= 0 and lastDesc == desc:
-                continue
-            else:
-                count = count -1
+    # Main phase logic
+    phase = state_manager.get_state('phase') or 'validation'
+    cp.log(f"Current phase: {phase}")
 
-                if (lastDesc != desc and "start" in f'{desc.lower()}') or find_string_in_text(desc.lower(), ["force", "stage", "staging"]):
-                    count = 10
-                    manual_test(None, desc)
-    except Exception as err:
-        simselector.client.log(f"Failed with exception={type(err)} err={str(err)} trace={str(sys.exc_info.traceback)}")
+    if phase == 'validation':
+        run_validation_phase()
+    elif phase == 'performance':
+        run_performance_phase()
+    else: # phase == 'complete'
+        cp.log('SimSelector has already completed.')
+
+    cp.log("SimSelector script finished.")
+
+
+if __name__ == '__main__':
+    main()
