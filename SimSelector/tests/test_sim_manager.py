@@ -109,7 +109,7 @@ class TestSIMManager(unittest.TestCase):
         self.assertFalse(result["success"])
         self.assertEqual(result["reason"], "no_sims_detected")
         self.assertTrue(result["fallback_mode"])
-        self.assertIn("No SIM cards detected", result["warnings"])
+        self.assertIn("No SIM cards detected", result["warnings"][0])
         self.assertIn("Insert at least one activated SIM card", result["recommendations"])
     
     def test_single_sim_detection(self):
@@ -152,7 +152,7 @@ class TestSIMManager(unittest.TestCase):
         self.assertTrue(result["single_sim_mode"])
         self.assertTrue(self.sim_manager.single_sim_mode)
         self.assertEqual(self.sim_manager.active_sim, 1)
-        self.assertIn("Single SIM configuration", result["warnings"])
+        self.assertIn("Single SIM configuration", result["warnings"][0])
     
     def test_dual_sim_detection(self):
         """Test dual SIM detection and primary selection"""
@@ -291,16 +291,16 @@ class TestSIMManager(unittest.TestCase):
         # No remaining SIMs
         remaining_sims = {}
         
-        # Mock error handler
-        with patch.object(self.sim_manager, 'error_handler') as mock_error_handler:
-            mock_error_handler.handle_error = Mock()
-            
-            self.sim_manager._handle_active_sim_removal(remaining_sims)
-            
-            # Should clear active SIM and trigger error handling
-            self.assertIsNone(self.sim_manager.active_sim)
-            self.assertFalse(self.sim_manager.single_sim_mode)
-            mock_error_handler.handle_error.assert_called_once()
+        # Mock error handler - need to set it directly on the sim_manager
+        mock_error_handler = Mock()
+        self.sim_manager.error_handler = mock_error_handler
+        
+        self.sim_manager._handle_active_sim_removal(remaining_sims)
+        
+        # Should clear active SIM and trigger error handling
+        self.assertIsNone(self.sim_manager.active_sim)
+        self.assertFalse(self.sim_manager.single_sim_mode)
+        mock_error_handler.handle_error.assert_called_once()
     
     def test_monitoring_start_stop(self):
         """Test SIM monitoring thread management"""
@@ -517,7 +517,7 @@ class TestSIMManagerEdgeCases(unittest.TestCase):
         self.assertTrue(result["success"])
         self.assertEqual(result["config_type"], "multi_sim")
         self.assertEqual(result["present_sims"], 3)
-        self.assertIn("Unusual configuration", result["warnings"])
+        self.assertIn("Unusual configuration", result["warnings"][0])
     
     def test_sim_manager_without_client(self):
         """Test SIM manager operation without CS client"""

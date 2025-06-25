@@ -31,6 +31,21 @@ except ImportError:
         STAGING = 0
         INSTALL = 1
         DEPLOYED = 2
+    
+    class ErrorSeverity:
+        LOW = "low"
+        MEDIUM = "medium"
+        HIGH = "high"
+        CRITICAL = "critical"
+    
+    class SimSelectorError(Exception):
+        def __init__(self, message, severity=None, error_type=None):
+            super().__init__(message)
+            self.severity = severity
+            self.error_type = error_type
+    
+    def get_error_handler():
+        return None
 
 
 class SIMStatus(Enum):

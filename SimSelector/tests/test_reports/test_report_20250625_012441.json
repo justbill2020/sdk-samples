@@ -1,0 +1,308 @@
+{
+  "timestamp": "2025-06-25T01:24:41.509220",
+  "summary": {
+    "total_tests": 130,
+    "total_failures": 3,
+    "total_errors": 54,
+    "total_skipped": 0,
+    "success_rate": 56.15384615384615,
+    "execution_time": 20.844074010849,
+    "passed": false
+  },
+  "modules": {
+    "test_sim_manager": {
+      "tests_run": 25,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 100.0,
+      "execution_time": 10.020263910293579,
+      "failure_details": [],
+      "error_details": []
+    },
+    "test_ip_manager": {
+      "tests_run": 31,
+      "failures": 0,
+      "errors": 18,
+      "skipped": 0,
+      "success_rate": 41.935483870967744,
+      "execution_time": 0.046034812927246094,
+      "failure_details": [],
+      "error_details": [
+        {
+          "test": "test_candidate_ip_generation (test_ip_manager.TestIPManager.test_candidate_ip_generation)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py\", line 344, in test_candidate_ip_generation\n    candidates = self.ip_manager._generate_candidate_ips(subnet, reserved)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'IPManager' object has no attribute '_generate_candidate_ips'\n"
+        },
+        {
+          "test": "test_dashboard_ip_selection_with_conflicts (test_ip_manager.TestIPManager.test_dashboard_ip_selection_with_conflicts)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py\", line 207, in test_dashboard_ip_selection_with_conflicts\n    with patch.object(self.ip_manager, '_generate_candidate_ips') as mock_candidates:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/anaconda3/lib/python3.12/unittest/mock.py\", line 1463, in __enter__\n    original, local = self.get_original()\n                      ^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/anaconda3/lib/python3.12/unittest/mock.py\", line 1436, in get_original\n    raise AttributeError(\nAttributeError: <ip_manager.IPManager object at 0x1022b5670> does not have the attribute '_generate_candidate_ips'\n"
+        },
+        {
+          "test": "test_dhcp_reservation_management (test_ip_manager.TestIPManager.test_dhcp_reservation_management)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py\", line 261, in test_dhcp_reservation_management\n    result = self.ip_manager.create_dhcp_reservation(\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'IPManager' object has no attribute 'create_dhcp_reservation'\n"
+        },
+        {
+          "test": "test_ip_availability_check (test_ip_manager.TestIPManager.test_ip_availability_check)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py\", line 331, in test_ip_availability_check\n    available = self.ip_manager.is_ip_available(\"192.168.1.50\")\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'IPManager' object has no attribute 'is_ip_available'\n"
+        },
+        {
+          "test": "test_ip_conflict_resolution_change_ip (test_ip_manager.TestIPManager.test_ip_conflict_resolution_change_ip)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py\", line 294, in test_ip_conflict_resolution_change_ip\n    result = self.ip_manager.resolve_conflicts()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'IPManager' object has no attribute 'resolve_conflicts'\n"
+        },
+        {
+          "test": "test_ip_conflict_resolution_create_reservation (test_ip_manager.TestIPManager.test_ip_conflict_resolution_create_reservation)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py\", line 315, in test_ip_conflict_resolution_create_reservation\n    with patch.object(self.ip_manager, '_get_dashboard_mac') as mock_mac:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/anaconda3/lib/python3.12/unittest/mock.py\", line 1463, in __enter__\n    original, local = self.get_original()\n                      ^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/anaconda3/lib/python3.12/unittest/mock.py\", line 1436, in get_original\n    raise AttributeError(\nAttributeError: <ip_manager.IPManager object at 0x1029bb050> does not have the attribute '_get_dashboard_mac'\n"
+        },
+        {
+          "test": "test_ip_manager_status_report (test_ip_manager.TestIPManager.test_ip_manager_status_report)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py\", line 403, in test_ip_manager_status_report\n    status = self.ip_manager.get_status()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'IPManager' object has no attribute 'get_status'. Did you mean: 'get_ip_status'?\n"
+        },
+        {
+          "test": "test_ip_range_scanning (test_ip_manager.TestIPManager.test_ip_range_scanning)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py\", line 425, in test_ip_range_scanning\n    active_ips = self.ip_manager.scan_ip_range(\"192.168.1.0/28\")  # Small range for testing\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'IPManager' object has no attribute 'scan_ip_range'\n"
+        },
+        {
+          "test": "test_ip_validation_invalid_addresses (test_ip_manager.TestIPManager.test_ip_validation_invalid_addresses)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py\", line 240, in test_ip_validation_invalid_addresses\n    self.assertFalse(self.ip_manager.validate_ip_address(ip))\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'IPManager' object has no attribute 'validate_ip_address'\n"
+        },
+        {
+          "test": "test_ip_validation_valid_addresses (test_ip_manager.TestIPManager.test_ip_validation_valid_addresses)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py\", line 226, in test_ip_validation_valid_addresses\n    self.assertTrue(self.ip_manager.validate_ip_address(ip))\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'IPManager' object has no attribute 'validate_ip_address'\n"
+        },
+        {
+          "test": "test_network_monitoring_setup (test_ip_manager.TestIPManager.test_network_monitoring_setup)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py\", line 369, in test_network_monitoring_setup\n    self.ip_manager.add_network_change_callback(test_callback)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'IPManager' object has no attribute 'add_network_change_callback'\n"
+        },
+        {
+          "test": "test_static_ip_configuration (test_ip_manager.TestIPManager.test_static_ip_configuration)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py\", line 379, in test_static_ip_configuration\n    result = self.ip_manager.configure_static_ip(\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: IPManager.configure_static_ip() got an unexpected keyword argument 'ip'\n"
+        },
+        {
+          "test": "test_subnet_validation (test_ip_manager.TestIPManager.test_subnet_validation)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py\", line 245, in test_subnet_validation\n    result = self.ip_manager.validate_subnet(\"192.168.1.0/24\", \"192.168.1.100\")\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'IPManager' object has no attribute 'validate_subnet'\n"
+        },
+        {
+          "test": "test_concurrent_conflict_resolution (test_ip_manager.TestIPManagerEdgeCases.test_concurrent_conflict_resolution)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py\", line 569, in test_concurrent_conflict_resolution\n    result = self.ip_manager.resolve_conflicts()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'IPManager' object has no attribute 'resolve_conflicts'\n"
+        },
+        {
+          "test": "test_invalid_subnet_operations (test_ip_manager.TestIPManagerEdgeCases.test_invalid_subnet_operations)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py\", line 541, in test_invalid_subnet_operations\n    candidates = self.ip_manager._generate_candidate_ips(\"invalid_subnet\", set())\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'IPManager' object has no attribute '_generate_candidate_ips'\n"
+        },
+        {
+          "test": "test_ping_command_failure (test_ip_manager.TestIPManagerEdgeCases.test_ping_command_failure)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py\", line 533, in test_ping_command_failure\n    available = self.ip_manager.is_ip_available(\"192.168.1.50\")\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'IPManager' object has no attribute 'is_ip_available'\n"
+        },
+        {
+          "test": "test_is_ip_available_function (test_ip_manager.TestIPManagerUtilityFunctions.test_is_ip_available_function)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py\", line 478, in test_is_ip_available_function\n    result = is_ip_available(\"192.168.1.10\", client)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/ip_manager.py\", line 884, in is_ip_available\n    return len(conflicts) == 0\n          ^^^^^^^^^^^^^^\nTypeError: object of type 'Mock' has no len()\n"
+        },
+        {
+          "test": "test_validate_ip_configuration_function (test_ip_manager.TestIPManagerUtilityFunctions.test_validate_ip_configuration_function)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py\", line 463, in test_validate_ip_configuration_function\n    result = validate_ip_configuration(\"192.168.1.10\", client)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: validate_ip_configuration() missing 1 required positional argument: 'gateway'\n"
+        }
+      ]
+    },
+    "test_traffic_validator": {
+      "tests_run": 34,
+      "failures": 0,
+      "errors": 32,
+      "skipped": 0,
+      "success_rate": 5.88235294117647,
+      "execution_time": 10.194770336151123,
+      "failure_details": [],
+      "error_details": [
+        {
+          "test": "test_bandwidth_trending (test_traffic_validator.TestTrafficValidator.test_bandwidth_trending)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 415, in test_bandwidth_trending\n    trend = self.validator.analyze_bandwidth_trend(historical_data)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'analyze_bandwidth_trend'\n"
+        },
+        {
+          "test": "test_bandwidth_validation_insufficient (test_traffic_validator.TestTrafficValidator.test_bandwidth_validation_insufficient)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 233, in test_bandwidth_validation_insufficient\n    validation = self.validator.validate_bandwidth(\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'validate_bandwidth'. Did you mean: 'calculate_bandwidth'?\n"
+        },
+        {
+          "test": "test_bandwidth_validation_sufficient (test_traffic_validator.TestTrafficValidator.test_bandwidth_validation_sufficient)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 213, in test_bandwidth_validation_sufficient\n    validation = self.validator.validate_bandwidth(\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'validate_bandwidth'. Did you mean: 'calculate_bandwidth'?\n"
+        },
+        {
+          "test": "test_dns_resolution_test (test_traffic_validator.TestTrafficValidator.test_dns_resolution_test)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 368, in test_dns_resolution_test\n    result = self.validator.test_dns_resolution()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'test_dns_resolution'\n"
+        },
+        {
+          "test": "test_interface_monitoring (test_traffic_validator.TestTrafficValidator.test_interface_monitoring)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 356, in test_interface_monitoring\n    interfaces = self.validator.monitor_interfaces()\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'monitor_interfaces'\n"
+        },
+        {
+          "test": "test_latency_analysis (test_traffic_validator.TestTrafficValidator.test_latency_analysis)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 299, in test_latency_analysis\n    analysis = self.validator.analyze_latency(15.0)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'analyze_latency'\n"
+        },
+        {
+          "test": "test_network_connectivity_basic (test_traffic_validator.TestTrafficValidator.test_network_connectivity_basic)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 106, in test_network_connectivity_basic\n    result = self.validator.test_connectivity()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'test_connectivity'\n"
+        },
+        {
+          "test": "test_network_connectivity_failure (test_traffic_validator.TestTrafficValidator.test_network_connectivity_failure)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 122, in test_network_connectivity_failure\n    result = self.validator.test_connectivity()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'test_connectivity'\n"
+        },
+        {
+          "test": "test_network_test_comprehensive (test_traffic_validator.TestTrafficValidator.test_network_test_comprehensive)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 269, in test_network_test_comprehensive\n    with patch.object(self.validator, 'test_connectivity') as mock_conn, \\\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/anaconda3/lib/python3.12/unittest/mock.py\", line 1463, in __enter__\n    original, local = self.get_original()\n                      ^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/anaconda3/lib/python3.12/unittest/mock.py\", line 1436, in get_original\n    raise AttributeError(\nAttributeError: <traffic_validator.TrafficValidator object at 0x102ad3b60> does not have the attribute 'test_connectivity'\n"
+        },
+        {
+          "test": "test_network_test_failure_scenarios (test_traffic_validator.TestTrafficValidator.test_network_test_failure_scenarios)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 288, in test_network_test_failure_scenarios\n    with patch.object(self.validator, 'test_connectivity') as mock_conn:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/anaconda3/lib/python3.12/unittest/mock.py\", line 1463, in __enter__\n    original, local = self.get_original()\n                      ^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/anaconda3/lib/python3.12/unittest/mock.py\", line 1436, in get_original\n    raise AttributeError(\nAttributeError: <traffic_validator.TrafficValidator object at 0x102ad3b90> does not have the attribute 'test_connectivity'\n"
+        },
+        {
+          "test": "test_network_topology_discovery (test_traffic_validator.TestTrafficValidator.test_network_topology_discovery)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 432, in test_network_topology_discovery\n    topology = self.validator.discover_network_topology()\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'discover_network_topology'\n"
+        },
+        {
+          "test": "test_packet_loss_detection (test_traffic_validator.TestTrafficValidator.test_packet_loss_detection)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 318, in test_packet_loss_detection\n    result = self.validator.test_packet_loss()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'test_packet_loss'\n"
+        },
+        {
+          "test": "test_quality_of_service_monitoring (test_traffic_validator.TestTrafficValidator.test_quality_of_service_monitoring)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 259, in test_quality_of_service_monitoring\n    qos_status = self.validator.monitor_qos()\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'monitor_qos'\n"
+        },
+        {
+          "test": "test_speed_test_execution (test_traffic_validator.TestTrafficValidator.test_speed_test_execution)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 137, in test_speed_test_execution\n    result = self.validator.run_speed_test()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: TrafficValidator.run_speed_test() missing 1 required positional argument: 'interface'\n"
+        },
+        {
+          "test": "test_speed_test_with_server_selection (test_traffic_validator.TestTrafficValidator.test_speed_test_with_server_selection)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 155, in test_speed_test_with_server_selection\n    result = self.validator.run_speed_test(server_id=\"12345\")\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: TrafficValidator.run_speed_test() got an unexpected keyword argument 'server_id'\n"
+        },
+        {
+          "test": "test_traffic_analysis_patterns (test_traffic_validator.TestTrafficValidator.test_traffic_analysis_patterns)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 333, in test_traffic_analysis_patterns\n    analysis = self.validator.analyze_traffic_patterns(traffic_data)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'analyze_traffic_patterns'\n"
+        },
+        {
+          "test": "test_traffic_metrics_collection (test_traffic_validator.TestTrafficValidator.test_traffic_metrics_collection)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 195, in test_traffic_metrics_collection\n    metrics = self.validator.collect_traffic_metrics()\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'collect_traffic_metrics'\n"
+        },
+        {
+          "test": "test_traffic_metrics_dataclass (test_traffic_validator.TestTrafficValidator.test_traffic_metrics_dataclass)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 77, in test_traffic_metrics_dataclass\n    metrics = TrafficMetrics(\n              ^^^^^^^^^^^^^^^\nTypeError: TrafficMetrics.__init__() got an unexpected keyword argument 'packets_sent'\n"
+        },
+        {
+          "test": "test_traffic_validator_initialization (test_traffic_validator.TestTrafficValidator.test_traffic_validator_initialization)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 72, in test_traffic_validator_initialization\n    self.assertEqual(self.validator.test_results, [])\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'test_results'\n"
+        },
+        {
+          "test": "test_traffic_validator_status (test_traffic_validator.TestTrafficValidator.test_traffic_validator_status)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 398, in test_traffic_validator_status\n    status = self.validator.get_status()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'get_status'\n"
+        },
+        {
+          "test": "test_wan_failover_testing (test_traffic_validator.TestTrafficValidator.test_wan_failover_testing)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 384, in test_wan_failover_testing\n    failover_status = self.validator.test_wan_failover()\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'test_wan_failover'\n"
+        },
+        {
+          "test": "test_concurrent_test_execution (test_traffic_validator.TestTrafficValidatorEdgeCases.test_concurrent_test_execution)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 587, in test_concurrent_test_execution\n    with patch.object(self.validator, 'test_connectivity') as mock_test:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/anaconda3/lib/python3.12/unittest/mock.py\", line 1463, in __enter__\n    original, local = self.get_original()\n                      ^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/anaconda3/lib/python3.12/unittest/mock.py\", line 1436, in get_original\n    raise AttributeError(\nAttributeError: <traffic_validator.TrafficValidator object at 0x102aecbf0> does not have the attribute 'test_connectivity'\n"
+        },
+        {
+          "test": "test_high_latency_scenarios (test_traffic_validator.TestTrafficValidatorEdgeCases.test_high_latency_scenarios)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 563, in test_high_latency_scenarios\n    result = self.validator.test_connectivity()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'test_connectivity'\n"
+        },
+        {
+          "test": "test_malformed_speedtest_output (test_traffic_validator.TestTrafficValidatorEdgeCases.test_malformed_speedtest_output)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 534, in test_malformed_speedtest_output\n    result = self.validator.run_speed_test()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: TrafficValidator.run_speed_test() missing 1 required positional argument: 'interface'\n"
+        },
+        {
+          "test": "test_memory_usage_monitoring (test_traffic_validator.TestTrafficValidatorEdgeCases.test_memory_usage_monitoring)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 619, in test_memory_usage_monitoring\n    status = self.validator.get_status()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'get_status'\n"
+        },
+        {
+          "test": "test_network_api_unavailable (test_traffic_validator.TestTrafficValidatorEdgeCases.test_network_api_unavailable)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 508, in test_network_api_unavailable\n    metrics = self.validator.collect_traffic_metrics()\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'collect_traffic_metrics'\n"
+        },
+        {
+          "test": "test_network_interface_down (test_traffic_validator.TestTrafficValidatorEdgeCases.test_network_interface_down)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 548, in test_network_interface_down\n    interfaces = self.validator.monitor_interfaces()\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'monitor_interfaces'\n"
+        },
+        {
+          "test": "test_no_internet_connection (test_traffic_validator.TestTrafficValidatorEdgeCases.test_no_internet_connection)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 579, in test_no_internet_connection\n    result = self.validator.test_connectivity()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'test_connectivity'\n"
+        },
+        {
+          "test": "test_speedtest_command_not_found (test_traffic_validator.TestTrafficValidatorEdgeCases.test_speedtest_command_not_found)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 519, in test_speedtest_command_not_found\n    result = self.validator.run_speed_test()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: TrafficValidator.run_speed_test() missing 1 required positional argument: 'interface'\n"
+        },
+        {
+          "test": "test_traffic_validator_without_client (test_traffic_validator.TestTrafficValidatorEdgeCases.test_traffic_validator_without_client)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 605, in test_traffic_validator_without_client\n    result = validator.monitor_interfaces()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'monitor_interfaces'\n"
+        },
+        {
+          "test": "test_run_speed_test_function (test_traffic_validator.TestTrafficValidatorUtilityFunctions.test_run_speed_test_function)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 487, in test_run_speed_test_function\n    self.assertTrue(result[\"success\"])\n                    ~~~~~~^^^^^^^^^^^\nTypeError: 'NetworkTest' object is not subscriptable\n"
+        },
+        {
+          "test": "test_validate_network_connectivity_function (test_traffic_validator.TestTrafficValidatorUtilityFunctions.test_validate_network_connectivity_function)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 472, in test_validate_network_connectivity_function\n    self.assertTrue(result[\"success\"])\n                    ~~~~~~^^^^^^^^^^^\nTypeError: 'NetworkTest' object is not subscriptable\n"
+        }
+      ]
+    },
+    "test_error_handler": {
+      "tests_run": 25,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 96.0,
+      "execution_time": 0.06062602996826172,
+      "failure_details": [
+        {
+          "test": "test_error_id_uniqueness (test_error_handler.TestSimSelectorError.test_error_id_uniqueness)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_error_handler.py\", line 154, in test_error_id_uniqueness\n    self.assertNotEqual(error1.error_id, error2.error_id)\nAssertionError: 'UNKNOWN_1750832681' == 'UNKNOWN_1750832681'\n"
+        }
+      ],
+      "error_details": []
+    },
+    "test_dashboard_server": {
+      "tests_run": 9,
+      "failures": 2,
+      "errors": 4,
+      "skipped": 0,
+      "success_rate": 33.33333333333333,
+      "execution_time": 0.025599002838134766,
+      "failure_details": [
+        {
+          "test": "test_error_handling (test_dashboard_server.TestDashboardServer.test_error_handling)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 105, in _load_phase_state\n    self._log(f\"Loaded phase state: {Phase.get_name(self._current_phase)}\")\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 88, in _log\n    self.client.log(f\"PHASE [{level}] {message}\")\n    ^^^^^^^^^^^^^^^\nAttributeError: 'str' object has no attribute 'log'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py\", line 179, in test_error_handling\n    server = DashboardServer('invalid_host', -1)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py\", line 1342, in __init__\n    self.phase_manager = get_phase_manager(client)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 513, in get_phase_manager\n    _phase_manager = PhaseManager(client)\n                     ^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 83, in __init__\n    self._load_phase_state()\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 112, in _load_phase_state\n    self._log(f\"Error loading phase state: {str(e)}\", \"ERROR\")\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 88, in _log\n    self.client.log(f\"PHASE [{level}] {message}\")\n    ^^^^^^^^^^^^^^^\nAttributeError: 'str' object has no attribute 'log'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py\", line 184, in test_error_handling\n    self.fail(f\"Server creation should handle invalid parameters: {e}\")\nAssertionError: Server creation should handle invalid parameters: 'str' object has no attribute 'log'\n"
+        },
+        {
+          "test": "test_server_initialization (test_dashboard_server.TestDashboardServer.test_server_initialization)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py\", line 115, in test_server_initialization\n    self.assertEqual(server.host, '127.0.0.1')\nAssertionError: '0.0.0.0' != '127.0.0.1'\n- 0.0.0.0\n+ 127.0.0.1\n\n"
+        }
+      ],
+      "error_details": [
+        {
+          "test": "test_concurrent_requests (test_dashboard_server.TestDashboardServer.test_concurrent_requests)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 105, in _load_phase_state\n    self._log(f\"Loaded phase state: {Phase.get_name(self._current_phase)}\")\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 88, in _log\n    self.client.log(f\"PHASE [{level}] {message}\")\n    ^^^^^^^^^^^^^^^\nAttributeError: 'str' object has no attribute 'log'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py\", line 238, in test_concurrent_requests\n    server = DashboardServer(self.test_host, self.test_port)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py\", line 1342, in __init__\n    self.phase_manager = get_phase_manager(client)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 513, in get_phase_manager\n    _phase_manager = PhaseManager(client)\n                     ^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 83, in __init__\n    self._load_phase_state()\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 112, in _load_phase_state\n    self._log(f\"Error loading phase state: {str(e)}\", \"ERROR\")\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 88, in _log\n    self.client.log(f\"PHASE [{level}] {message}\")\n    ^^^^^^^^^^^^^^^\nAttributeError: 'str' object has no attribute 'log'\n"
+        },
+        {
+          "test": "test_dashboard_data_rendering (test_dashboard_server.TestDashboardServer.test_dashboard_data_rendering)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 105, in _load_phase_state\n    self._log(f\"Loaded phase state: {Phase.get_name(self._current_phase)}\")\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 88, in _log\n    self.client.log(f\"PHASE [{level}] {message}\")\n    ^^^^^^^^^^^^^^^\nAttributeError: 'str' object has no attribute 'log'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py\", line 294, in test_dashboard_data_rendering\n    server = DashboardServer(self.test_host, self.test_port)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py\", line 1342, in __init__\n    self.phase_manager = get_phase_manager(client)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 513, in get_phase_manager\n    _phase_manager = PhaseManager(client)\n                     ^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 83, in __init__\n    self._load_phase_state()\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 112, in _load_phase_state\n    self._log(f\"Error loading phase state: {str(e)}\", \"ERROR\")\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 88, in _log\n    self.client.log(f\"PHASE [{level}] {message}\")\n    ^^^^^^^^^^^^^^^\nAttributeError: 'str' object has no attribute 'log'\n"
+        },
+        {
+          "test": "test_security_integration (test_dashboard_server.TestDashboardServer.test_security_integration)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/anaconda3/lib/python3.12/unittest/mock.py\", line 1395, in patched\n    return func(*newargs, **newkeywargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py\", line 212, in test_security_integration\n    mock_security_manager.validate_ip_access.return_value = SecurityDecision('granted')\n                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SecurityDecision.__init__() missing 3 required positional arguments: 'client_ip', 'phase_id', and 'timestamp'\n"
+        },
+        {
+          "test": "test_server_lifecycle (test_dashboard_server.TestDashboardServer.test_server_lifecycle)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py\", line 1395, in start\n    self._log(f\"Dashboard server not started - phase {current_phase} does not allow dashboard access\", \"WARNING\")\n  File \"/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py\", line 1380, in _log\n    self.client.log(f\"DASHBOARD [{level}] {message}\")\n    ^^^^^^^^^^^^^^^\nAttributeError: 'str' object has no attribute 'log'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py\", line 102, in test_server_lifecycle\n    result = self.dashboard_server.start()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py\", line 1440, in start\n    self._log(f\"Failed to start dashboard server: {str(e)}\", \"ERROR\")\n  File \"/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py\", line 1380, in _log\n    self.client.log(f\"DASHBOARD [{level}] {message}\")\n    ^^^^^^^^^^^^^^^\nAttributeError: 'str' object has no attribute 'log'\n"
+        }
+      ]
+    },
+    "test_firewall_manager": {
+      "tests_run": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 100.0,
+      "execution_time": 0.0002067089080810547,
+      "failure_details": [],
+      "error_details": []
+    }
+  },
+  "coverage": {}
+}
