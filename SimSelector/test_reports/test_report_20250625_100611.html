@@ -1,0 +1,479 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimSelector v2.6.0 Unit Test Report</title>
+    <style>
+        
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        header { text-align: center; margin-bottom: 30px; }
+        h1 { color: #333; margin-bottom: 10px; }
+        .timestamp { color: #666; font-style: italic; }
+        .summary { background: #f8f9fa; padding: 20px; border-radius: 6px; margin-bottom: 30px; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .metric { text-align: center; }
+        .metric-value { font-size: 2em; font-weight: bold; margin-bottom: 5px; }
+        .metric-label { color: #666; font-size: 0.9em; }
+        .success { color: #28a745; }
+        .warning { color: #ffc107; }
+        .error { color: #dc3545; }
+        .module { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 6px; }
+        .module-header { display: flex; justify-content: between; align-items: center; margin-bottom: 15px; }
+        .module-name { font-size: 1.2em; font-weight: bold; }
+        .module-stats { display: flex; gap: 20px; }
+        .stat { text-align: center; }
+        .stat-value { font-weight: bold; }
+        .failures, .errors { margin-top: 15px; }
+        .failure-item, .error-item { margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-left: 4px solid #dc3545; }
+        .recommendations { background: #e7f3ff; padding: 20px; border-radius: 6px; }
+        .recommendation-item { margin-bottom: 10px; }
+        .progress-bar { width: 100%; height: 20px; background: #e9ecef; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; transition: width 0.3s ease; }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SimSelector v2.6.0 Unit Test Report</h1>
+            <p class="timestamp">Generated: 2025-06-25 10:06:11</p>
+        </header>
+        
+        <div class="summary">
+            
+        <h2>Test Summary</h2>
+        <div class="summary-grid">
+            <div class="metric">
+                <div class="metric-value error">75.4%</div>
+                <div class="metric-label">Success Rate</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">130</div>
+                <div class="metric-label">Total Tests</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value success">98</div>
+                <div class="metric-label">Passed</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value error">9</div>
+                <div class="metric-label">Failed</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value error">23</div>
+                <div class="metric-label">Errors</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">61.15s</div>
+                <div class="metric-label">Execution Time</div>
+            </div>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill success" style="width: 75.38461538461539%"></div>
+        </div>
+        
+        </div>
+        
+        <div class="modules">
+            <h2>Module Results</h2>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_sim_manager</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value success">100.0%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">25</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_ip_manager</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value warning">87.1%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">31</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">2</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">2</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            <div class='failures'><h4>Failures:</h4><div class='failure-item'><strong>test_ip_range_scanning (test_ip_manager.TestIPManager.test_ip_range_scanning)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py", line 427, in test_ip_range_scanning
+    self.assertIn("192.168.1.10", active_ips)
+AssertionError: '192.168.1.10' not found in []
+</pre></div><div class='failure-item'><strong>test_ping_command_failure (test_ip_manager.TestIPManagerEdgeCases.test_ping_command_failure)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py", line 536, in test_ping_command_failure
+    self.assertFalse(available)
+AssertionError: True is not false
+</pre></div></div><div class='errors'><h4>Errors:</h4><div class='error-item'><strong>test_is_ip_available_function (test_ip_manager.TestIPManagerUtilityFunctions.test_is_ip_available_function)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py", line 478, in test_is_ip_available_function
+    result = is_ip_available("192.168.1.10", client)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/ip_manager.py", line 1194, in is_ip_available
+    return len(conflicts) == 0
+          ^^^^^^^^^^^^^^
+TypeError: object of type 'Mock' has no len()
+</pre></div><div class='error-item'><strong>test_validate_ip_configuration_function (test_ip_manager.TestIPManagerUtilityFunctions.test_validate_ip_configuration_function)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py", line 463, in test_validate_ip_configuration_function
+    result = validate_ip_configuration("192.168.1.10", client)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: validate_ip_configuration() missing 1 required positional argument: 'gateway'
+</pre></div></div></div>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_traffic_validator</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value error">38.2%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">34</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">4</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">17</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            <div class='failures'><h4>Failures:</h4><div class='failure-item'><strong>test_quality_of_service_monitoring (test_traffic_validator.TestTrafficValidator.test_quality_of_service_monitoring)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 261, in test_quality_of_service_monitoring
+    self.assertIn("interfaces", qos_status)
+AssertionError: 'interfaces' not found in {'success': True, 'qos_data': {'enp1s0': {'priority_queues': [{'priority': 'high', 'packets': 1000, 'bytes': 1048576, 'drops': 0}, {'priority': 'normal', 'packets': 5000, 'bytes': 5242880, 'drops': 2}, {'priority': 'low', 'packets': 2000, 'bytes': 2097152, 'drops': 5}]}}, 'timestamp': 1750863960.984384}
+</pre></div><div class='failure-item'><strong>test_high_latency_scenarios (test_traffic_validator.TestTrafficValidatorEdgeCases.test_high_latency_scenarios)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 567, in test_high_latency_scenarios
+    self.assertIn("warning", result)
+AssertionError: 'warning' not found in {'success': True, 'latency': 1500.0, 'host': '8.8.8.8', 'output': '64 bytes from 8.8.8.8: icmp_seq=1 time=1500.0 ms'}
+</pre></div><div class='failure-item'><strong>test_malformed_speedtest_output (test_traffic_validator.TestTrafficValidatorEdgeCases.test_malformed_speedtest_output)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 537, in test_malformed_speedtest_output
+    self.assertIn("parse", result["error"].lower())
+AssertionError: 'parse' not found in 'invalid speed test output format'
+</pre></div><div class='failure-item'><strong>test_speedtest_command_not_found (test_traffic_validator.TestTrafficValidatorEdgeCases.test_speedtest_command_not_found)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 522, in test_speedtest_command_not_found
+    self.assertIn("command not found", result["error"].lower())
+AssertionError: 'command not found' not found in 'speedtest-cli not found'
+</pre></div></div><div class='errors'><h4>Errors:</h4><div class='error-item'><strong>test_bandwidth_trending (test_traffic_validator.TestTrafficValidator.test_bandwidth_trending)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 415, in test_bandwidth_trending
+    trend = self.validator.analyze_bandwidth_trend(historical_data)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TrafficValidator' object has no attribute 'analyze_bandwidth_trend'
+</pre></div><div class='error-item'><strong>test_dns_resolution_test (test_traffic_validator.TestTrafficValidator.test_dns_resolution_test)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 368, in test_dns_resolution_test
+    result = self.validator.test_dns_resolution()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TrafficValidator' object has no attribute 'test_dns_resolution'
+</pre></div><div class='error-item'><strong>test_interface_monitoring (test_traffic_validator.TestTrafficValidator.test_interface_monitoring)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 356, in test_interface_monitoring
+    interfaces = self.validator.monitor_interfaces()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TrafficValidator' object has no attribute 'monitor_interfaces'
+</pre></div><div class='error-item'><strong>test_latency_analysis (test_traffic_validator.TestTrafficValidator.test_latency_analysis)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 299, in test_latency_analysis
+    analysis = self.validator.analyze_latency(15.0)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TrafficValidator' object has no attribute 'analyze_latency'
+</pre></div><div class='error-item'><strong>test_network_test_comprehensive (test_traffic_validator.TestTrafficValidator.test_network_test_comprehensive)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 277, in test_network_test_comprehensive
+    result = self.validator.run_comprehensive_test()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TrafficValidator' object has no attribute 'run_comprehensive_test'
+</pre></div><div class='error-item'><strong>test_network_test_failure_scenarios (test_traffic_validator.TestTrafficValidator.test_network_test_failure_scenarios)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 291, in test_network_test_failure_scenarios
+    result = self.validator.run_comprehensive_test()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TrafficValidator' object has no attribute 'run_comprehensive_test'
+</pre></div><div class='error-item'><strong>test_network_topology_discovery (test_traffic_validator.TestTrafficValidator.test_network_topology_discovery)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 432, in test_network_topology_discovery
+    topology = self.validator.discover_network_topology()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TrafficValidator' object has no attribute 'discover_network_topology'
+</pre></div><div class='error-item'><strong>test_packet_loss_detection (test_traffic_validator.TestTrafficValidator.test_packet_loss_detection)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 318, in test_packet_loss_detection
+    result = self.validator.test_packet_loss()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TrafficValidator' object has no attribute 'test_packet_loss'
+</pre></div><div class='error-item'><strong>test_traffic_analysis_patterns (test_traffic_validator.TestTrafficValidator.test_traffic_analysis_patterns)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 333, in test_traffic_analysis_patterns
+    analysis = self.validator.analyze_traffic_patterns(traffic_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TrafficValidator' object has no attribute 'analyze_traffic_patterns'
+</pre></div><div class='error-item'><strong>test_traffic_validator_status (test_traffic_validator.TestTrafficValidator.test_traffic_validator_status)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 398, in test_traffic_validator_status
+    status = self.validator.get_status()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TrafficValidator' object has no attribute 'get_status'
+</pre></div><div class='error-item'><strong>test_wan_failover_testing (test_traffic_validator.TestTrafficValidator.test_wan_failover_testing)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 384, in test_wan_failover_testing
+    failover_status = self.validator.test_wan_failover()
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TrafficValidator' object has no attribute 'test_wan_failover'
+</pre></div><div class='error-item'><strong>test_concurrent_test_execution (test_traffic_validator.TestTrafficValidatorEdgeCases.test_concurrent_test_execution)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 593, in test_concurrent_test_execution
+    result = self.validator.run_comprehensive_test()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TrafficValidator' object has no attribute 'run_comprehensive_test'
+</pre></div><div class='error-item'><strong>test_memory_usage_monitoring (test_traffic_validator.TestTrafficValidatorEdgeCases.test_memory_usage_monitoring)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 619, in test_memory_usage_monitoring
+    status = self.validator.get_status()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TrafficValidator' object has no attribute 'get_status'
+</pre></div><div class='error-item'><strong>test_network_interface_down (test_traffic_validator.TestTrafficValidatorEdgeCases.test_network_interface_down)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 548, in test_network_interface_down
+    interfaces = self.validator.monitor_interfaces()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TrafficValidator' object has no attribute 'monitor_interfaces'
+</pre></div><div class='error-item'><strong>test_traffic_validator_without_client (test_traffic_validator.TestTrafficValidatorEdgeCases.test_traffic_validator_without_client)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 605, in test_traffic_validator_without_client
+    result = validator.monitor_interfaces()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TrafficValidator' object has no attribute 'monitor_interfaces'
+</pre></div><div class='error-item'><strong>test_run_speed_test_function (test_traffic_validator.TestTrafficValidatorUtilityFunctions.test_run_speed_test_function)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 487, in test_run_speed_test_function
+    self.assertTrue(result["success"])
+                    ~~~~~~^^^^^^^^^^^
+TypeError: 'NetworkTest' object is not subscriptable
+</pre></div><div class='error-item'><strong>test_validate_network_connectivity_function (test_traffic_validator.TestTrafficValidatorUtilityFunctions.test_validate_network_connectivity_function)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 472, in test_validate_network_connectivity_function
+    self.assertTrue(result["success"])
+                    ~~~~~~^^^^^^^^^^^
+TypeError: 'NetworkTest' object is not subscriptable
+</pre></div></div></div>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_error_handler</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value success">96.0%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">25</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">1</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            <div class='failures'><h4>Failures:</h4><div class='failure-item'><strong>test_error_id_uniqueness (test_error_handler.TestSimSelectorError.test_error_id_uniqueness)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_error_handler.py", line 154, in test_error_id_uniqueness
+    self.assertNotEqual(error1.error_id, error2.error_id)
+AssertionError: 'UNKNOWN_1750863971' == 'UNKNOWN_1750863971'
+</pre></div></div></div>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_dashboard_server</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value error">33.3%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">9</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">2</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">4</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            <div class='failures'><h4>Failures:</h4><div class='failure-item'><strong>test_error_handling (test_dashboard_server.TestDashboardServer.test_error_handling)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 105, in _load_phase_state
+    self._log(f"Loaded phase state: {Phase.get_name(self._current_phase)}")
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 88, in _log
+    self.client.log(f"PHASE [{level}] {message}")
+    ^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'log'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 179, in test_error_handling
+    server = DashboardServer('invalid_host', -1)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py", line 1342, in __init__
+    self.phase_manager = get_phase_manager(client)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 513, in get_phase_manager
+    _phase_manager = PhaseManager(client)
+                     ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 83, in __init__
+    self._load_phase_state()
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 112, in _load_phase_state
+    self._log(f"Error loading phase state: {str(e)}", "ERROR")
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 88, in _log
+    self.client.log(f"PHASE [{level}] {message}")
+    ^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'log'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 184, in test_error_handling
+    self.fail(f"Server creation should handle invalid parameters: {e}")
+AssertionError: Server creation should handle invalid parameters: 'str' object has no attribute 'log'
+</pre></div><div class='failure-item'><strong>test_server_initialization (test_dashboard_server.TestDashboardServer.test_server_initialization)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 115, in test_server_initialization
+    self.assertEqual(server.host, '127.0.0.1')
+AssertionError: '0.0.0.0' != '127.0.0.1'
+- 0.0.0.0
++ 127.0.0.1
+
+</pre></div></div><div class='errors'><h4>Errors:</h4><div class='error-item'><strong>test_concurrent_requests (test_dashboard_server.TestDashboardServer.test_concurrent_requests)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 105, in _load_phase_state
+    self._log(f"Loaded phase state: {Phase.get_name(self._current_phase)}")
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 88, in _log
+    self.client.log(f"PHASE [{level}] {message}")
+    ^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'log'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 238, in test_concurrent_requests
+    server = DashboardServer(self.test_host, self.test_port)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py", line 1342, in __init__
+    self.phase_manager = get_phase_manager(client)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 513, in get_phase_manager
+    _phase_manager = PhaseManager(client)
+                     ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 83, in __init__
+    self._load_phase_state()
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 112, in _load_phase_state
+    self._log(f"Error loading phase state: {str(e)}", "ERROR")
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 88, in _log
+    self.client.log(f"PHASE [{level}] {message}")
+    ^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'log'
+</pre></div><div class='error-item'><strong>test_dashboard_data_rendering (test_dashboard_server.TestDashboardServer.test_dashboard_data_rendering)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 105, in _load_phase_state
+    self._log(f"Loaded phase state: {Phase.get_name(self._current_phase)}")
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 88, in _log
+    self.client.log(f"PHASE [{level}] {message}")
+    ^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'log'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 294, in test_dashboard_data_rendering
+    server = DashboardServer(self.test_host, self.test_port)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py", line 1342, in __init__
+    self.phase_manager = get_phase_manager(client)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 513, in get_phase_manager
+    _phase_manager = PhaseManager(client)
+                     ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 83, in __init__
+    self._load_phase_state()
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 112, in _load_phase_state
+    self._log(f"Error loading phase state: {str(e)}", "ERROR")
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 88, in _log
+    self.client.log(f"PHASE [{level}] {message}")
+    ^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'log'
+</pre></div><div class='error-item'><strong>test_security_integration (test_dashboard_server.TestDashboardServer.test_security_integration)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/anaconda3/lib/python3.12/unittest/mock.py", line 1395, in patched
+    return func(*newargs, **newkeywargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 212, in test_security_integration
+    mock_security_manager.validate_ip_access.return_value = SecurityDecision('granted')
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: SecurityDecision.__init__() missing 3 required positional arguments: 'client_ip', 'phase_id', and 'timestamp'
+</pre></div><div class='error-item'><strong>test_server_lifecycle (test_dashboard_server.TestDashboardServer.test_server_lifecycle)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py", line 1395, in start
+    self._log(f"Dashboard server not started - phase {current_phase} does not allow dashboard access", "WARNING")
+  File "/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py", line 1380, in _log
+    self.client.log(f"DASHBOARD [{level}] {message}")
+    ^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'log'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 102, in test_server_lifecycle
+    result = self.dashboard_server.start()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py", line 1440, in start
+    self._log(f"Failed to start dashboard server: {str(e)}", "ERROR")
+  File "/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py", line 1380, in _log
+    self.client.log(f"DASHBOARD [{level}] {message}")
+    ^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'log'
+</pre></div></div></div>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_firewall_manager</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value success">100.0%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">6</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="recommendations">
+            <h2>Recommendations</h2><ul><li class='recommendation-item'>❌ Address test failures before deployment</li><li class='recommendation-item'>⚠️ Fix test errors - these indicate code issues</li><li class='recommendation-item'>📈 Improve test coverage and fix failing tests</li><li class='recommendation-item'>⚡ test_ip_manager: Minor issues to address</li><li class='recommendation-item'>🔧 test_traffic_validator: Critical issues need attention</li><li class='recommendation-item'>🔧 test_dashboard_server: Critical issues need attention</li></ul>
+        </div>
+    </div>
+</body>
+</html>

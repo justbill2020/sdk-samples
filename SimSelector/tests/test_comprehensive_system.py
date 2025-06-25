@@ -51,8 +51,18 @@ except ImportError as e:
         DEPLOYED = 2
     
     class SecurityDecision:
-        def __init__(self, value):
-            self.value = value
+        def __init__(self, access_result='granted', client_ip='127.0.0.1', phase_id=0, timestamp=None):
+            # Support both old style (string) and new style (parameters) constructor
+            if isinstance(access_result, str):
+                self.value = access_result
+                self.access_result = access_result
+            else:
+                self.access_result = access_result
+                self.value = str(access_result)
+            
+            self.client_ip = client_ip
+            self.phase_id = phase_id
+            self.timestamp = timestamp or time.time()
 
 
 class TestSystemIntegration(unittest.TestCase):
@@ -118,7 +128,9 @@ class TestSystemIntegration(unittest.TestCase):
         
         # Initialize security manager
         self.security_manager = Mock()
-        self.security_manager.validate_ip_access.return_value = SecurityDecision('granted')
+        # Create proper SecurityDecision object
+        from security_manager import AccessResult
+        self.security_manager.validate_ip_access.return_value = AccessResult.GRANTED
         self.security_manager.validate_phase_access.return_value = True
         self.security_manager.validate_request.return_value = True
         self.security_manager.get_security_level.return_value = "HIGH"
@@ -215,9 +227,12 @@ class TestSystemIntegration(unittest.TestCase):
         ]
         
         for ip, expected in test_ips:
-            self.security_manager.validate_ip_access.return_value = SecurityDecision(expected)
+            # Map string to AccessResult enum
+            access_result = AccessResult.GRANTED if expected == 'granted' else AccessResult.DENIED
+            self.security_manager.validate_ip_access.return_value = access_result
             result = self.security_manager.validate_ip_access(ip, Phase.INSTALL)
-            self.assertEqual(result.value, expected)
+            expected_value = AccessResult.GRANTED.value if expected == 'granted' else AccessResult.DENIED.value
+            self.assertEqual(result.value, expected_value)
         
         # Test phase-based access control
         phase_access_tests = [
@@ -352,7 +367,7 @@ class TestSystemIntegration(unittest.TestCase):
         
         # Reset side effect
         self.security_manager.validate_ip_access.side_effect = None
-        self.security_manager.validate_ip_access.return_value = SecurityDecision('granted')
+        self.security_manager.validate_ip_access.return_value = AccessResult.GRANTED
         
         # Test firewall manager error handling
         self.firewall_manager.configure_dashboard_access.side_effect = Exception("Firewall configuration failed")

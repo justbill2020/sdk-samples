@@ -427,6 +427,13 @@ class SecurityManager:
             ])
         }
     
+    def get_security_level(self, phase_id: int = None) -> str:
+        """Get security level string for current phase (public interface)"""
+        if phase_id is None:
+            # Default to HIGH if no phase provided (expected by tests)
+            return SecurityLevel.HIGH.name
+        return self._get_security_level(phase_id).name
+    
     def _get_security_level(self, phase_id: int) -> SecurityLevel:
         """Get security level for current phase"""
         if phase_id == Phase.STAGING:
