@@ -1,0 +1,11 @@
+# SimSelector v2.6.0 Dependencies
+# Core cryptography library for secure state storage
+cryptography>=3.4.8
+
+# HTTP server dependencies for tech dashboard (to be added in later tasks)
+# tornado>=6.1
+# websockets>=10.0
+
+# Testing dependencies
+# pytest>=6.0
+# pytest-cov>=2.0 
