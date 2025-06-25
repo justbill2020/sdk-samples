@@ -25,7 +25,7 @@ try:
     from SimSelector import Phase, PhaseTransitionManager, PhaseTransitionError
     from state_manager import get_state, set_state, set_secure_state
     from security_manager import get_security_manager
-    from firewall_manager_netcloud import get_firewall_manager
+    from firewall_manager import get_firewall_manager
 except ImportError as e:
     print(f"Warning: Could not import core systems: {e}")
     # Fallback definitions for testing
