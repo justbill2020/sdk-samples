@@ -75,6 +75,84 @@ class PhaseTransitionError(SimSelectorException):
     pass
 
 
+class PhaseTransitionManager:
+    """Manages secure phase transitions with validation rules"""
+    
+    # Valid state transitions - defines what transitions are allowed
+    VALID_TRANSITIONS = {
+        None: [Phase.STAGING],                    # Initial state -> Staging
+        Phase.STAGING: [Phase.INSTALL],           # Staging -> Install only
+        Phase.INSTALL: [Phase.DEPLOYED],          # Install -> Deployed only
+        Phase.DEPLOYED: [Phase.INSTALL],          # Deployed -> Install (support/maintenance)
+    }
+    
+    # Phase requirements - what must be true before entering each phase
+    PHASE_REQUIREMENTS = {
+        Phase.STAGING: {
+            'description': 'Warehouse staging phase - basic SIM validation',
+            'required_conditions': ['device_powered_on'],
+            'validation_checks': ['sim_detection', 'basic_connectivity']
+        },
+        Phase.INSTALL: {
+            'description': 'Field installation phase - full testing and dashboard',
+            'required_conditions': ['staging_complete', 'device_reboot'],
+            'validation_checks': ['all_sims_validated', 'network_ready']
+        },
+        Phase.DEPLOYED: {
+            'description': 'Production deployment - dashboard disabled for LAN',
+            'required_conditions': ['install_complete', 'performance_testing_done'],
+            'validation_checks': ['sim_prioritization_complete', 'wan_rules_configured']
+        }
+    }
+    
+    @classmethod
+    def can_transition(cls, from_phase, to_phase):
+        """Check if transition from one phase to another is valid"""
+        if from_phase is None and to_phase == Phase.STAGING:
+            return True
+        
+        if from_phase not in cls.VALID_TRANSITIONS:
+            return False
+            
+        return to_phase in cls.VALID_TRANSITIONS[from_phase]
+    
+    @classmethod
+    def get_valid_next_phases(cls, current_phase):
+        """Get list of valid next phases from current phase"""
+        return cls.VALID_TRANSITIONS.get(current_phase, [])
+    
+    @classmethod
+    def validate_transition(cls, from_phase, to_phase, client=None):
+        """Validate transition with detailed checks and logging"""
+        if not cls.can_transition(from_phase, to_phase):
+            error_msg = f"Invalid transition from {Phase.get_name(from_phase)} to {Phase.get_name(to_phase)}"
+            if client:
+                client.log(f"ERROR: {error_msg}")
+            raise PhaseTransitionError(error_msg)
+        
+        # Log successful transition validation
+        if client:
+            from_name = Phase.get_name(from_phase) if from_phase is not None else "Initial"
+            to_name = Phase.get_name(to_phase)
+            client.log(f"Phase transition validated: {from_name} -> {to_name}")
+        
+        return True
+    
+    @classmethod
+    def get_phase_requirements(cls, phase):
+        """Get requirements for entering a specific phase"""
+        return cls.PHASE_REQUIREMENTS.get(phase, {})
+    
+    @classmethod
+    def log_transition_matrix(cls, client):
+        """Log the complete transition matrix for debugging"""
+        client.log("Phase Transition Matrix:")
+        for from_phase, to_phases in cls.VALID_TRANSITIONS.items():
+            from_name = Phase.get_name(from_phase) if from_phase is not None else "Initial"
+            to_names = [Phase.get_name(p) for p in to_phases]
+            client.log(f"  {from_name} -> {to_names}")
+
+
 class SimSelector(object):
     """Main Application."""
     MIN_DOWNLOAD_SPD = {'5G': 30.0, 'lte/3g': 10.0}  # Mbps - need to confirm tech response for w1850
