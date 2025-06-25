@@ -66,10 +66,26 @@ except ImportError:
     
     class DashboardAPI:
         def __init__(self, phase_manager=None, security_manager=None):
+            self.phase_manager = phase_manager
+            self.security_manager = security_manager
             self.cache = DataCache()
             self.rsrp_collector = RSRPCollector()
             self.request_count = 0
             self.error_count = 0
+            # Add missing attributes expected by tests
+            self.request_statistics = {
+                'total_requests': 0,
+                'successful_requests': 0,
+                'failed_requests': 0,
+                'average_response_time': 0.0,
+                'last_request_time': None
+            }
+            self.error_statistics = {
+                'total_errors': 0,
+                'error_categories': {},
+                'recent_errors': [],
+                'last_error_time': None
+            }
         
         def validate_api_request(self, request_info):
             return True
@@ -97,6 +113,19 @@ except ImportError:
         
         def shutdown(self):
             pass
+        
+        def cleanup(self):
+            """Cleanup method expected by tests"""
+            pass
+        
+        def _create_api_response(self, data, success=True, message=None):
+            """Create standardized API response"""
+            return {
+                'success': success,
+                'timestamp': datetime.now().isoformat(),
+                'message': message,
+                'data': data
+            }
     
     def get_dashboard_api(phase_manager=None, security_manager=None):
         return DashboardAPI(phase_manager, security_manager)

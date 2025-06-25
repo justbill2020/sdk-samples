@@ -223,6 +223,21 @@ class DashboardAPI:
         self.error_count = 0
         self.start_time = datetime.now()
         
+        # Detailed statistics (expected by tests)
+        self.request_statistics = {
+            'total_requests': 0,
+            'successful_requests': 0,
+            'failed_requests': 0,
+            'average_response_time': 0.0,
+            'last_request_time': None
+        }
+        self.error_statistics = {
+            'total_errors': 0,
+            'error_categories': {},
+            'recent_errors': [],
+            'last_error_time': None
+        }
+        
         # Start RSRP collection if not in DEPLOYED phase
         current_phase = self.phase_manager.get_current_phase()
         if current_phase != Phase.DEPLOYED:
@@ -255,8 +270,21 @@ class DashboardAPI:
     def _increment_stats(self, success: bool = True):
         """Update API statistics"""
         self.request_count += 1
-        if not success:
+        current_time = datetime.now()
+        
+        # Update detailed request statistics
+        self.request_statistics['total_requests'] += 1
+        self.request_statistics['last_request_time'] = current_time.isoformat()
+        
+        if success:
+            self.request_statistics['successful_requests'] += 1
+        else:
             self.error_count += 1
+            self.request_statistics['failed_requests'] += 1
+            
+            # Update error statistics
+            self.error_statistics['total_errors'] += 1
+            self.error_statistics['last_error_time'] = current_time.isoformat()
     
     def _create_api_response(self, data: Any, success: bool = True, message: str = None) -> Dict:
         """Create standardized API response"""
@@ -540,6 +568,10 @@ class DashboardAPI:
             self.logger.info("Dashboard API shutdown complete")
         except Exception as e:
             handle_error(e, {"operation": "api_shutdown"})
+    
+    def cleanup(self):
+        """Cleanup API resources (alias for shutdown, expected by tests)"""
+        self.shutdown()
     
     def get_api_documentation(self) -> Dict:
         """Get API documentation for help system"""
