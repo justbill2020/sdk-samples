@@ -25,6 +25,31 @@ from csclient import EventingCSClient
 from speedtest import Speedtest
 
 
+# Phase enumeration for three-phase workflow
+class Phase:
+    """Three-phase workflow enumeration for SimSelector v2.6.0"""
+    STAGING = 0      # Warehouse staging - basic SIM validation
+    INSTALL = 1      # Field installation - full testing and dashboard access
+    DEPLOYED = 2     # Production deployment - dashboard disabled for LAN access
+    
+    # Phase names for logging and display
+    NAMES = {
+        STAGING: "Staging",
+        INSTALL: "Install", 
+        DEPLOYED: "Deployed"
+    }
+    
+    @classmethod
+    def get_name(cls, phase_id):
+        """Get human-readable phase name"""
+        return cls.NAMES.get(phase_id, f"Unknown({phase_id})")
+    
+    @classmethod
+    def is_valid(cls, phase_id):
+        """Validate phase ID"""
+        return phase_id in cls.NAMES
+
+
 class SimSelectorException(Exception):
     """General SimSelector Exception."""
     pass
@@ -45,6 +70,11 @@ class RunBefore(SimSelectorException):
     pass
 
 
+class PhaseTransitionError(SimSelectorException):
+    """Phase transition validation error."""
+    pass
+
+
 class SimSelector(object):
     """Main Application."""
     MIN_DOWNLOAD_SPD = {'5G': 30.0, 'lte/3g': 10.0}  # Mbps - need to confirm tech response for w1850
@@ -53,7 +83,7 @@ class SimSelector(object):
     NUM_ACTIVE_SIMS = 1  # Number of fastest (download) SIMs to keep active.  0 = all; do not disable SIMs
     ONLY_RUN_ONCE = False  # True means do not run if SimSelector has been run on this device before.
 
-    APP_NAME = "SimSelector 2.5.9"
+    APP_NAME = "SimSelector 2.6.0"  # Updated version for three-phase workflow
 
     STATUS_DEVS_PATH = '/status/wan/devices'
     CFG_RULES2_PATH = '/config/wan/rules2'
