@@ -251,6 +251,8 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
                 self._serve_status_page()
             elif path == '/help':
                 self._serve_help_page()
+            elif path.startswith('/api/help/'):
+                self._handle_help_api(path, parsed_url.query)
             else:
                 self._send_error(404, "Page not found")
                 
@@ -387,18 +389,179 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
             self._send_error(500, "Status unavailable")
     
     def _serve_help_page(self):
-        """Serve help documentation page"""
+        """Serve comprehensive help page with template"""
         try:
             current_phase = self.dashboard_server.phase_manager.get_current_phase()
+            phase_status = self.dashboard_server.phase_manager.get_phase_status()
             
-            # Generate help HTML based on current phase
-            html_content = self._generate_help_html(current_phase)
-            
-            self._send_response(200, html_content, 'text/html')
-            
+            # Try to load help template
+            template_path = os.path.join(os.path.dirname(__file__), 'templates', 'help.html')
+            if os.path.exists(template_path):
+                with open(template_path, 'r', encoding='utf-8') as f:
+                    help_html = f.read()
+                
+                # Replace template variables
+                replacements = {
+                    '{{current_phase}}': str(current_phase),
+                    '{{phase_name}}': phase_status.get('current_phase_name', 'Unknown'),
+                    '{{timestamp}}': time.strftime('%Y-%m-%d %H:%M:%S')
+                }
+                
+                for placeholder, value in replacements.items():
+                    help_html = help_html.replace(placeholder, value)
+                
+                self._send_response(200, help_html)
+            else:
+                # Fallback to generated help if template not found
+                help_html = self._generate_help_html(current_phase)
+                self._send_response(200, help_html)
+                
         except Exception as e:
-            self.dashboard_server._log(f"Error serving help: {str(e)}", "ERROR")
-            self._send_error(500, "Help unavailable")
+            self.dashboard_server._log(f"Error serving help page: {str(e)}", "ERROR")
+            self._send_error(500, "Failed to load help page")
+    
+    def _handle_help_api(self, path: str, query: str):
+        """Handle help-specific API requests"""
+        try:
+            if path == '/api/help/search':
+                self._api_help_search(query)
+            elif path == '/api/help/context':
+                self._api_help_context(query)
+            elif path == '/api/help/troubleshooting':
+                self._api_help_troubleshooting(query)
+            else:
+                self._send_json_error(404, "Help API endpoint not found")
+        except Exception as e:
+            self.dashboard_server._log(f"Help API error: {str(e)}", "ERROR")
+            self._send_json_error(500, "Help API error")
+    
+    def _api_help_search(self, query: str):
+        """API endpoint for help content search"""
+        from urllib.parse import parse_qs
+        params = parse_qs(query)
+        search_term = params.get('q', [''])[0]
+        
+        # Mock search results - would be implemented with actual search
+        results = []
+        if search_term:
+            results = [
+                {
+                    'title': 'Dashboard Access',
+                    'section': 'troubleshooting',
+                    'content': 'How to access the dashboard during different phases',
+                    'relevance': 0.9
+                },
+                {
+                    'title': 'Signal Quality',
+                    'section': 'troubleshooting', 
+                    'content': 'Improving signal strength and RSRP values',
+                    'relevance': 0.7
+                }
+            ]
+        
+        self._send_json_response({
+            'query': search_term,
+            'results': results,
+            'total': len(results)
+        })
+    
+    def _api_help_context(self, query: str):
+        """API endpoint for context-sensitive help"""
+        from urllib.parse import parse_qs
+        params = parse_qs(query)
+        context = params.get('context', [''])[0]
+        
+        current_phase = self.dashboard_server.phase_manager.get_current_phase()
+        
+        # Context-sensitive help based on current phase and topic
+        context_help = {
+            'phase': current_phase,
+            'phase_name': ['STAGING', 'INSTALL', 'DEPLOYED'][current_phase],
+            'help_topics': self._get_context_help_topics(context, current_phase),
+            'quick_actions': self._get_quick_actions(current_phase)
+        }
+        
+        self._send_json_response(context_help)
+    
+    def _api_help_troubleshooting(self, query: str):
+        """API endpoint for troubleshooting guides"""
+        current_phase = self.dashboard_server.phase_manager.get_current_phase()
+        
+        troubleshooting_guides = {
+            'dashboard_access': {
+                'title': 'Dashboard Access Issues',
+                'applicable_phases': [0, 1],  # STAGING, INSTALL
+                'severity': 'high',
+                'steps': [
+                    'Verify device is in correct phase',
+                    'Check LAN connectivity',
+                    'Clear browser cache',
+                    'Try different browser'
+                ]
+            },
+            'poor_signal': {
+                'title': 'Poor Signal Quality',
+                'applicable_phases': [0, 1, 2],  # All phases
+                'severity': 'medium',
+                'steps': [
+                    'Check antenna connections',
+                    'Verify carrier coverage',
+                    'Monitor RSRP values',
+                    'Consider external antenna'
+                ]
+            }
+        }
+        
+        # Filter guides by current phase
+        applicable_guides = {
+            k: v for k, v in troubleshooting_guides.items()
+            if current_phase in v['applicable_phases']
+        }
+        
+        self._send_json_response({
+            'current_phase': current_phase,
+            'guides': applicable_guides,
+            'support_contact': {
+                'email': 'support@simselector.com',
+                'phone': '1-800-SIM-HELP'
+            }
+        })
+    
+    def _get_context_help_topics(self, context: str, phase: int) -> List[Dict[str, str]]:
+        """Get help topics based on context and phase"""
+        topics = []
+        
+        if context == 'signal':
+            topics.extend([
+                {'title': 'Understanding RSRP Values', 'link': '#signal-strength'},
+                {'title': 'Improving Signal Quality', 'link': '#antenna-setup'}
+            ])
+        
+        if context == 'phase' or not context:
+            phase_names = ['STAGING', 'INSTALL', 'DEPLOYED']
+            topics.append({
+                'title': f'{phase_names[phase]} Phase Guide',
+                'link': '#phase-guide'
+            })
+        
+        return topics
+    
+    def _get_quick_actions(self, phase: int) -> List[Dict[str, str]]:
+        """Get quick actions based on current phase"""
+        actions = []
+        
+        if phase == 0:  # STAGING
+            actions.extend([
+                {'title': 'Check SIM Status', 'action': 'refresh_sim_data'},
+                {'title': 'Run Signal Test', 'action': 'test_signal'}
+            ])
+        elif phase == 1:  # INSTALL
+            actions.extend([
+                {'title': 'Start Speed Test', 'action': 'start_speed_test'},
+                {'title': 'Test Failover', 'action': 'test_failover'}
+            ])
+        
+        return actions
     
     def _handle_api_request(self, path: str, query: str):
         """Handle API requests"""
@@ -527,11 +690,32 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
             # Remove /static/ prefix
             file_path = path[8:]  # Remove '/static/'
             
-            # Basic static file serving (will be enhanced)
-            if file_path == 'dashboard.css':
+            # Try to serve from static directory first
+            static_file_path = os.path.join(os.path.dirname(__file__), 'static', file_path)
+            if os.path.exists(static_file_path):
+                with open(static_file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                # Determine content type
+                if file_path.endswith('.css'):
+                    content_type = 'text/css'
+                elif file_path.endswith('.js'):
+                    content_type = 'application/javascript'
+                elif file_path.endswith('.html'):
+                    content_type = 'text/html'
+                elif file_path.endswith('.json'):
+                    content_type = 'application/json'
+                else:
+                    content_type = 'text/plain'
+                
+                self._send_response(200, content, content_type)
+                return
+            
+            # Fallback to embedded content for backward compatibility
+            if file_path == 'dashboard.css' or file_path == 'css/dashboard.css':
                 css_content = self._get_dashboard_css()
                 self._send_response(200, css_content, 'text/css')
-            elif file_path == 'dashboard.js':
+            elif file_path == 'dashboard.js' or file_path == 'js/dashboard.js':
                 js_content = self._get_dashboard_js()
                 self._send_response(200, js_content, 'application/javascript')
             else:
