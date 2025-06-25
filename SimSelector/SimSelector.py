@@ -27,7 +27,54 @@ from speedtest import Speedtest
 
 # Phase enumeration for three-phase workflow
 class Phase:
-    """Three-phase workflow enumeration for SimSelector v2.6.0"""
+    """Three-phase workflow enumeration for SimSelector v2.6.0
+    
+    PHASE BEHAVIORS AND ACCESS PERMISSIONS:
+    
+    STAGING (0) - Warehouse Staging Phase:
+    - Purpose: Basic SIM validation for warehouse staging
+    - Trigger: First boot after SDK installation
+    - Duration: Until device power-off (indefinite)
+    - Network Access: LAN dashboard access enabled
+    - SIM Testing: Basic connectivity validation only
+    - Behavior: Validates both SIMs have functional connections
+    - Dashboard: Active on all LAN interfaces
+    - Exit Condition: Device power-off, then reboot triggers INSTALL
+    
+    INSTALL (1) - Field Installation Phase:  
+    - Purpose: Full testing and technician dashboard access
+    - Trigger: First boot after STAGING phase completion
+    - Duration: Until installation completion (~15-30 minutes)
+    - Network Access: LAN dashboard access enabled
+    - SIM Testing: Full speed tests and performance validation
+    - Behavior: Complete SimSelector validation and prioritization
+    - Dashboard: Active with real-time RSRP, progress, and help
+    - Exit Condition: Successful SIM prioritization, auto-transition to DEPLOYED
+    
+    DEPLOYED (2) - Production Deployment Phase:
+    - Purpose: Normal production operation
+    - Trigger: Automatic after INSTALL completion
+    - Duration: Indefinite (production state)
+    - Network Access: LAN dashboard access DISABLED
+    - SIM Testing: Manual trigger only via NCM description field
+    - Behavior: Standard SimSelector operation with existing manual triggers
+    - Dashboard: NCM remote connect access only
+    - Exit Condition: Manual reset to INSTALL for maintenance/troubleshooting
+    
+    ACCESS CONTROL MATRIX:
+    
+    Phase    | LAN Dashboard | NCM Dashboard | SIM Testing | Firewall Rules
+    ---------|---------------|---------------|-------------|---------------
+    STAGING  | ✅ Enabled    | ✅ Enabled    | Basic Only  | Port 8080 Open
+    INSTALL  | ✅ Enabled    | ✅ Enabled    | Full Tests  | Port 8080 Open  
+    DEPLOYED | ❌ Disabled   | ✅ Enabled    | Manual Only | Port 8080 Closed
+    
+    SECURITY CONSIDERATIONS:
+    - Dashboard access automatically disabled in production (DEPLOYED phase)
+    - Phase transitions validated to prevent unauthorized access
+    - Sensitive state data encrypted at rest
+    - Firewall rules dynamically managed per phase
+    """
     STAGING = 0      # Warehouse staging - basic SIM validation
     INSTALL = 1      # Field installation - full testing and dashboard access
     DEPLOYED = 2     # Production deployment - dashboard disabled for LAN access
@@ -39,6 +86,34 @@ class Phase:
         DEPLOYED: "Deployed"
     }
     
+    # Phase-specific access permissions
+    ACCESS_PERMISSIONS = {
+        STAGING: {
+            'lan_dashboard_access': True,
+            'ncm_dashboard_access': True,
+            'sim_testing_mode': 'basic',
+            'firewall_port_8080': 'open',
+            'duration': 'indefinite',
+            'manual_triggers': ['power_cycle']
+        },
+        INSTALL: {
+            'lan_dashboard_access': True,
+            'ncm_dashboard_access': True,
+            'sim_testing_mode': 'full',
+            'firewall_port_8080': 'open',
+            'duration': 'until_completion',
+            'manual_triggers': ['force', 'reset']
+        },
+        DEPLOYED: {
+            'lan_dashboard_access': False,
+            'ncm_dashboard_access': True,
+            'sim_testing_mode': 'manual_only',
+            'firewall_port_8080': 'closed',
+            'duration': 'indefinite',
+            'manual_triggers': ['force', 'reset', 'start']
+        }
+    }
+    
     @classmethod
     def get_name(cls, phase_id):
         """Get human-readable phase name"""
@@ -48,6 +123,23 @@ class Phase:
     def is_valid(cls, phase_id):
         """Validate phase ID"""
         return phase_id in cls.NAMES
+    
+    @classmethod
+    def get_access_permissions(cls, phase_id):
+        """Get access permissions for a specific phase"""
+        return cls.ACCESS_PERMISSIONS.get(phase_id, {})
+    
+    @classmethod
+    def has_lan_dashboard_access(cls, phase_id):
+        """Check if phase allows LAN dashboard access"""
+        permissions = cls.get_access_permissions(phase_id)
+        return permissions.get('lan_dashboard_access', False)
+    
+    @classmethod
+    def get_sim_testing_mode(cls, phase_id):
+        """Get SIM testing mode for phase"""
+        permissions = cls.get_access_permissions(phase_id)
+        return permissions.get('sim_testing_mode', 'manual_only')
 
 
 class SimSelectorException(Exception):
@@ -76,7 +168,45 @@ class PhaseTransitionError(SimSelectorException):
 
 
 class PhaseTransitionManager:
-    """Manages secure phase transitions with validation rules"""
+    """Manages secure phase transitions with validation rules
+    
+    TRANSITION FLOW DOCUMENTATION:
+    
+    1. INITIAL → STAGING (First Boot):
+       - Triggered: SDK installation, first device boot
+       - Validation: Device powered on, basic hardware checks
+       - Purpose: Warehouse validation before shipping
+       
+    2. STAGING → INSTALL (After Power Cycle):
+       - Triggered: Device reboot after staging completion
+       - Validation: Staging phase completed, SIMs validated
+       - Purpose: Field installation with full testing
+       
+    3. INSTALL → DEPLOYED (Automatic):
+       - Triggered: Installation completion, SIM prioritization done
+       - Validation: Performance testing complete, WAN rules configured
+       - Purpose: Production deployment with security lockdown
+       
+    4. DEPLOYED → INSTALL (Manual/Maintenance):
+       - Triggered: Support/maintenance requirements
+       - Validation: Administrative override, maintenance mode
+       - Purpose: Troubleshooting, configuration updates
+    
+    VALIDATION REQUIREMENTS:
+    
+    Each phase transition requires specific conditions to be met:
+    - Pre-transition validation checks
+    - State persistence validation  
+    - Network configuration validation
+    - Security permission validation
+    
+    ROLLBACK CAPABILITIES:
+    
+    - Failed transitions automatically rollback to previous phase
+    - State corruption recovery with backup restoration
+    - Manual override for support scenarios
+    - Comprehensive logging for troubleshooting
+    """
     
     # Valid state transitions - defines what transitions are allowed
     VALID_TRANSITIONS = {
@@ -91,17 +221,23 @@ class PhaseTransitionManager:
         Phase.STAGING: {
             'description': 'Warehouse staging phase - basic SIM validation',
             'required_conditions': ['device_powered_on'],
-            'validation_checks': ['sim_detection', 'basic_connectivity']
+            'validation_checks': ['sim_detection', 'basic_connectivity'],
+            'security_level': 'medium',
+            'network_requirements': ['lan_interface_available']
         },
         Phase.INSTALL: {
             'description': 'Field installation phase - full testing and dashboard',
             'required_conditions': ['staging_complete', 'device_reboot'],
-            'validation_checks': ['all_sims_validated', 'network_ready']
+            'validation_checks': ['all_sims_validated', 'network_ready'],
+            'security_level': 'medium',
+            'network_requirements': ['lan_interface_available', 'internet_connectivity']
         },
         Phase.DEPLOYED: {
             'description': 'Production deployment - dashboard disabled for LAN',
             'required_conditions': ['install_complete', 'performance_testing_done'],
-            'validation_checks': ['sim_prioritization_complete', 'wan_rules_configured']
+            'validation_checks': ['sim_prioritization_complete', 'wan_rules_configured'],
+            'security_level': 'high',
+            'network_requirements': ['wan_connectivity_validated']
         }
     }
     
@@ -151,6 +287,21 @@ class PhaseTransitionManager:
             from_name = Phase.get_name(from_phase) if from_phase is not None else "Initial"
             to_names = [Phase.get_name(p) for p in to_phases]
             client.log(f"  {from_name} -> {to_names}")
+    
+    @classmethod
+    def log_phase_documentation(cls, phase_id, client):
+        """Log comprehensive phase documentation"""
+        phase_name = Phase.get_name(phase_id)
+        permissions = Phase.get_access_permissions(phase_id)
+        requirements = cls.get_phase_requirements(phase_id)
+        
+        client.log(f"=== {phase_name} Phase Documentation ===")
+        client.log(f"Description: {requirements.get('description', 'N/A')}")
+        client.log(f"LAN Dashboard Access: {permissions.get('lan_dashboard_access', False)}")
+        client.log(f"SIM Testing Mode: {permissions.get('sim_testing_mode', 'unknown')}")
+        client.log(f"Security Level: {requirements.get('security_level', 'unknown')}")
+        client.log(f"Duration: {permissions.get('duration', 'unknown')}")
+        client.log(f"Manual Triggers: {permissions.get('manual_triggers', [])}")
 
 
 class SimSelector(object):
