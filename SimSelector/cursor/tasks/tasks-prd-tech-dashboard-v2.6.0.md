@@ -122,27 +122,27 @@
     - [x] 3.4.3 Implement context-sensitive help based on current status
     - [x] 3.4.4 Create support contact information and escalation procedures
 
-- [ ] **4.0 Network & Access Management**
-  - [ ] 4.1 Implement dynamic firewall rule management
-    - [ ] 4.1.1 Create iptables rule templates for dashboard access
-    - [ ] 4.1.2 Implement automatic rule creation on phase transitions
-    - [ ] 4.1.3 Add rule cleanup and automatic removal
-    - [ ] 4.1.4 Create firewall rule conflict resolution
-  - [ ] 4.2 Configure LAN access control for staging/install phases
-    - [ ] 4.2.1 Detect all available LAN interfaces (ethernet, WiFi)
-    - [ ] 4.2.2 Bind dashboard server to appropriate interfaces
-    - [ ] 4.2.3 Implement phase-based access control policies
-    - [ ] 4.2.4 Add network interface monitoring and adaptation
-  - [ ] 4.3 Ensure NCM remote connect compatibility
-    - [ ] 4.3.1 Test dashboard access via NCM HTTP remote connect
-    - [ ] 4.3.2 Implement NCM-specific routing and proxy compatibility
-    - [ ] 4.3.3 Add NCM session management and authentication passthrough
-    - [ ] 4.3.4 Create NCM compatibility testing procedures
-  - [ ] 4.4 Add automatic dashboard disable in deployed phase
-    - [ ] 4.4.1 Implement automatic server shutdown on phase transition
-    - [ ] 4.4.2 Remove firewall rules when entering deployed phase
-    - [ ] 4.4.3 Add NCM-only access mode for deployed phase
-    - [ ] 4.4.4 Create manual override for support access
+- [x] **4.0 Network & Access Management** ✅ COMPLETE
+  - [x] 4.1 Implement dynamic firewall rule management ✅ COMPLETE
+    - [x] 4.1.1 Create iptables rule templates for dashboard access
+    - [x] 4.1.2 Implement automatic rule creation on phase transitions
+    - [x] 4.1.3 Add rule cleanup and automatic removal
+    - [x] 4.1.4 Create firewall rule conflict resolution
+  - [x] 4.2 Configure LAN access control for staging/install phases ✅ COMPLETE
+    - [x] 4.2.1 Detect all available LAN interfaces (ethernet, WiFi)
+    - [x] 4.2.2 Bind dashboard server to appropriate interfaces
+    - [x] 4.2.3 Implement phase-based access control policies
+    - [x] 4.2.4 Add network interface monitoring and adaptation
+  - [x] 4.3 Ensure NCM remote connect compatibility ✅ COMPLETE
+    - [x] 4.3.1 Test dashboard access via NCM HTTP remote connect
+    - [x] 4.3.2 Implement NCM-specific routing and proxy compatibility
+    - [x] 4.3.3 Add NCM session management and authentication passthrough
+    - [x] 4.3.4 Create NCM compatibility testing procedures
+  - [x] 4.4 Add automatic dashboard disable in deployed phase ✅ COMPLETE
+    - [x] 4.4.1 Implement automatic server shutdown on phase transition
+    - [x] 4.4.2 Remove firewall rules when entering deployed phase
+    - [x] 4.4.3 Add NCM-only access mode for deployed phase
+    - [x] 4.4.4 Create manual override for support access
 
 - [ ] **5.0 Error Handling & Edge Cases**
   - [ ] 5.1 Handle single SIM scenarios and SIM detection failures
