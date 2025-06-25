@@ -162,4 +162,4 @@ core.*
 # Example: customer-specific configuration files
 *customer*.ini
 *production*.ini
-*prod*.ini 
+*prod*.ini .cursor/

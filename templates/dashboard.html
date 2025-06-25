@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimSelector Tech Dashboard - {{phase_name}}</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/responsive.css">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <meta name="description" content="SimSelector v2.6.0 Technical Dashboard for Field Installation">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header Section -->
+        <header class="dashboard-header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <h1 class="dashboard-title">SimSelector</h1>
+                    <span class="version-badge">v2.6.0</span>
+                </div>
+                <div class="phase-indicator phase-{{current_phase}}">
+                    <span class="phase-label">Current Phase:</span>
+                    <span class="phase-name">{{phase_name}}</span>
+                </div>
+            </div>
+            <nav class="dashboard-nav">
+                <a href="/dashboard" class="nav-link active">Dashboard</a>
+                <a href="/status" class="nav-link">Status</a>
+                <a href="/help" class="nav-link">Help</a>
+            </nav>
+        </header>
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <!-- Status Cards Grid -->
+            <section class="status-cards">
+                <!-- System Status Card -->
+                <div class="status-card system-status">
+                    <div class="card-header">
+                        <h3 class="card-title">System Status</h3>
+                        <div class="status-indicator" id="system-status-indicator">
+                            <span class="status-dot online"></span>
+                            <span class="status-text">Online</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="status-item">
+                            <span class="status-label">Phase:</span>
+                            <span class="status-value" id="current-phase">{{phase_name}}</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Uptime:</span>
+                            <span class="status-value" id="system-uptime">--</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Security:</span>
+                            <span class="status-value security-active" id="security-status">Active</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SIM Status Card -->
+                <div class="status-card sim-status">
+                    <div class="card-header">
+                        <h3 class="card-title">SIM Status</h3>
+                        <button class="refresh-btn" onclick="refreshSimData()" title="Refresh SIM Data">
+                            <span class="refresh-icon">⟳</span>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="sim-slots" id="sim-slots-container">
+                            <!-- SIM slot data will be populated via JavaScript -->
+                            <div class="sim-slot" data-sim="1">
+                                <div class="sim-header">
+                                    <span class="sim-label">SIM 1</span>
+                                    <span class="sim-status-badge" id="sim1-status">--</span>
+                                </div>
+                                <div class="sim-rsrp">
+                                    <span class="rsrp-label">RSRP:</span>
+                                    <span class="rsrp-value" id="sim1-rsrp">--</span>
+                                </div>
+                            </div>
+                            <div class="sim-slot" data-sim="2">
+                                <div class="sim-header">
+                                    <span class="sim-label">SIM 2</span>
+                                    <span class="sim-status-badge" id="sim2-status">--</span>
+                                </div>
+                                <div class="sim-rsrp">
+                                    <span class="rsrp-label">RSRP:</span>
+                                    <span class="rsrp-value" id="sim2-rsrp">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Network Information Card -->
+                <div class="status-card network-info">
+                    <div class="card-header">
+                        <h3 class="card-title">Network Information</h3>
+                        <div class="connection-indicator" id="connection-indicator">
+                            <span class="connection-dot"></span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="network-item">
+                            <span class="network-label">Active SIM:</span>
+                            <span class="network-value" id="active-sim">--</span>
+                        </div>
+                        <div class="network-item">
+                            <span class="network-label">Carrier:</span>
+                            <span class="network-value" id="carrier-name">--</span>
+                        </div>
+                        <div class="network-item">
+                            <span class="network-label">Signal Quality:</span>
+                            <div class="signal-bar-container">
+                                <div class="signal-bars" id="signal-bars">
+                                    <div class="signal-bar"></div>
+                                    <div class="signal-bar"></div>
+                                    <div class="signal-bar"></div>
+                                    <div class="signal-bar"></div>
+                                    <div class="signal-bar"></div>
+                                </div>
+                                <span class="signal-text" id="signal-text">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phase Progress Card -->
+                <div class="status-card phase-progress">
+                    <div class="card-header">
+                        <h3 class="card-title">Phase Progress</h3>
+                        <div class="progress-percentage" id="phase-progress-percent">--</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="progress-timeline">
+                            <div class="timeline-step completed" data-phase="0">
+                                <div class="step-circle">1</div>
+                                <span class="step-name">Staging</span>
+                            </div>
+                            <div class="timeline-connector"></div>
+                            <div class="timeline-step" data-phase="1">
+                                <div class="step-circle">2</div>
+                                <span class="step-name">Install</span>
+                            </div>
+                            <div class="timeline-connector"></div>
+                            <div class="timeline-step" data-phase="2">
+                                <div class="step-circle">3</div>
+                                <span class="step-name">Deployed</span>
+                            </div>
+                        </div>
+                        <div class="phase-description" id="phase-description">
+                            Phase-specific instructions will appear here
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Action Panel -->
+            <section class="action-panel">
+                <div class="action-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Quick Actions</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="action-buttons">
+                            <button class="action-btn primary" onclick="refreshDashboard()" id="refresh-dashboard">
+                                <span class="btn-icon">⟳</span>
+                                Refresh Dashboard
+                            </button>
+                            <button class="action-btn secondary" onclick="runSystemTest()" id="run-test">
+                                <span class="btn-icon">⚡</span>
+                                Run System Test
+                            </button>
+                            <button class="action-btn info" onclick="window.open('/status', '_blank')">
+                                <span class="btn-icon">📊</span>
+                                Detailed Status
+                            </button>
+                            <button class="action-btn warning" onclick="window.open('/help', '_blank')">
+                                <span class="btn-icon">❓</span>
+                                Help & Support
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Logs Section -->
+            <section class="logs-section" id="logs-section">
+                <div class="logs-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Recent Activity</h3>
+                        <div class="logs-controls">
+                            <button class="logs-btn" onclick="clearLogs()" title="Clear Logs">Clear</button>
+                            <button class="logs-btn" onclick="toggleAutoScroll()" id="autoscroll-btn" title="Toggle Auto-scroll">Auto-scroll: ON</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="logs-container" id="logs-container">
+                            <div class="log-entry info">
+                                <span class="log-timestamp">[{{timestamp}}]</span>
+                                <span class="log-level">INFO</span>
+                                <span class="log-message">Dashboard initialized in {{phase_name}} phase</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="dashboard-footer">
+            <div class="footer-content">
+                <span class="footer-text">SimSelector v2.6.0 Tech Dashboard</span>
+                <span class="footer-separator">|</span>
+                <span class="footer-text">Phase: {{phase_name}}</span>
+                <span class="footer-separator">|</span>
+                <span class="footer-text" id="last-update">Last Updated: --</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading...</div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/dashboard.js"></script>
+    <script src="/static/js/notifications.js"></script>
+    <script>
+        // Initialize dashboard with current phase
+        window.addEventListener('DOMContentLoaded', function() {
+            initializeDashboard({{current_phase}}, '{{phase_name}}');
+        });
+    </script>
+</body>
+</html> 

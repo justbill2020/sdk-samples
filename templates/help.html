@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimSelector Help & Documentation - {{phase_name}}</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/responsive.css">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <meta name="description" content="SimSelector v2.6.0 Help Documentation and Troubleshooting">
+    <style>
+        /* Help-specific styles */
+        .help-search {
+            position: sticky;
+            top: 0;
+            background: var(--bg-secondary);
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 100;
+        }
+        
+        .search-container {
+            display: flex;
+            gap: var(--spacing-sm);
+            align-items: center;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: var(--font-size-base);
+            font-family: var(--font-family);
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .clear-search {
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+        
+        .clear-search:hover {
+            background: var(--border-color);
+        }
+        
+        .help-sections {
+            display: grid;
+            gap: var(--spacing-lg);
+            padding: var(--spacing-lg);
+        }
+        
+        .help-section {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+        }
+        
+        .help-section.hidden {
+            display: none;
+        }
+        
+        .section-header {
+            background: var(--bg-tertiary);
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition-fast);
+        }
+        
+        .section-header:hover {
+            background: var(--border-color);
+        }
+        
+        .section-title {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .section-toggle {
+            font-size: var(--font-size-lg);
+            color: var(--text-secondary);
+            transition: var(--transition-fast);
+        }
+        
+        .section-content {
+            padding: var(--spacing-lg);
+            display: none;
+        }
+        
+        .section-content.expanded {
+            display: block;
+        }
+        
+        .help-item {
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-lg);
+            border-bottom: 1px solid var(--bg-tertiary);
+        }
+        
+        .help-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .help-item h4 {
+            color: var(--primary-color);
+            margin: 0 0 var(--spacing-sm) 0;
+            font-size: var(--font-size-base);
+        }
+        
+        .help-item p {
+            margin: 0 0 var(--spacing-sm) 0;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        
+        .help-steps {
+            list-style: none;
+            padding: 0;
+            margin: var(--spacing-sm) 0;
+        }
+        
+        .help-steps li {
+            padding: var(--spacing-xs) 0;
+            padding-left: var(--spacing-lg);
+            position: relative;
+            color: var(--text-secondary);
+        }
+        
+        .help-steps li::before {
+            content: counter(step-counter);
+            counter-increment: step-counter;
+            position: absolute;
+            left: 0;
+            top: var(--spacing-xs);
+            background: var(--primary-color);
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+        }
+        
+        .help-steps {
+            counter-reset: step-counter;
+        }
+        
+        .phase-specific {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            color: white;
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius);
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .phase-specific h3 {
+            margin: 0 0 var(--spacing-sm) 0;
+        }
+        
+        .warning-box {
+            background: var(--warning-color);
+            color: white;
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius);
+            margin: var(--spacing-sm) 0;
+        }
+        
+        .warning-box strong {
+            display: block;
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .contact-section {
+            background: var(--bg-tertiary);
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius);
+            margin-top: var(--spacing-lg);
+        }
+        
+        .contact-methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-md);
+        }
+        
+        .contact-item {
+            background: var(--bg-secondary);
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+        }
+        
+        .contact-item h4 {
+            margin: 0 0 var(--spacing-sm) 0;
+            color: var(--primary-color);
+        }
+        
+        .contact-item p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: var(--spacing-xl);
+            color: var(--text-muted);
+        }
+        
+        .highlight {
+            background: yellow;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header Section -->
+        <header class="dashboard-header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <h1 class="dashboard-title">SimSelector Help</h1>
+                    <span class="version-badge">v2.6.0</span>
+                </div>
+                <div class="phase-indicator phase-{{current_phase}}">
+                    <span class="phase-label">Current Phase:</span>
+                    <span class="phase-name">{{phase_name}}</span>
+                </div>
+            </div>
+            <nav class="dashboard-nav">
+                <a href="/dashboard" class="nav-link">Dashboard</a>
+                <a href="/status" class="nav-link">Status</a>
+                <a href="/help" class="nav-link active">Help</a>
+            </nav>
+        </header>
+
+        <!-- Search Section -->
+        <div class="help-search">
+            <div class="search-container">
+                <input type="text" class="search-input" id="help-search" placeholder="Search help topics..." autocomplete="off">
+                <button class="clear-search" onclick="clearSearch()">Clear</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="help-sections" id="help-content">
+            <!-- Phase-Specific Help -->
+            <div class="help-section" data-section="phase-guide">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2 class="section-title">{{phase_name}} Phase Guide</h2>
+                    <span class="section-toggle">▼</span>
+                </div>
+                <div class="section-content expanded">
+                    <div class="phase-specific">
+                        <h3>Current Phase: {{phase_name}}</h3>
+                        <p id="phase-description">Phase-specific guidance will be loaded here.</p>
+                    </div>
+                    
+                    <div class="help-item">
+                        <h4>Phase Objectives</h4>
+                        <p id="phase-objectives">Loading phase objectives...</p>
+                        <ul class="help-steps" id="phase-steps">
+                            <!-- Steps will be populated by JavaScript -->
+                        </ul>
+                    </div>
+                    
+                    <div class="help-item">
+                        <h4>Expected Duration</h4>
+                        <p id="phase-duration">Loading duration information...</p>
+                    </div>
+                    
+                    <div class="help-item">
+                        <h4>Next Steps</h4>
+                        <p id="phase-next-steps">Loading next steps...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Start Guide -->
+            <div class="help-section" data-section="quick-start">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2 class="section-title">Quick Start Guide</h2>
+                    <span class="section-toggle">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="help-item">
+                        <h4>First Time Setup</h4>
+                        <p>Follow these steps to get started with SimSelector:</p>
+                        <ol class="help-steps">
+                            <li>Ensure both SIM cards are properly inserted</li>
+                            <li>Verify network connectivity for both carriers</li>
+                            <li>Access the dashboard via LAN during Staging phase</li>
+                            <li>Monitor signal strength and performance metrics</li>
+                            <li>Allow automatic phase progression or manually advance</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="help-item">
+                        <h4>Dashboard Access</h4>
+                        <p>The dashboard is available during Staging and Install phases:</p>
+                        <ul class="help-steps">
+                            <li>Connect to the device's LAN network</li>
+                            <li>Open a web browser and navigate to the device IP</li>
+                            <li>Dashboard will automatically load with current status</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Troubleshooting Guide -->
+            <div class="help-section" data-section="troubleshooting">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2 class="section-title">Troubleshooting Guide</h2>
+                    <span class="section-toggle">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="help-item">
+                        <h4>Dashboard Not Accessible</h4>
+                        <p>If you cannot access the dashboard:</p>
+                        <ol class="help-steps">
+                            <li>Verify the device is in Staging or Install phase</li>
+                            <li>Check LAN connectivity to the device</li>
+                            <li>Ensure firewall rules allow dashboard access</li>
+                            <li>Try accessing via different browser or device</li>
+                            <li>Contact support if issue persists</li>
+                        </ol>
+                        
+                        <div class="warning-box">
+                            <strong>Note:</strong> Dashboard is automatically disabled in Deployed phase for security.
+                        </div>
+                    </div>
+                    
+                    <div class="help-item">
+                        <h4>Poor Signal Quality</h4>
+                        <p>To improve signal performance:</p>
+                        <ol class="help-steps">
+                            <li>Check antenna connections and positioning</li>
+                            <li>Verify SIM card carrier coverage in the area</li>
+                            <li>Monitor RSRP values in real-time dashboard</li>
+                            <li>Consider external antenna if signal is consistently poor</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="help-item">
+                        <h4>SIM Detection Issues</h4>
+                        <p>If SIM cards are not detected:</p>
+                        <ol class="help-steps">
+                            <li>Power down device completely</li>
+                            <li>Remove and reinsert SIM cards</li>
+                            <li>Ensure SIM cards are not damaged</li>
+                            <li>Verify SIM cards are activated with carriers</li>
+                            <li>Power up device and check status dashboard</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="help-item">
+                        <h4>Speed Test Failures</h4>
+                        <p>If speed tests are failing:</p>
+                        <ol class="help-steps">
+                            <li>Check network connectivity for each SIM</li>
+                            <li>Verify carrier data plans are active</li>
+                            <li>Ensure sufficient signal strength (RSRP > -100 dBm)</li>
+                            <li>Check for network congestion during testing</li>
+                            <li>Restart testing from dashboard if needed</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Documentation -->
+            <div class="help-section" data-section="api-docs">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2 class="section-title">API Documentation</h2>
+                    <span class="section-toggle">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="help-item">
+                        <h4>System Status API</h4>
+                        <p><strong>GET /api/system/status</strong></p>
+                        <p>Returns current system status including phase, uptime, and security information.</p>
+                        <pre><code>{
+  "current_phase": 1,
+  "current_phase_name": "INSTALL",
+  "system_uptime": 3600,
+  "security_level": "Active"
+}</code></pre>
+                    </div>
+                    
+                    <div class="help-item">
+                        <h4>SIM Status API</h4>
+                        <p><strong>GET /api/sim/status</strong></p>
+                        <p>Returns detailed SIM information including signal strength and carrier data.</p>
+                        <pre><code>{
+  "sims": [
+    {"slot": 1, "status": "active", "rsrp": -85, "carrier": "Verizon"},
+    {"slot": 2, "status": "standby", "rsrp": -92, "carrier": "AT&T"}
+  ],
+  "active_sim": 1
+}</code></pre>
+                    </div>
+                    
+                    <div class="help-item">
+                        <h4>Phase Management API</h4>
+                        <p><strong>GET /api/phase/status</strong></p>
+                        <p>Returns current phase status and progress information.</p>
+                        <p><strong>POST /api/phase/transition</strong></p>
+                        <p>Request phase transition (requires appropriate permissions).</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Information -->
+            <div class="help-section" data-section="security">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <h2 class="section-title">Security Information</h2>
+                    <span class="section-toggle">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="help-item">
+                        <h4>Dashboard Security</h4>
+                        <p>The dashboard includes several security features:</p>
+                        <ul class="help-steps">
+                            <li>IP whitelist validation for LAN access only</li>
+                            <li>Request rate limiting (60 req/min, 5 req/sec per IP)</li>
+                            <li>Automatic IP blocking for excessive requests</li>
+                            <li>Phase-based access control</li>
+                            <li>SSL/TLS encryption support</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="help-item">
+                        <h4>Access Control</h4>
+                        <p>Dashboard access is controlled by device phase:</p>
+                        <ul class="help-steps">
+                            <li><strong>Staging Phase:</strong> Full dashboard access for configuration</li>
+                            <li><strong>Install Phase:</strong> Full dashboard access for testing</li>
+                            <li><strong>Deployed Phase:</strong> Dashboard disabled, NCM access only</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="warning-box">
+                        <strong>Security Note:</strong> The dashboard automatically disables in production (Deployed phase) for security. Use NCM for remote management.
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Contact Section -->
+        <div class="contact-section">
+            <h3>Support & Contact Information</h3>
+            <p>Need additional help? Contact support through these channels:</p>
+            
+            <div class="contact-methods">
+                <div class="contact-item">
+                    <h4>Technical Support</h4>
+                    <p><strong>Email:</strong> support@simselector.com</p>
+                    <p><strong>Hours:</strong> 24/7 for critical issues</p>
+                    <p><strong>Response:</strong> Within 4 hours</p>
+                </div>
+                
+                <div class="contact-item">
+                    <h4>Field Support</h4>
+                    <p><strong>Phone:</strong> 1-800-SIM-HELP</p>
+                    <p><strong>Hours:</strong> 8 AM - 6 PM EST</p>
+                    <p><strong>Response:</strong> Immediate for installations</p>
+                </div>
+                
+                <div class="contact-item">
+                    <h4>Documentation</h4>
+                    <p><strong>Online Docs:</strong> docs.simselector.com</p>
+                    <p><strong>Video Guides:</strong> Available on support portal</p>
+                    <p><strong>Updates:</strong> Automatic via NCM</p>
+                </div>
+                
+                <div class="contact-item">
+                    <h4>Emergency Escalation</h4>
+                    <p><strong>Critical Issues:</strong> escalation@simselector.com</p>
+                    <p><strong>Severity 1:</strong> Device failure during installation</p>
+                    <p><strong>Response:</strong> Within 1 hour</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- No Results Message -->
+        <div class="no-results" id="no-results" style="display: none;">
+            <h3>No results found</h3>
+            <p>Try different search terms or browse the sections above.</p>
+            <button class="action-btn primary" onclick="clearSearch()">Clear Search</button>
+        </div>
+
+        <!-- Footer -->
+        <footer class="dashboard-footer">
+            <div class="footer-content">
+                <span class="footer-text">SimSelector v2.6.0 Help Documentation</span>
+                <span class="footer-separator">|</span>
+                <span class="footer-text">Phase: {{phase_name}}</span>
+                <span class="footer-separator">|</span>
+                <span class="footer-text">Last Updated: {{timestamp}}</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/dashboard.js"></script>
+    <script src="/static/js/notifications.js"></script>
+    <script>
+        // Initialize help system with current phase
+        window.addEventListener('DOMContentLoaded', function() {
+            initializeHelp({{current_phase}}, '{{phase_name}}');
+            setupSearch();
+        });
+    </script>
+</body>
+</html> 

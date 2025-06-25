@@ -1,0 +1,80 @@
+---
+description: Generates Task lists based on PRD
+globs: 
+alwaysApply: false
+---
+
+---
+description: "Generate a task list from a PRD — Python script focus"
+globs:
+  - "*.md"
+alwaysApply: true
+---
+
+# Rule: Generating a Task List from a PRD (Python Script Edition)
+
+## Goal
+Guide the AI assistant to create a concise, step-by-step task list (in Markdown) that will walk a **junior Python developer** through implementing a **stand-alone script** described in an existing Product Requirements Document (PRD).
+
+## Output
+
+- **Format:** Markdown (`.md`)
+- **Location:** `/SimSelector/cursor/tasks/`
+- **Filename:** `tasks-[prd-file-name].md`  
+  *Example:* `tasks-prd-data-cleanup-script.md`
+
+## Process
+
+1. **Receive PRD Reference** – The user points the AI to a specific PRD file.
+2. **Analyse PRD** – Read the functional requirements, user stories, and acceptance criteria.
+3. **Phase 1 – Generate Parent Tasks**  
+   Create the file and list the 4–6 high-level tasks required to deliver the script.  
+   Display the list (no sub-tasks yet) and say:  
+   *“I’ve drafted the high-level tasks. Reply **Go** when you’re ready for sub-tasks.”*
+4. **Wait for Confirmation** – Pause until the user replies **Go**.
+5. **Phase 2 – Generate Sub-Tasks**  
+   Break each parent task into actionable sub-tasks that a junior dev can follow.
+6. **Identify Relevant Files**  
+   List the files that will be created or modified (script, helpers, tests, docs).
+7. **Generate Final Output** – Combine *Relevant Files*, *Tasks*, and *Notes* in the prescribed Markdown structure.
+8. **Save Task List** – Write the file to `/tasks/` as `tasks-[prd-file-name].md`.
+
+## Output Format
+
+## Relevant Files
+
+- `SimSelector/SimSelector.py` – Primary script implementing the PRD logic.
+- `SimSelector/utils.py` – Helper functions shared by multiple modules.
+- `SimSelector/tests/test_my_feature.py` – Pytest unit tests for `my_feature.py`.
+- `SimSelector/README.md` – Usage instructions (CLI flags, examples).
+
+### Notes
+
+- Place tests under `tests/` and run with `pytest`.
+- Follow PEP 8 formatting (`ruff` / `black` recommended).
+- Include type hints where beneficial (`mypy` optional).
+
+## Tasks
+
+- [ ] **1.0 Setup & Environment**
+  - [ ] 1.1 Initialise Git repo & virtual environment
+  - [ ] 1.2 Add dependencies to `/SimSelector/requirements.txt`
+- [ ] **2.0 Parse Input Data**
+  - [ ] 2.1 Design CLI interface with `argparse`
+  - [ ] 2.2 Implement input validation
+- [ ] **3.0 Core Processing Logic**
+  - [ ] 3.1 Translate PRD algorithms into functions
+- [ ] **4.0 Output & Reporting**
+  - [ ] 4.1 Write results to file / stdout as specified
+- [ ] **5.0 Tests & QA**
+  - [ ] 5.1 Write unit tests with pytest
+  - [ ] 5.2 Run `pytest -q` & ensure coverage ≥ 80%
+
+
+## Interaction Model
+
+The assistant **must** pause after the parent tasks and await the user’s “Go” before expanding into sub-tasks. This checkpoint ensures alignment and prevents wasted effort.
+
+## Target Audience
+
+Assume the developer is comfortable with basic Python and the command line but is **new to structuring scripts for maintainability**. Keep language clear, avoid jargon, and include context where helpful.
