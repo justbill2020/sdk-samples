@@ -22,6 +22,7 @@ import json
 import os
 from typing import Dict, List, Optional, Tuple, Any
 from enum import Enum
+from dataclasses import dataclass
 
 # Import our phase system
 try:
@@ -47,6 +48,31 @@ class AccessResult(Enum):
     DENIED = "denied"
     RATE_LIMITED = "rate_limited"
     INVALID_REQUEST = "invalid_request"
+
+
+@dataclass
+class SecurityDecision:
+    """Security decision result"""
+    access_result: AccessResult
+    client_ip: str
+    phase_id: int
+    timestamp: float
+    
+    # Decision details
+    security_level: Optional[str] = None
+    reason: Optional[str] = None
+    rate_limit_remaining: Optional[int] = None
+    lockout_until: Optional[float] = None
+    
+    # Validation results
+    ip_allowed: bool = True
+    request_valid: bool = True
+    phase_access_allowed: bool = True
+    
+    # Additional context
+    user_agent: Optional[str] = None
+    request_path: Optional[str] = None
+    headers: Optional[Dict[str, str]] = None
 
 
 class SecurityViolation(Exception):
@@ -490,4 +516,80 @@ def validate_request_security(request_path: str, request_params: Dict[str, str],
                             client=None) -> bool:
     """Quick function to validate request security"""
     security_manager = get_security_manager(client)
-    return security_manager.validate_request(request_path, request_params) 
+    return security_manager.validate_request(request_path, request_params)
+
+def evaluate_security_decision(client_ip: str, phase_id: int, request_path: str = None,
+                             user_agent: str = None, headers: Dict[str, str] = None,
+                             client=None) -> SecurityDecision:
+    """Evaluate comprehensive security decision"""
+    security_manager = get_security_manager(client)
+    timestamp = time.time()
+    
+    # Create base decision
+    decision = SecurityDecision(
+        access_result=AccessResult.DENIED,  # Start with denied, upgrade if all checks pass
+        client_ip=client_ip,
+        phase_id=phase_id,
+        timestamp=timestamp,
+        user_agent=user_agent,
+        request_path=request_path,
+        headers=headers
+    )
+    
+    try:
+        # Get security level for phase
+        decision.security_level = security_manager._get_security_level(phase_id).name
+        
+        # Check IP access
+        ip_access_result = security_manager.validate_ip_access(client_ip, phase_id)
+        decision.ip_allowed = (ip_access_result == AccessResult.GRANTED)
+        
+        if ip_access_result == AccessResult.RATE_LIMITED:
+            decision.access_result = AccessResult.RATE_LIMITED
+            decision.reason = "Rate limit exceeded"
+            return decision
+        
+        if ip_access_result == AccessResult.DENIED:
+            decision.access_result = AccessResult.DENIED
+            decision.reason = "IP address not allowed"
+            return decision
+        
+        # Check request validation if provided
+        if request_path:
+            decision.request_valid = security_manager.validate_request(request_path, {})
+            if not decision.request_valid:
+                decision.access_result = AccessResult.INVALID_REQUEST
+                decision.reason = "Invalid request format"
+                return decision
+        
+        # Check phase-specific access
+        if request_path and '/dashboard' in request_path:
+            decision.phase_access_allowed = security_manager.validate_phase_access(phase_id, 'lan_dashboard')
+        else:
+            decision.phase_access_allowed = True
+        
+        if not decision.phase_access_allowed:
+            decision.access_result = AccessResult.DENIED
+            decision.reason = "Dashboard access not allowed in current phase"
+            return decision
+        
+        # All checks passed
+        decision.access_result = AccessResult.GRANTED
+        decision.reason = "All security checks passed"
+        
+        return decision
+        
+    except Exception as e:
+        decision.access_result = AccessResult.DENIED
+        decision.reason = f"Security evaluation error: {str(e)}"
+        return decision
+
+def get_security_manager(client=None):
+    """Get or create security manager singleton"""
+    global _security_manager
+    if _security_manager is None:
+        _security_manager = SecurityManager(client)
+    return _security_manager
+
+# Global security manager instance
+_security_manager = None 

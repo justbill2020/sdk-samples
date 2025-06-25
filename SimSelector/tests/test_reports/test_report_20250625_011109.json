@@ -1,0 +1,77 @@
+{
+  "timestamp": "2025-06-25T01:11:09.120356",
+  "summary": {
+    "total_tests": 65,
+    "total_failures": 5,
+    "total_errors": 0,
+    "total_skipped": 0,
+    "success_rate": 92.3076923076923,
+    "execution_time": 10.542994976043701,
+    "passed": false
+  },
+  "modules": {
+    "test_sim_manager": {
+      "tests_run": 25,
+      "failures": 4,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 84.0,
+      "execution_time": 10.034782886505127,
+      "failure_details": [
+        {
+          "test": "test_active_sim_removal_no_alternatives (test_sim_manager.TestSIMManager.test_active_sim_removal_no_alternatives)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_sim_manager.py\", line 303, in test_active_sim_removal_no_alternatives\n    mock_error_handler.handle_error.assert_called_once()\n  File \"/Users/bill/anaconda3/lib/python3.12/unittest/mock.py\", line 928, in assert_called_once\n    raise AssertionError(msg)\nAssertionError: Expected 'handle_error' to have been called once. Called 0 times.\n"
+        },
+        {
+          "test": "test_no_sims_detected_scenario (test_sim_manager.TestSIMManager.test_no_sims_detected_scenario)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_sim_manager.py\", line 112, in test_no_sims_detected_scenario\n    self.assertIn(\"No SIM cards detected\", result[\"warnings\"])\nAssertionError: 'No SIM cards detected' not found in ['No SIM cards detected - system cannot operate']\n"
+        },
+        {
+          "test": "test_single_sim_detection (test_sim_manager.TestSIMManager.test_single_sim_detection)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_sim_manager.py\", line 155, in test_single_sim_detection\n    self.assertIn(\"Single SIM configuration\", result[\"warnings\"])\nAssertionError: 'Single SIM configuration' not found in ['Single SIM configuration - no failover capability']\n"
+        },
+        {
+          "test": "test_multiple_sims_scenario (test_sim_manager.TestSIMManagerEdgeCases.test_multiple_sims_scenario)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_sim_manager.py\", line 520, in test_multiple_sims_scenario\n    self.assertIn(\"Unusual configuration\", result[\"warnings\"])\nAssertionError: 'Unusual configuration' not found in ['Unusual configuration: 3 SIMs detected', 'Slot 1: No network connection', 'Slot 2: No network connection']\n"
+        }
+      ],
+      "error_details": []
+    },
+    "test_error_handler": {
+      "tests_run": 25,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 96.0,
+      "execution_time": 0.0574948787689209,
+      "failure_details": [
+        {
+          "test": "test_error_id_uniqueness (test_error_handler.TestSimSelectorError.test_error_id_uniqueness)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_error_handler.py\", line 154, in test_error_id_uniqueness\n    self.assertNotEqual(error1.error_id, error2.error_id)\nAssertionError: 'UNKNOWN_1750831868' == 'UNKNOWN_1750831868'\n"
+        }
+      ],
+      "error_details": []
+    },
+    "test_dashboard_server": {
+      "tests_run": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 100.0,
+      "execution_time": 0.006632089614868164,
+      "failure_details": [],
+      "error_details": []
+    },
+    "test_firewall_manager": {
+      "tests_run": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 100.0,
+      "execution_time": 0.00020194053649902344,
+      "failure_details": [],
+      "error_details": []
+    }
+  },
+  "coverage": {}
+}

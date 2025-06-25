@@ -61,6 +61,15 @@ class BandwidthQuality(Enum):
     CRITICAL = "critical"     # <0.1 Mbps
 
 
+class TestResult(Enum):
+    """Network test result status"""
+    PASS = "pass"
+    FAIL = "fail"
+    WARNING = "warning" 
+    ERROR = "error"
+    TIMEOUT = "timeout"
+
+
 @dataclass
 class TrafficMetrics:
     """Traffic performance metrics"""
@@ -130,6 +139,32 @@ class PerformanceAlert:
     metrics: Optional[TrafficMetrics] = None
     resolved: bool = False
     resolution_time: Optional[float] = None
+
+
+@dataclass
+class NetworkTest:
+    """Network test configuration and results"""
+    test_type: str
+    interface: str
+    timestamp: float
+    duration: Optional[float] = None
+    
+    # Test parameters
+    target_host: Optional[str] = None
+    expected_bandwidth: Optional[float] = None
+    timeout: Optional[int] = None
+    
+    # Test results
+    result: TestResult = TestResult.ERROR
+    bandwidth: Optional[float] = None
+    latency: Optional[float] = None
+    packet_loss: Optional[float] = None
+    error_message: Optional[str] = None
+    
+    # Additional metrics
+    jitter: Optional[float] = None
+    download_speed: Optional[float] = None
+    upload_speed: Optional[float] = None
 
 
 class TrafficValidator:
@@ -823,7 +858,7 @@ class TrafficValidator:
 _traffic_validator = None
 
 def get_traffic_validator(client=None):
-    """Get or create traffic validator instance"""
+    """Get or create traffic validator singleton"""
     global _traffic_validator
     if _traffic_validator is None:
         _traffic_validator = TrafficValidator(client)
@@ -835,6 +870,63 @@ def validate_traffic_quality(interface: str, client=None) -> Dict[str, Any]:
     return validator.validate_traffic_quality(interface)
 
 def get_traffic_status(client=None) -> Dict[str, Any]:
-    """Get traffic status"""
+    """Get comprehensive traffic status"""
     validator = get_traffic_validator(client)
-    return validator.get_traffic_status() 
+    return validator.get_traffic_status()
+
+def validate_network_connectivity(interface: str, client=None) -> NetworkTest:
+    """Validate network connectivity for interface"""
+    validator = get_traffic_validator(client)
+    
+    test = NetworkTest(
+        test_type="connectivity",
+        interface=interface,
+        timestamp=time.time()
+    )
+    
+    try:
+        # Test basic connectivity
+        connectivity_result = validator.test_connectivity(interface)
+        
+        if connectivity_result.get("success", False):
+            test.result = TestResult.PASS
+            test.latency = connectivity_result.get("latency")
+        else:
+            test.result = TestResult.FAIL
+            test.error_message = connectivity_result.get("error", "Connectivity test failed")
+            
+    except Exception as e:
+        test.result = TestResult.ERROR
+        test.error_message = str(e)
+    
+    return test
+
+def run_speed_test(interface: str, client=None) -> NetworkTest:
+    """Run speed test for interface"""
+    validator = get_traffic_validator(client)
+    
+    test = NetworkTest(
+        test_type="speed_test",
+        interface=interface,
+        timestamp=time.time()
+    )
+    
+    try:
+        # Run speed test
+        speed_result = validator.run_speed_test(interface)
+        
+        if speed_result and speed_result.get("success", False):
+            test.result = TestResult.PASS
+            test.download_speed = speed_result.get("download_speed")
+            test.upload_speed = speed_result.get("upload_speed")
+            test.latency = speed_result.get("latency")
+            test.bandwidth = max(test.download_speed or 0, test.upload_speed or 0)
+        else:
+            test.result = TestResult.FAIL
+            test.error_message = speed_result.get("error", "Speed test failed") if speed_result else "Speed test failed"
+            
+    except Exception as e:
+        test.result = TestResult.ERROR
+        test.error_message = str(e)
+    
+    return test 

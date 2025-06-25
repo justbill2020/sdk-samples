@@ -1,430 +1,584 @@
-# SimSelector Hardware Testing Guide
+# Hardware Testing Guide - SimSelector v2.6.0
 
-**Safe & Systematic Testing on Real Cradlepoint Hardware**
+This guide provides comprehensive procedures for testing SimSelector on real Cradlepoint hardware devices.
 
-## 🎯 Overview
+## Table of Contents
 
-This guide provides a systematic approach to validate SimSelector 2.5.9 on actual Cradlepoint hardware after comprehensive mock testing. It includes staging procedures, monitoring tools, and safety protocols to ensure reliable deployment.
+1. [Testing Prerequisites](#testing-prerequisites)
+2. [Test Environment Setup](#test-environment-setup)
+3. [Hardware Configuration Tests](#hardware-configuration-tests)
+4. [SIM Card Testing](#sim-card-testing)
+5. [Network Configuration Testing](#network-configuration-testing)
+6. [Performance Testing](#performance-testing)
+7. [Security Testing](#security-testing)
+8. [Failover and Recovery Testing](#failover-and-recovery-testing)
+9. [Integration Testing](#integration-testing)
+10. [Troubleshooting Guide](#troubleshooting-guide)
 
-## ⚠️ Prerequisites
+## Testing Prerequisites
 
-### Hardware Requirements
-- **Cradlepoint Router**: Any NCOS-compatible device (IBR1700, IBR900, etc.)
-- **SIM Cards**: Minimum 2 active SIMs with data plans
-- **Antennas**: Properly connected cellular antennas
-- **Network**: Stable management network connection
+### Required Hardware
+- Cradlepoint router with cellular modem (IBR1700, IBR900, AER series)
+- Minimum 2 SIM cards from different carriers (recommended: Verizon, AT&T, T-Mobile)
+- Ethernet cable for management access
+- Computer for testing and monitoring
+- Network connectivity for internet access
 
 ### Software Requirements
-- **NCM Access**: Active NetCloud Manager account with device access
-- **SSH/Console**: Direct device access for troubleshooting
-- **Monitoring Tools**: Log collection and analysis capability
+- NetCloud Manager access
+- SSH client (Terminal, PuTTY, etc.)
+- Web browser for dashboard access
+- Speed test applications (speedtest-cli, iperf3)
+- Network monitoring tools
 
-### Pre-Testing Validation
+### SIM Card Requirements
+- Active cellular data plans
+- Different carriers for redundancy testing
+- Known ICCID/IMSI information
+- PIN codes (if applicable)
+
+## Test Environment Setup
+
+### 1. Initial Router Configuration
+
 ```bash
-# Run all mock tests first
-python tests/test_runner.py all
+# SSH into router
+ssh admin@192.168.1.1
 
-# Validate mock data accuracy
-python tests/mock_data_validator.py --all
-```
+# Verify router model and firmware
+status system model
+status system firmware
 
-## 🔧 Staged Testing Approach
-
-### Stage 1: Lab Environment Testing
-**Goal**: Validate basic functionality in controlled environment
-
-#### Setup
-1. **Controlled Network**: Test in lab with known good connectivity
-2. **Backup Configuration**: Save current router configuration
-3. **Monitoring**: Set up continuous log monitoring
-4. **SIM Cards**: Use test SIMs with adequate data allowances
-
-#### Test Procedure
-```bash
-# 1. Deploy application to test device
-# Upload SimSelector package via NCM
-
-# 2. Enable detailed logging
-# Router CLI: config system logging level debug
-
-# 3. Monitor initial boot cycle
-# NCM: Monitor > Logs > Application Logs
-
-# 4. Trigger validation phase manually
-# NCM: Set device description to "start"
-
-# 5. Monitor validation results
-# Look for staging feedback in description field
-```
-
-#### Expected Results
-- ✅ SIM detection within 30 seconds
-- ✅ Staging feedback appears in description field
-- ✅ Signal quality classification accurate
-- ✅ No application crashes or timeouts
-
-### Stage 2: Signal Quality Validation
-**Goal**: Verify signal strength measurements and classifications
-
-#### Test Matrix
-| Test Case | RSRP Range | Expected Classification | Test Method |
-|-----------|------------|------------------------|-------------|
-| Excellent Signal | -50 to -70 dBm | Good Signal | Close to tower |
-| Good Signal | -70 to -90 dBm | Good Signal | Normal distance |
-| Weak Signal | -90 to -105 dBm | Weak Signal | Far from tower |
-| Bad Signal | < -105 dBm | Bad Signal (Check Antenna) | Antenna disconnected |
-
-#### Validation Commands
-```bash
-# Check actual RSRP values via CLI
-status cellular module mdm-sim1 diagnostics
-
-# Compare with SimSelector classification
-# Check device description field for staging results
-```
-
-### Stage 3: Speed Test Validation
-**Goal**: Verify Ookla speed test integration and accuracy
-
-#### Pre-Test Checks
-- ✅ Internet connectivity on each SIM
-- ✅ Adequate data allowances (>1GB per SIM)
-- ✅ Speedtest.net accessibility
-- ✅ No data throttling or carrier restrictions
-
-#### Speed Test Monitoring
-```bash
-# Monitor speed test progress
-tail -f /var/log/application.log | grep SimSelector
-
-# Check for timeout errors
-grep "timeout" /var/log/application.log
-
-# Verify speed test results
-# Compare with manual speed tests using speedtest-cli
-```
-
-#### Validation Criteria
-- **Download Speeds**: Within 20% of manual speed tests
-- **Upload Speeds**: Within 30% of manual speed tests (more variable)
-- **Test Duration**: Complete within 5 minutes per SIM
-- **No Timeouts**: All tests should complete successfully
-
-### Stage 4: Performance Phase Testing
-**Goal**: Validate comprehensive testing and SIM prioritization
-
-#### Test Scenarios
-1. **Normal Performance**: All SIMs meet minimum thresholds
-2. **Below Minimums**: Some SIMs below 5G/LTE thresholds
-3. **Mixed Technologies**: 5G and LTE SIMs together
-4. **Similar Speeds**: Test tie-breaking logic
-
-#### Monitoring Points
-```bash
-# Watch for phase transitions
-grep "phase" /var/log/application.log
-
-# Monitor SIM prioritization
-grep "Prioritizing SIMs" /var/log/application.log
-
-# Check WAN rule configuration
-status wan rules2
-```
-
-### Stage 5: Field Testing
-**Goal**: Validate in real deployment conditions
-
-#### Deployment Conditions
-- **Remote Locations**: Test with varying signal conditions
-- **Multiple Carriers**: Use SIMs from different operators
-- **Production Traffic**: Monitor with real user traffic
-- **Extended Duration**: Run for multiple days
-
-#### Safety Protocols
-1. **Rollback Plan**: Keep original configuration backup
-2. **Remote Access**: Ensure out-of-band management access
-3. **Monitoring**: Continuous health monitoring
-4. **Support Contact**: 24/7 support availability during testing
-
-## 📊 Testing Tools & Scripts
-
-### Real-Time Monitoring Script
-```bash
-#!/bin/bash
-# monitor_simselector.sh - Real-time SimSelector monitoring
-
-echo "🔍 SimSelector Hardware Testing Monitor"
-echo "======================================"
-
-while true; do
-    echo -n "$(date '+%H:%M:%S') - "
-    
-    # Check application status
-    if pgrep -f SimSelector > /dev/null; then
-        echo -n "✅ Running - "
-    else
-        echo -n "❌ Stopped - "
-    fi
-    
-    # Check current phase
-    PHASE=$(grep "Current phase:" /var/log/application.log | tail -1 | cut -d: -f3 | tr -d ' ')
-    echo -n "Phase: ${PHASE:-Unknown} - "
-    
-    # Check description field
-    DESC=$(cat /config/system/desc 2>/dev/null)
-    echo "Desc: ${DESC:0:50}..."
-    
-    sleep 30
-done
-```
-
-### Performance Comparison Tool
-```python
-#!/usr/bin/env python3
-# compare_speeds.py - Compare SimSelector vs manual speed tests
-
-import subprocess
-import json
-import time
-
-def manual_speed_test(interface):
-    """Run manual speed test on specific interface."""
-    try:
-        cmd = f"speedtest-cli --interface {interface} --json"
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=300)
-        return json.loads(result.stdout)
-    except Exception as e:
-        print(f"Manual speed test failed: {e}")
-        return None
-
-def get_simselector_results():
-    """Extract SimSelector results from logs."""
-    try:
-        with open('/var/log/application.log', 'r') as f:
-            lines = f.readlines()
-        
-        # Find most recent results
-        for line in reversed(lines):
-            if 'DL:' in line and 'UL:' in line:
-                return parse_simselector_line(line)
-        return None
-    except Exception as e:
-        print(f"Failed to get SimSelector results: {e}")
-        return None
-
-def compare_results():
-    """Compare SimSelector vs manual results."""
-    print("🔬 Speed Test Comparison")
-    print("========================")
-    
-    # Get interface list
-    interfaces = ['wwan0', 'wwan1']  # Adjust as needed
-    
-    for iface in interfaces:
-        print(f"\n📡 Testing {iface}:")
-        
-        # Manual test
-        manual = manual_speed_test(iface)
-        if manual:
-            manual_dl = manual['download'] / 1_000_000  # Convert to Mbps
-            manual_ul = manual['upload'] / 1_000_000
-            print(f"  Manual: ↓{manual_dl:.1f} Mbps ↑{manual_ul:.1f} Mbps")
-        
-        # SimSelector results would be extracted from logs
-        # This is a simplified version
-        
-if __name__ == "__main__":
-    compare_results()
-```
-
-## 🚨 Safety & Recovery Procedures
-
-### Automatic Rollback
-```bash
-#!/bin/bash
-# rollback_simselector.sh - Emergency rollback script
-
-echo "🚨 SimSelector Emergency Rollback"
-echo "================================="
-
-# Stop SimSelector
-echo "Stopping SimSelector..."
-killall -9 python3 2>/dev/null
-
-# Clear description field
-echo "Clearing description field..."
-echo "" > /config/system/desc
-
-# Restore WAN rules backup
-if [ -f /tmp/wan_rules_backup.json ]; then
-    echo "Restoring WAN rules..."
-    cp /tmp/wan_rules_backup.json /config/wan/rules2.json
-fi
-
-# Restart networking
-echo "Restarting network services..."
-systemctl restart networking
-
-echo "✅ Rollback complete"
-```
-
-### Health Check Script
-```bash
-#!/bin/bash
-# health_check.sh - Automated health monitoring
-
-check_connectivity() {
-    ping -c 3 8.8.8.8 > /dev/null 2>&1
-    return $?
-}
-
-check_application() {
-    pgrep -f SimSelector > /dev/null
-    return $?
-}
-
-check_memory() {
-    MEM_USAGE=$(ps aux | grep SimSelector | awk '{sum+=$6} END {print sum/1024}')
-    if (( $(echo "$MEM_USAGE > 100" | bc -l) )); then
-        return 1
-    fi
-    return 0
-}
-
-# Main health check
-echo "🏥 SimSelector Health Check"
-echo "============================"
-
-HEALTHY=true
-
-if ! check_connectivity; then
-    echo "❌ No internet connectivity"
-    HEALTHY=false
-fi
-
-if ! check_application; then
-    echo "❌ SimSelector not running"
-    HEALTHY=false
-fi
-
-if ! check_memory; then
-    echo "⚠️ High memory usage detected"
-fi
-
-if [ "$HEALTHY" = true ]; then
-    echo "✅ All systems healthy"
-    exit 0
-else
-    echo "🚨 Health check failed - manual intervention required"
-    exit 1
-fi
-```
-
-## 📋 Testing Checklist
-
-### Pre-Deployment
-- [ ] Mock tests all pass (12/12 scenarios)
-- [ ] Mock data validation clean
-- [ ] Hardware requirements verified
-- [ ] Backup configuration saved
-- [ ] Test SIMs activated with data
-- [ ] Monitoring tools configured
-
-### Validation Phase Testing
-- [ ] SIM detection successful
-- [ ] Signal strength accurate
-- [ ] Staging feedback correct
-- [ ] No application crashes
-- [ ] State management working
-
-### Performance Phase Testing
-- [ ] Speed tests complete
-- [ ] Results within expected ranges
-- [ ] SIM prioritization correct
-- [ ] WAN rule configuration valid
-- [ ] Final results accurate
-
-### Production Deployment
-- [ ] Field testing successful
-- [ ] Extended duration stable
-- [ ] Performance meets requirements
-- [ ] Support procedures documented
-- [ ] Rollback tested and ready
-
-## 🔍 Common Issues & Solutions
-
-### Issue: SIM Detection Failures
-**Symptoms**: "Only 1 SIM found" errors
-**Diagnosis**:
-```bash
-status cellular modules
+# Check cellular modem status
 status wan devices
 ```
-**Solutions**:
-- Check SIM card seating
-- Verify carrier activation
-- Check for NOSIM errors
-- Wait 60 seconds for detection
 
-### Issue: Speed Test Timeouts
-**Symptoms**: "Error accessing speedtest config page"
+### 2. Install SimSelector
+
+```bash
+# Upload SimSelector package
+scp SimSelector.tar.gz admin@192.168.1.1:/var/lib/application/
+
+# Install via NetCloud or local interface
+# Enable application in router configuration
+```
+
+### 3. Baseline Network Testing
+
+```bash
+# Test initial connectivity
+ping -c 5 8.8.8.8
+
+# Run baseline speed test
+speedtest-cli --simple
+
+# Check interface status
+status system network interfaces
+```
+
+## Hardware Configuration Tests
+
+### Test HC-001: Router Hardware Detection
+**Objective**: Verify SimSelector correctly detects router hardware
+
+```bash
+# Start SimSelector with verbose logging
+python3 SimSelector.py --verbose --log-level DEBUG
+
+# Expected: Correct detection of:
+# - Router model
+# - Cellular modem type
+# - Number of SIM slots
+# - Available network interfaces
+```
+
+**Success Criteria**:
+- ✅ Router model correctly identified
+- ✅ Cellular modem detected and accessible
+- ✅ All SIM slots enumerated
+- ✅ Network interfaces discovered
+
+### Test HC-002: SIM Slot Detection
+**Objective**: Verify detection of all available SIM slots
+
+```bash
+# Check SIM slot status
+python3 -c "from sim_manager import get_sim_manager; print(get_sim_manager().detect_sim_configuration())"
+```
+
+**Success Criteria**:
+- ✅ All physical SIM slots detected
+- ✅ SIM presence/absence correctly reported
+- ✅ SIM slot numbering matches hardware
+
+### Test HC-003: Temperature Monitoring
+**Objective**: Verify thermal monitoring functionality
+
+```bash
+# Monitor modem temperature
+watch -n 5 "status wan devices | grep temperature"
+
+# Run SimSelector thermal monitoring
+python3 -c "from hardware_monitor import get_temperature_status; print(get_temperature_status())"
+```
+
+**Success Criteria**:
+- ✅ Temperature readings within normal range (20-70°C)
+- ✅ Temperature monitoring alerts functional
+- ✅ Thermal shutdown protection works
+
+## SIM Card Testing
+
+### Test SC-001: Single SIM Configuration
+**Objective**: Test SimSelector with single SIM
+
+**Setup**:
+1. Insert one SIM card in slot 1
+2. Leave slot 2 empty
+3. Start SimSelector
+
+```bash
+# Run single SIM test
+python3 SimSelector.py --test-mode single-sim
+```
+
+**Expected Behavior**:
+- ✅ Single SIM detected and activated
+- ✅ Single SIM mode enabled
+- ✅ Dashboard accessible on cellular network
+- ✅ Performance monitoring active
+
+### Test SC-002: Dual SIM Configuration
+**Objective**: Test SimSelector with dual SIM setup
+
+**Setup**:
+1. Insert SIM cards in both slots
+2. Use different carriers if possible
+3. Start SimSelector
+
+```bash
+# Run dual SIM test
+python3 SimSelector.py --test-mode dual-sim
+```
+
+**Expected Behavior**:
+- ✅ Both SIMs detected
+- ✅ Primary SIM selected based on signal quality
+- ✅ Secondary SIM available for failover
+- ✅ Carrier preference logic applied
+
+### Test SC-003: SIM Hot-Swap Testing
+**Objective**: Verify hot-swap detection and handling
+
+**Procedure**:
+1. Start with SIM in slot 1 active
+2. Remove SIM from slot 1 while system running
+3. Insert SIM in slot 2
+4. Monitor system response
+
+```bash
+# Monitor SIM changes
+tail -f /var/log/SimSelector.log | grep -i "hot-swap\|sim.*change"
+```
+
+**Expected Behavior**:
+- ✅ SIM removal detected within 30 seconds
+- ✅ System switches to available SIM
+- ✅ No service interruption
+- ✅ Hot-swap events logged
+
+### Test SC-004: Signal Quality Assessment
+**Objective**: Test signal quality evaluation
+
+**Procedure**:
+1. Move router to different locations
+2. Monitor RSRP values
+3. Verify signal quality calculations
+
+```bash
+# Check signal quality
+python3 -c "from sim_manager import get_sim_manager; print(get_sim_manager().get_signal_quality())"
+```
+
+**Success Criteria**:
+- ✅ RSRP values accurately reported
+- ✅ Signal bars calculation correct
+- ✅ Poor signal warnings triggered
+- ✅ Carrier switching on poor signal
+
+## Network Configuration Testing
+
+### Test NC-001: IP Address Management
+**Objective**: Test dashboard IP selection and conflict resolution
+
+```bash
+# Test IP configuration
+python3 -c "from ip_manager import get_ip_manager; print(get_ip_manager().select_dashboard_ip())"
+
+# Check for IP conflicts
+nmap -sn 192.168.1.0/24
+```
+
+**Success Criteria**:
+- ✅ Dashboard IP automatically selected
+- ✅ No IP conflicts detected
+- ✅ IP accessible from local network
+- ✅ DHCP reservation created
+
+### Test NC-002: Firewall Configuration
+**Objective**: Verify firewall rules properly configured
+
+```bash
+# Check firewall rules
+iptables -L -n | grep SimSelector
+
+# Test dashboard access
+curl -I http://192.168.1.50:8080
+```
+
+**Success Criteria**:
+- ✅ Dashboard port accessible
+- ✅ Management ports secured
+- ✅ Firewall rules properly applied
+- ✅ Security policies enforced
+
+### Test NC-003: Network Interface Monitoring
+**Objective**: Test network interface detection and monitoring
+
+```bash
+# Monitor network interfaces
+python3 -c "from network_manager import get_network_manager; print(get_network_manager().get_interfaces())"
+```
+
+**Success Criteria**:
+- ✅ All interfaces detected
+- ✅ Interface status accurate
+- ✅ Traffic statistics collected
+- ✅ Interface changes detected
+
+## Performance Testing
+
+### Test PT-001: Speed Test Validation
+**Objective**: Verify speed test accuracy and reliability
+
+**Procedure**:
+1. Run multiple speed tests
+2. Compare with external tools
+3. Test on different carriers
+
+```bash
+# SimSelector speed test
+python3 -c "from traffic_validator import run_speed_test; print(run_speed_test())"
+
+# External validation
+speedtest-cli --simple
+iperf3 -c iperf.scottlinux.com
+```
+
+**Success Criteria**:
+- ✅ Speed test results within 10% of external tools
+- ✅ Consistent results across multiple runs
+- ✅ Tests complete within 60 seconds
+- ✅ Results properly logged
+
+### Test PT-002: Carrier Performance Comparison
+**Objective**: Test performance comparison between carriers
+
+**Test Matrix**:
+| Carrier | Technology | Expected Speed | Test Location |
+|---------|------------|----------------|---------------|
+| Verizon | 5G/LTE     | >25 Mbps       | Location A    |
+| AT&T    | LTE        | >15 Mbps       | Location A    |
+| T-Mobile| 5G/LTE     | >30 Mbps       | Location A    |
+
+```bash
+# Automated carrier testing
+python3 tests/carrier_performance_test.py --all-carriers --location "Test Lab"
+```
+
+### Test PT-003: Load Testing
+**Objective**: Test system performance under load
+
+```bash
+# Generate traffic load
+iperf3 -c test-server.com -t 300 -P 10
+
+# Monitor system performance
+python3 -c "from system_monitor import get_system_stats; print(get_system_stats())"
+```
+
+**Success Criteria**:
+- ✅ System stable under load
+- ✅ Dashboard responsive during testing
+- ✅ SIM switching functional under load
+- ✅ No memory leaks detected
+
+## Security Testing
+
+### Test ST-001: Authentication Testing
+**Objective**: Verify dashboard authentication
+
+```bash
+# Test unauthenticated access
+curl http://192.168.1.50:8080/admin
+
+# Test with credentials
+curl -u admin:password http://192.168.1.50:8080/admin
+```
+
+**Success Criteria**:
+- ✅ Unauthenticated access blocked
+- ✅ Valid credentials accepted
+- ✅ Session management working
+- ✅ Password security enforced
+
+### Test ST-002: Network Security
+**Objective**: Test network security controls
+
+```bash
+# Port scan
+nmap -sS 192.168.1.50
+
+# Vulnerability scan
+nmap --script vuln 192.168.1.50
+```
+
+**Success Criteria**:
+- ✅ Only required ports open
+- ✅ No vulnerable services exposed
+- ✅ TLS/SSL properly configured
+- ✅ Security headers present
+
+### Test ST-003: Data Protection
+**Objective**: Verify sensitive data protection
+
+**Checks**:
+- ✅ SIM details not exposed in logs
+- ✅ Credentials properly encrypted
+- ✅ API endpoints secured
+- ✅ Error messages don't leak info
+
+## Failover and Recovery Testing
+
+### Test FR-001: SIM Failover Testing
+**Objective**: Test automatic SIM failover
+
+**Procedure**:
+1. Start with primary SIM active
+2. Simulate primary SIM failure
+3. Monitor failover process
+4. Restore primary SIM
+
+```bash
+# Simulate SIM failure
+python3 -c "from sim_manager import get_sim_manager; get_sim_manager().simulate_sim_failure(1)"
+
+# Monitor failover
+tail -f /var/log/SimSelector.log | grep -i failover
+```
+
+**Success Criteria**:
+- ✅ Failover triggered within 60 seconds
+- ✅ Secondary SIM activated
+- ✅ Service continuity maintained
+- ✅ Automatic recovery on primary restore
+
+### Test FR-002: Network Recovery Testing
+**Objective**: Test recovery from network failures
+
+**Procedure**:
+1. Disconnect ethernet interface
+2. Simulate cellular network failure
+3. Monitor recovery process
+
+```bash
+# Simulate network failure
+sudo ifdown eth0
+
+# Monitor recovery
+python3 -c "from error_handler import get_error_handler; print(get_error_handler().get_status())"
+```
+
+**Success Criteria**:
+- ✅ Network failure detected
+- ✅ Alternative connectivity attempted
+- ✅ Error recovery mechanisms triggered
+- ✅ Service restored automatically
+
+### Test FR-003: System Recovery Testing
+**Objective**: Test system recovery after crashes
+
+**Procedure**:
+1. Simulate application crash
+2. Test restart procedures
+3. Verify state recovery
+
+```bash
+# Test application restart
+sudo systemctl restart simselector
+
+# Check recovery status
+python3 -c "from state_manager import get_state; print(get_state())"
+```
+
+**Success Criteria**:
+- ✅ Application restarts automatically
+- ✅ Previous state recovered
+- ✅ SIM selection maintained
+- ✅ Dashboard connectivity restored
+
+## Integration Testing
+
+### Test IT-001: NetCloud Integration
+**Objective**: Test integration with NetCloud Manager
+
+**Procedure**:
+1. Configure NetCloud monitoring
+2. Verify data reporting
+3. Test remote management
+
+**Success Criteria**:
+- ✅ Device status reported to NetCloud
+- ✅ Performance data uploaded
+- ✅ Remote configuration possible
+- ✅ Alerts properly forwarded
+
+### Test IT-002: Third-Party Integration
+**Objective**: Test integration with external systems
+
+```bash
+# Test SNMP integration
+snmpwalk -v2c -c public 192.168.1.50
+
+# Test syslog integration
+logger "SimSelector test message"
+```
+
+**Success Criteria**:
+- ✅ SNMP data available
+- ✅ Syslog messages forwarded
+- ✅ API endpoints functional
+- ✅ Data formats correct
+
+## Troubleshooting Guide
+
+### Common Issues and Solutions
+
+#### Issue: SIM Not Detected
+**Symptoms**: SIM card present but not recognized
+
 **Diagnosis**:
 ```bash
-ping -I wwan0 www.speedtest.net
-nslookup speedtest.net
-```
-**Solutions**:
-- Check internet connectivity per SIM
-- Verify DNS resolution
-- Test manual speedtest-cli
-- Check carrier APN settings
+# Check modem status
+status wan devices
 
-### Issue: Incorrect Signal Classification
-**Symptoms**: Signal quality doesn't match staging feedback
+# Check SIM slot status
+python3 -c "from sim_manager import get_sim_manager; print(get_sim_manager().debug_sim_slots())"
+```
+
+**Solutions**:
+1. Verify SIM card properly seated
+2. Check SIM card compatibility
+3. Restart cellular modem
+4. Check for SIM lock/PIN
+
+#### Issue: Poor Performance
+**Symptoms**: Slow speeds or connection drops
+
 **Diagnosis**:
 ```bash
-status cellular module mdm-sim1 diagnostics | grep RSRP
+# Check signal quality
+python3 -c "from sim_manager import get_sim_manager; print(get_sim_manager().get_signal_quality())"
+
+# Check network congestion
+ping -c 10 8.8.8.8
 ```
-**Solutions**:
-- Verify antenna connections
-- Check for RF interference
-- Compare with carrier signal maps
-- Validate RSRP measurement methodology
 
-### Issue: Performance Inconsistencies
-**Symptoms**: Results vary significantly between runs
+**Solutions**:
+1. Improve antenna positioning
+2. Switch to different carrier
+3. Check for network congestion
+4. Update carrier settings
+
+#### Issue: Dashboard Inaccessible
+**Symptoms**: Cannot access web dashboard
+
 **Diagnosis**:
-- Check network load and time of day
-- Monitor carrier throttling
-- Verify data plan status
-- Check for background traffic
+```bash
+# Check dashboard service
+sudo systemctl status simselector
+
+# Check network configuration
+python3 -c "from ip_manager import get_ip_manager; print(get_ip_manager().get_status())"
+```
 
 **Solutions**:
-- Run tests during off-peak hours
-- Use dedicated test APNs if available
-- Monitor concurrent device usage
-- Implement result averaging
+1. Restart dashboard service
+2. Check IP configuration
+3. Verify firewall rules
+4. Check network connectivity
 
-## 📞 Support & Escalation
+### Performance Benchmarks
 
-### Level 1: Local Troubleshooting
-- Check logs: `/var/log/application.log`
-- Verify connectivity: `ping`, `traceroute`
-- Monitor resources: `top`, `free`, `df`
-- Test manually: `speedtest-cli`
+#### Expected Performance Ranges
 
-### Level 2: Remote Diagnosis
-- Enable debug logging
-- Collect full system logs
-- Run diagnostic scripts
-- Compare with mock test results
+| Technology | Download Speed | Upload Speed | Latency |
+|------------|---------------|--------------|---------|
+| 5G mmWave  | 100-1000 Mbps| 50-100 Mbps | <20ms   |
+| 5G Sub-6   | 50-200 Mbps  | 10-50 Mbps  | <30ms   |
+| LTE Cat 20 | 25-100 Mbps  | 5-25 Mbps   | <50ms   |
+| LTE Cat 12 | 10-50 Mbps   | 2-10 Mbps   | <75ms   |
 
-### Level 3: Development Support
-- Provide detailed reproduction steps
-- Include log files and configuration
-- Document environmental conditions
-- Share performance comparison data
+#### Signal Quality Thresholds
+
+| RSRP Range | Quality | Expected Performance |
+|------------|---------|---------------------|
+| > -70 dBm  | Excellent | Full speed         |
+| -70 to -85 | Good     | 80% of max speed   |
+| -85 to -100| Fair     | 50% of max speed   |
+| -100 to -115| Poor    | 25% of max speed   |
+| < -115 dBm | Very Poor| Unreliable         |
+
+### Test Report Template
+
+```markdown
+# SimSelector Hardware Test Report
+
+**Test Date**: [Date]
+**Tester**: [Name]
+**Router Model**: [Model]
+**Firmware Version**: [Version]
+**SimSelector Version**: v2.6.0
+
+## Test Summary
+- Total Tests: [X]
+- Passed: [X]
+- Failed: [X]
+- Success Rate: [X]%
+
+## Hardware Configuration
+- SIM Cards: [Number and carriers]
+- Signal Strength: [RSRP values]
+- Network Environment: [Description]
+
+## Performance Results
+- Primary SIM Speed: [Down/Up Mbps]
+- Secondary SIM Speed: [Down/Up Mbps]
+- Failover Time: [Seconds]
+- Dashboard Response: [ms]
+
+## Issues Found
+1. [Issue description and resolution]
+2. [Issue description and resolution]
+
+## Recommendations
+1. [Recommendation]
+2. [Recommendation]
+
+## Conclusion
+[Overall assessment and deployment readiness]
+```
 
 ---
 
-**Remember**: Always test thoroughly in lab before production deployment. When in doubt, roll back to known good configuration. 
+**Note**: This testing guide should be executed in a controlled environment before production deployment. All tests should pass before considering the system ready for field deployment. 

@@ -61,6 +61,37 @@ class ConnectivityStatus(Enum):
     GATEWAY_UNREACHABLE = "gateway_unreachable"
 
 
+class ConflictSeverity(Enum):
+    """IP conflict severity levels"""
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
+class ResolutionStrategy(Enum):
+    """IP conflict resolution strategies"""
+    CHANGE_IP = "change_ip"
+    CREATE_RESERVATION = "create_reservation"
+    NOTIFY_USER = "notify_user"
+    FORCE_OVERRIDE = "force_override"
+    IGNORE = "ignore"
+
+
+@dataclass
+class IPConflict:
+    """IP conflict information"""
+    ip: str
+    severity: ConflictSeverity
+    source: str
+    interface: Optional[str] = None
+    detected_at: Optional[float] = None
+    resolution: Optional[ResolutionStrategy] = None
+    resolved: bool = False
+    resolution_time: Optional[float] = None
+    error_message: Optional[str] = None
+
+
 @dataclass
 class IPConfiguration:
     """IP configuration information"""
@@ -98,6 +129,11 @@ class IPManager:
         self.connectivity_status = ConnectivityStatus.UNKNOWN
         self.monitoring_thread = None
         self.monitoring_enabled = False
+        
+        # Add conflict tracking
+        self.conflicts = []  # List of IPConflict objects
+        self.reserved_ips = set()  # Set of reserved IP addresses
+        self.dashboard_ip = None  # Current dashboard IP
         
         # Configuration
         self.dhcp_timeout = 60  # seconds
@@ -667,24 +703,182 @@ class IPManager:
             interface_type = "ethernet"
         
         return self.configure_interface_with_fallback(interface, interface_type)
+    
+    def get_network_interfaces(self) -> Dict[str, Dict[str, Any]]:
+        """Get network interface information"""
+        try:
+            if self.client:
+                response = self.client.get("status/system/network/interfaces")
+                if response and "interfaces" in response:
+                    interfaces = {}
+                    for iface in response["interfaces"]:
+                        interfaces[iface["name"]] = {
+                            "ip": iface.get("ip"),
+                            "netmask": iface.get("netmask"),
+                            "status": iface.get("status")
+                        }
+                    return interfaces
+            return {}
+        except Exception as e:
+            self._log(f"Failed to get network interfaces: {e}", "ERROR")
+            return {}
+    
+    def detect_ip_conflicts(self) -> List[IPConflict]:
+        """Detect IP conflicts from various sources"""
+        conflicts = []
+        
+        if not self.dashboard_ip:
+            return conflicts
+        
+        try:
+            # Check DHCP leases
+            if self.client:
+                dhcp_response = self.client.get("status/wan/devices")
+                if dhcp_response and "dhcp_leases" in dhcp_response:
+                    for lease in dhcp_response["dhcp_leases"]:
+                        if lease.get("ip") == self.dashboard_ip:
+                            conflicts.append(IPConflict(
+                                ip=self.dashboard_ip,
+                                severity=ConflictSeverity.HIGH,
+                                source=f"DHCP lease (MAC: {lease.get('mac', 'unknown')})",
+                                detected_at=time.time(),
+                                resolution=ResolutionStrategy.CHANGE_IP
+                            ))
+                
+                # Check ARP table
+                arp_response = self.client.get("status/system/network/arp")
+                if arp_response and "entries" in arp_response:
+                    for entry in arp_response["entries"]:
+                        if entry.get("ip") == self.dashboard_ip:
+                            conflicts.append(IPConflict(
+                                ip=self.dashboard_ip,
+                                severity=ConflictSeverity.MEDIUM,
+                                source=f"ARP table entry (MAC: {entry.get('mac', 'unknown')})",
+                                interface=entry.get("interface"),
+                                detected_at=time.time(),
+                                resolution=ResolutionStrategy.CHANGE_IP
+                            ))
+                
+                # Check static configurations
+                static_response = self.client.get("config/system/network/static")
+                if static_response and "interfaces" in static_response:
+                    for iface in static_response["interfaces"]:
+                        if iface.get("ip") == self.dashboard_ip:
+                            conflicts.append(IPConflict(
+                                ip=self.dashboard_ip,
+                                severity=ConflictSeverity.CRITICAL,
+                                source=f"Static IP configuration",
+                                interface=iface.get("name"),
+                                detected_at=time.time(),
+                                resolution=ResolutionStrategy.NOTIFY_USER
+                            ))
+            
+            self.conflicts = conflicts
+            return conflicts
+            
+        except Exception as e:
+            self._log(f"Error detecting IP conflicts: {e}", "ERROR")
+            return []
+    
+    def select_dashboard_ip(self) -> Dict[str, Any]:
+        """Select an available IP for dashboard"""
+        try:
+            # Get network interfaces to determine subnets
+            interfaces = self.get_network_interfaces()
+            
+            for interface, config in interfaces.items():
+                if config.get("ip") and config.get("netmask"):
+                    network = ipaddress.IPv4Network(f"{config['ip']}/{config['netmask']}", strict=False)
+                    
+                    # Try to find an available IP in this subnet
+                    for ip in network.hosts():
+                        ip_str = str(ip)
+                        if ip_str != config["ip"]:  # Don't use interface IP
+                            # Check if this IP would conflict
+                            old_dashboard_ip = self.dashboard_ip
+                            self.dashboard_ip = ip_str
+                            conflicts = self.detect_ip_conflicts()
+                            
+                            if not conflicts:
+                                return {
+                                    "success": True,
+                                    "ip": ip_str,
+                                    "network": str(network),
+                                    "interface": interface,
+                                    "conflicts": []
+                                }
+                            
+                            self.dashboard_ip = old_dashboard_ip
+            
+            return {
+                "success": False,
+                "error": "No available IP addresses found",
+                "conflicts": []
+            }
+            
+        except Exception as e:
+            self._log(f"Error selecting dashboard IP: {e}", "ERROR")
+            return {
+                "success": False,
+                "error": str(e),
+                "conflicts": []
+            }
 
 
 # Global IP manager instance
 _ip_manager = None
 
 def get_ip_manager(client=None):
-    """Get or create IP manager instance"""
+    """Get or create IP manager singleton"""
     global _ip_manager
     if _ip_manager is None:
         _ip_manager = IPManager(client)
     return _ip_manager
 
 def configure_interface_ip(interface: str, client=None, interface_type: str = "cellular") -> bool:
-    """Configure interface IP with fallback"""
+    """Configure IP address for interface with fallback"""
     ip_manager = get_ip_manager(client)
     return ip_manager.configure_interface_with_fallback(interface, interface_type)
 
 def test_network_connectivity(interface: Optional[str] = None, client=None) -> ConnectivityTest:
     """Test network connectivity"""
     ip_manager = get_ip_manager(client)
-    return ip_manager.test_connectivity(interface) 
+    return ip_manager.test_connectivity(interface)
+
+def validate_ip_configuration(ip: str, netmask: str, gateway: str) -> Dict[str, Any]:
+    """Validate IP configuration parameters"""
+    try:
+        # Validate IP address
+        ip_addr = ipaddress.IPv4Address(ip)
+        
+        # Validate netmask
+        network = ipaddress.IPv4Network(f"{ip}/{netmask}", strict=False)
+        
+        # Validate gateway is in same network
+        gateway_addr = ipaddress.IPv4Address(gateway)
+        if gateway_addr not in network:
+            return {
+                "valid": False,
+                "error": "Gateway not in same network as IP address"
+            }
+        
+        return {
+            "valid": True,
+            "network": str(network),
+            "broadcast": str(network.broadcast_address)
+        }
+        
+    except Exception as e:
+        return {
+            "valid": False,
+            "error": str(e)
+        }
+
+def is_ip_available(ip: str, client=None) -> bool:
+    """Check if IP address is available (not conflicting)"""
+    ip_manager = get_ip_manager(client)
+    old_dashboard_ip = ip_manager.dashboard_ip
+    ip_manager.dashboard_ip = ip
+    conflicts = ip_manager.detect_ip_conflicts()
+    ip_manager.dashboard_ip = old_dashboard_ip
+    return len(conflicts) == 0 

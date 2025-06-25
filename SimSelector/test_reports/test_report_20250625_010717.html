@@ -1,0 +1,203 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimSelector v2.6.0 Unit Test Report</title>
+    <style>
+        
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        header { text-align: center; margin-bottom: 30px; }
+        h1 { color: #333; margin-bottom: 10px; }
+        .timestamp { color: #666; font-style: italic; }
+        .summary { background: #f8f9fa; padding: 20px; border-radius: 6px; margin-bottom: 30px; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .metric { text-align: center; }
+        .metric-value { font-size: 2em; font-weight: bold; margin-bottom: 5px; }
+        .metric-label { color: #666; font-size: 0.9em; }
+        .success { color: #28a745; }
+        .warning { color: #ffc107; }
+        .error { color: #dc3545; }
+        .module { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 6px; }
+        .module-header { display: flex; justify-content: between; align-items: center; margin-bottom: 15px; }
+        .module-name { font-size: 1.2em; font-weight: bold; }
+        .module-stats { display: flex; gap: 20px; }
+        .stat { text-align: center; }
+        .stat-value { font-weight: bold; }
+        .failures, .errors { margin-top: 15px; }
+        .failure-item, .error-item { margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-left: 4px solid #dc3545; }
+        .recommendations { background: #e7f3ff; padding: 20px; border-radius: 6px; }
+        .recommendation-item { margin-bottom: 10px; }
+        .progress-bar { width: 100%; height: 20px; background: #e9ecef; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; transition: width 0.3s ease; }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SimSelector v2.6.0 Unit Test Report</h1>
+            <p class="timestamp">Generated: 2025-06-25 01:07:17</p>
+        </header>
+        
+        <div class="summary">
+            
+        <h2>Test Summary</h2>
+        <div class="summary-grid">
+            <div class="metric">
+                <div class="metric-value warning">92.3%</div>
+                <div class="metric-label">Success Rate</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">65</div>
+                <div class="metric-label">Total Tests</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value success">60</div>
+                <div class="metric-label">Passed</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value error">5</div>
+                <div class="metric-label">Failed</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value error">0</div>
+                <div class="metric-label">Errors</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">10.77s</div>
+                <div class="metric-label">Execution Time</div>
+            </div>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill success" style="width: 92.3076923076923%"></div>
+        </div>
+        
+        </div>
+        
+        <div class="modules">
+            <h2>Module Results</h2>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_sim_manager</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value warning">84.0%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">25</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">4</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            <div class='failures'><h4>Failures:</h4><div class='failure-item'><strong>test_active_sim_removal_no_alternatives (test_sim_manager.TestSIMManager.test_active_sim_removal_no_alternatives)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_sim_manager.py", line 303, in test_active_sim_removal_no_alternatives
+    mock_error_handler.handle_error.assert_called_once()
+  File "/Users/bill/anaconda3/lib/python3.12/unittest/mock.py", line 928, in assert_called_once
+    raise AssertionError(msg)
+AssertionError: Expected 'handle_error' to have been called once. Called 0 times.
+</pre></div><div class='failure-item'><strong>test_no_sims_detected_scenario (test_sim_manager.TestSIMManager.test_no_sims_detected_scenario)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_sim_manager.py", line 112, in test_no_sims_detected_scenario
+    self.assertIn("No SIM cards detected", result["warnings"])
+AssertionError: 'No SIM cards detected' not found in ['No SIM cards detected - system cannot operate']
+</pre></div><div class='failure-item'><strong>test_single_sim_detection (test_sim_manager.TestSIMManager.test_single_sim_detection)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_sim_manager.py", line 155, in test_single_sim_detection
+    self.assertIn("Single SIM configuration", result["warnings"])
+AssertionError: 'Single SIM configuration' not found in ['Single SIM configuration - no failover capability']
+</pre></div><div class='failure-item'><strong>test_multiple_sims_scenario (test_sim_manager.TestSIMManagerEdgeCases.test_multiple_sims_scenario)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_sim_manager.py", line 520, in test_multiple_sims_scenario
+    self.assertIn("Unusual configuration", result["warnings"])
+AssertionError: 'Unusual configuration' not found in ['Unusual configuration: 3 SIMs detected', 'Slot 1: No network connection', 'Slot 2: No network connection']
+</pre></div></div></div>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_error_handler</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value success">96.0%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">25</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">1</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            <div class='failures'><h4>Failures:</h4><div class='failure-item'><strong>test_error_id_uniqueness (test_error_handler.TestSimSelectorError.test_error_id_uniqueness)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_error_handler.py", line 154, in test_error_id_uniqueness
+    self.assertNotEqual(error1.error_id, error2.error_id)
+AssertionError: 'UNKNOWN_1750831636' == 'UNKNOWN_1750831636'
+</pre></div></div></div>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_dashboard_server</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value success">100.0%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">9</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_firewall_manager</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value success">100.0%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">6</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="recommendations">
+            <h2>Recommendations</h2><ul><li class='recommendation-item'>❌ Address test failures before deployment</li><li class='recommendation-item'>📈 Improve test coverage and fix failing tests</li><li class='recommendation-item'>⚡ test_sim_manager: Minor issues to address</li></ul>
+        </div>
+    </div>
+</body>
+</html>
