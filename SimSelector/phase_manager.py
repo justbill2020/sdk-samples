@@ -84,9 +84,13 @@ class PhaseManager:
     
     def _log(self, message: str, level: str = "INFO") -> None:
         """Log phase management operations"""
-        if self.client:
-            self.client.log(f"PHASE [{level}] {message}")
-        else:
+        try:
+            if self.client and hasattr(self.client, 'log'):
+                self.client.log(f"PHASE [{level}] {message}")
+            else:
+                print(f"PHASE [{level}] {message}")
+        except Exception:
+            # Fallback to print if client logging fails
             print(f"PHASE [{level}] {message}")
     
     def _load_phase_state(self) -> None:

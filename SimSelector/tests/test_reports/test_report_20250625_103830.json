@@ -1,0 +1,38 @@
+{
+  "timestamp": "2025-06-25T10:38:30.854517",
+  "summary": {
+    "total_tests": 9,
+    "total_failures": 3,
+    "total_errors": 0,
+    "total_skipped": 0,
+    "success_rate": 66.66666666666666,
+    "execution_time": 1.0776000022888184,
+    "passed": false
+  },
+  "modules": {
+    "test_dashboard_server": {
+      "tests_run": 9,
+      "failures": 3,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 66.66666666666666,
+      "execution_time": 0.022742748260498047,
+      "failure_details": [
+        {
+          "test": "test_error_handling (test_dashboard_server.TestDashboardServer.test_error_handling)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py\", line 192, in test_error_handling\n    self.assertTrue(result1)\nAssertionError: False is not true\n"
+        },
+        {
+          "test": "test_server_initialization (test_dashboard_server.TestDashboardServer.test_server_initialization)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py\", line 120, in test_server_initialization\n    self.assertEqual(server.host, self.test_host)\nAssertionError: 8082 != '127.0.0.1'\n"
+        },
+        {
+          "test": "test_server_lifecycle (test_dashboard_server.TestDashboardServer.test_server_lifecycle)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py\", line 103, in test_server_lifecycle\n    self.assertTrue(result)\nAssertionError: False is not true\n"
+        }
+      ],
+      "error_details": []
+    }
+  },
+  "coverage": {}
+}

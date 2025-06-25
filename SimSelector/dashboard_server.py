@@ -1376,9 +1376,13 @@ class DashboardServer:
         
     def _log(self, message: str, level: str = "INFO") -> None:
         """Log server operations"""
-        if self.client:
-            self.client.log(f"DASHBOARD [{level}] {message}")
-        else:
+        try:
+            if self.client and hasattr(self.client, 'log'):
+                self.client.log(f"DASHBOARD [{level}] {message}")
+            else:
+                print(f"DASHBOARD [{level}] {message}")
+        except Exception:
+            # Fallback to print if client logging fails
             print(f"DASHBOARD [{level}] {message}")
     
     def start(self) -> bool:

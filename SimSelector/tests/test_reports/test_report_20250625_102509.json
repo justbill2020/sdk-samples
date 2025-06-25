@@ -1,0 +1,111 @@
+{
+  "timestamp": "2025-06-25T10:25:09.531284",
+  "summary": {
+    "total_tests": 34,
+    "total_failures": 4,
+    "total_errors": 17,
+    "total_skipped": 0,
+    "success_rate": 38.23529411764706,
+    "execution_time": 10.376548767089844,
+    "passed": false
+  },
+  "modules": {
+    "test_traffic_validator": {
+      "tests_run": 34,
+      "failures": 4,
+      "errors": 17,
+      "skipped": 0,
+      "success_rate": 38.23529411764706,
+      "execution_time": 10.186469793319702,
+      "failure_details": [
+        {
+          "test": "test_quality_of_service_monitoring (test_traffic_validator.TestTrafficValidator.test_quality_of_service_monitoring)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 261, in test_quality_of_service_monitoring\n    self.assertIn(\"interfaces\", qos_status)\nAssertionError: 'interfaces' not found in {'success': True, 'qos_data': {'enp1s0': {'priority_queues': [{'priority': 'high', 'packets': 1000, 'bytes': 1048576, 'drops': 0}, {'priority': 'normal', 'packets': 5000, 'bytes': 5242880, 'drops': 2}, {'priority': 'low', 'packets': 2000, 'bytes': 2097152, 'drops': 5}]}}, 'timestamp': 1750865099.386013}\n"
+        },
+        {
+          "test": "test_high_latency_scenarios (test_traffic_validator.TestTrafficValidatorEdgeCases.test_high_latency_scenarios)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 567, in test_high_latency_scenarios\n    self.assertIn(\"warning\", result)\nAssertionError: 'warning' not found in {'success': True, 'latency': 1500.0, 'host': '8.8.8.8', 'output': '64 bytes from 8.8.8.8: icmp_seq=1 time=1500.0 ms'}\n"
+        },
+        {
+          "test": "test_malformed_speedtest_output (test_traffic_validator.TestTrafficValidatorEdgeCases.test_malformed_speedtest_output)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 537, in test_malformed_speedtest_output\n    self.assertIn(\"parse\", result[\"error\"].lower())\nAssertionError: 'parse' not found in 'invalid speed test output format'\n"
+        },
+        {
+          "test": "test_speedtest_command_not_found (test_traffic_validator.TestTrafficValidatorEdgeCases.test_speedtest_command_not_found)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 522, in test_speedtest_command_not_found\n    self.assertIn(\"command not found\", result[\"error\"].lower())\nAssertionError: 'command not found' not found in 'speedtest-cli not found'\n"
+        }
+      ],
+      "error_details": [
+        {
+          "test": "test_bandwidth_trending (test_traffic_validator.TestTrafficValidator.test_bandwidth_trending)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 415, in test_bandwidth_trending\n    trend = self.validator.analyze_bandwidth_trend(historical_data)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'analyze_bandwidth_trend'\n"
+        },
+        {
+          "test": "test_dns_resolution_test (test_traffic_validator.TestTrafficValidator.test_dns_resolution_test)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 368, in test_dns_resolution_test\n    result = self.validator.test_dns_resolution()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'test_dns_resolution'\n"
+        },
+        {
+          "test": "test_interface_monitoring (test_traffic_validator.TestTrafficValidator.test_interface_monitoring)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 356, in test_interface_monitoring\n    interfaces = self.validator.monitor_interfaces()\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'monitor_interfaces'\n"
+        },
+        {
+          "test": "test_latency_analysis (test_traffic_validator.TestTrafficValidator.test_latency_analysis)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 299, in test_latency_analysis\n    analysis = self.validator.analyze_latency(15.0)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'analyze_latency'\n"
+        },
+        {
+          "test": "test_network_test_comprehensive (test_traffic_validator.TestTrafficValidator.test_network_test_comprehensive)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 277, in test_network_test_comprehensive\n    result = self.validator.run_comprehensive_test()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'run_comprehensive_test'\n"
+        },
+        {
+          "test": "test_network_test_failure_scenarios (test_traffic_validator.TestTrafficValidator.test_network_test_failure_scenarios)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 291, in test_network_test_failure_scenarios\n    result = self.validator.run_comprehensive_test()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'run_comprehensive_test'\n"
+        },
+        {
+          "test": "test_network_topology_discovery (test_traffic_validator.TestTrafficValidator.test_network_topology_discovery)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 432, in test_network_topology_discovery\n    topology = self.validator.discover_network_topology()\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'discover_network_topology'\n"
+        },
+        {
+          "test": "test_packet_loss_detection (test_traffic_validator.TestTrafficValidator.test_packet_loss_detection)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 318, in test_packet_loss_detection\n    result = self.validator.test_packet_loss()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'test_packet_loss'\n"
+        },
+        {
+          "test": "test_traffic_analysis_patterns (test_traffic_validator.TestTrafficValidator.test_traffic_analysis_patterns)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 333, in test_traffic_analysis_patterns\n    analysis = self.validator.analyze_traffic_patterns(traffic_data)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'analyze_traffic_patterns'\n"
+        },
+        {
+          "test": "test_traffic_validator_status (test_traffic_validator.TestTrafficValidator.test_traffic_validator_status)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 398, in test_traffic_validator_status\n    status = self.validator.get_status()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'get_status'\n"
+        },
+        {
+          "test": "test_wan_failover_testing (test_traffic_validator.TestTrafficValidator.test_wan_failover_testing)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 384, in test_wan_failover_testing\n    failover_status = self.validator.test_wan_failover()\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'test_wan_failover'\n"
+        },
+        {
+          "test": "test_concurrent_test_execution (test_traffic_validator.TestTrafficValidatorEdgeCases.test_concurrent_test_execution)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 593, in test_concurrent_test_execution\n    result = self.validator.run_comprehensive_test()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'run_comprehensive_test'\n"
+        },
+        {
+          "test": "test_memory_usage_monitoring (test_traffic_validator.TestTrafficValidatorEdgeCases.test_memory_usage_monitoring)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 619, in test_memory_usage_monitoring\n    status = self.validator.get_status()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'get_status'\n"
+        },
+        {
+          "test": "test_network_interface_down (test_traffic_validator.TestTrafficValidatorEdgeCases.test_network_interface_down)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 548, in test_network_interface_down\n    interfaces = self.validator.monitor_interfaces()\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'monitor_interfaces'\n"
+        },
+        {
+          "test": "test_traffic_validator_without_client (test_traffic_validator.TestTrafficValidatorEdgeCases.test_traffic_validator_without_client)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 605, in test_traffic_validator_without_client\n    result = validator.monitor_interfaces()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'TrafficValidator' object has no attribute 'monitor_interfaces'\n"
+        },
+        {
+          "test": "test_run_speed_test_function (test_traffic_validator.TestTrafficValidatorUtilityFunctions.test_run_speed_test_function)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 487, in test_run_speed_test_function\n    self.assertTrue(result[\"success\"])\n                    ~~~~~~^^^^^^^^^^^\nTypeError: 'NetworkTest' object is not subscriptable\n"
+        },
+        {
+          "test": "test_validate_network_connectivity_function (test_traffic_validator.TestTrafficValidatorUtilityFunctions.test_validate_network_connectivity_function)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py\", line 472, in test_validate_network_connectivity_function\n    self.assertTrue(result[\"success\"])\n                    ~~~~~~^^^^^^^^^^^\nTypeError: 'NetworkTest' object is not subscriptable\n"
+        }
+      ]
+    }
+  },
+  "coverage": {}
+}

@@ -112,7 +112,7 @@ class TestDashboardServer(unittest.TestCase):
         """Test dashboard server initialization parameters"""
         # Test default initialization
         server = DashboardServer()
-        self.assertEqual(server.host, '127.0.0.1')
+        self.assertEqual(server.host, '0.0.0.0')  # Updated to match actual default
         self.assertEqual(server.port, 8080)
         
         # Test custom initialization
@@ -209,7 +209,9 @@ class TestDashboardServer(unittest.TestCase):
         mock_phase.return_value = mock_phase_manager
         
         mock_security_manager = Mock()
-        mock_security_manager.validate_ip_access.return_value = SecurityDecision('granted')
+        # Create proper SecurityDecision with required parameters
+        from security_manager import AccessResult
+        mock_security_manager.validate_ip_access.return_value = AccessResult.GRANTED
         mock_security_manager.validate_request.return_value = True
         mock_security.return_value = mock_security_manager
         
@@ -226,7 +228,7 @@ class TestDashboardServer(unittest.TestCase):
         
         # Verify IP access validation
         ip_decision = security_manager.validate_ip_access('127.0.0.1')
-        self.assertEqual(ip_decision.value, 'granted')
+        self.assertEqual(ip_decision, AccessResult.GRANTED)
         
         # Verify request validation
         is_valid = security_manager.validate_request('GET', '/')

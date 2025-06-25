@@ -1,0 +1,238 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimSelector v2.6.0 Unit Test Report</title>
+    <style>
+        
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        header { text-align: center; margin-bottom: 30px; }
+        h1 { color: #333; margin-bottom: 10px; }
+        .timestamp { color: #666; font-style: italic; }
+        .summary { background: #f8f9fa; padding: 20px; border-radius: 6px; margin-bottom: 30px; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .metric { text-align: center; }
+        .metric-value { font-size: 2em; font-weight: bold; margin-bottom: 5px; }
+        .metric-label { color: #666; font-size: 0.9em; }
+        .success { color: #28a745; }
+        .warning { color: #ffc107; }
+        .error { color: #dc3545; }
+        .module { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 6px; }
+        .module-header { display: flex; justify-content: between; align-items: center; margin-bottom: 15px; }
+        .module-name { font-size: 1.2em; font-weight: bold; }
+        .module-stats { display: flex; gap: 20px; }
+        .stat { text-align: center; }
+        .stat-value { font-weight: bold; }
+        .failures, .errors { margin-top: 15px; }
+        .failure-item, .error-item { margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-left: 4px solid #dc3545; }
+        .recommendations { background: #e7f3ff; padding: 20px; border-radius: 6px; }
+        .recommendation-item { margin-bottom: 10px; }
+        .progress-bar { width: 100%; height: 20px; background: #e9ecef; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; transition: width 0.3s ease; }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SimSelector v2.6.0 Unit Test Report</h1>
+            <p class="timestamp">Generated: 2025-06-25 10:30:12</p>
+        </header>
+        
+        <div class="summary">
+            
+        <h2>Test Summary</h2>
+        <div class="summary-grid">
+            <div class="metric">
+                <div class="metric-value error">33.3%</div>
+                <div class="metric-label">Success Rate</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">9</div>
+                <div class="metric-label">Total Tests</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value success">3</div>
+                <div class="metric-label">Passed</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value error">2</div>
+                <div class="metric-label">Failed</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value error">4</div>
+                <div class="metric-label">Errors</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">0.55s</div>
+                <div class="metric-label">Execution Time</div>
+            </div>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill success" style="width: 33.33333333333333%"></div>
+        </div>
+        
+        </div>
+        
+        <div class="modules">
+            <h2>Module Results</h2>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_dashboard_server</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value error">33.3%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">9</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">2</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">4</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            <div class='failures'><h4>Failures:</h4><div class='failure-item'><strong>test_error_handling (test_dashboard_server.TestDashboardServer.test_error_handling)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 105, in _load_phase_state
+    self._log(f"Loaded phase state: {Phase.get_name(self._current_phase)}")
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 88, in _log
+    self.client.log(f"PHASE [{level}] {message}")
+    ^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'log'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 179, in test_error_handling
+    server = DashboardServer('invalid_host', -1)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py", line 1342, in __init__
+    self.phase_manager = get_phase_manager(client)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 513, in get_phase_manager
+    _phase_manager = PhaseManager(client)
+                     ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 83, in __init__
+    self._load_phase_state()
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 112, in _load_phase_state
+    self._log(f"Error loading phase state: {str(e)}", "ERROR")
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 88, in _log
+    self.client.log(f"PHASE [{level}] {message}")
+    ^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'log'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 184, in test_error_handling
+    self.fail(f"Server creation should handle invalid parameters: {e}")
+AssertionError: Server creation should handle invalid parameters: 'str' object has no attribute 'log'
+</pre></div><div class='failure-item'><strong>test_server_initialization (test_dashboard_server.TestDashboardServer.test_server_initialization)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 115, in test_server_initialization
+    self.assertEqual(server.host, '127.0.0.1')
+AssertionError: '0.0.0.0' != '127.0.0.1'
+- 0.0.0.0
++ 127.0.0.1
+
+</pre></div></div><div class='errors'><h4>Errors:</h4><div class='error-item'><strong>test_concurrent_requests (test_dashboard_server.TestDashboardServer.test_concurrent_requests)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 105, in _load_phase_state
+    self._log(f"Loaded phase state: {Phase.get_name(self._current_phase)}")
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 88, in _log
+    self.client.log(f"PHASE [{level}] {message}")
+    ^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'log'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 238, in test_concurrent_requests
+    server = DashboardServer(self.test_host, self.test_port)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py", line 1342, in __init__
+    self.phase_manager = get_phase_manager(client)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 513, in get_phase_manager
+    _phase_manager = PhaseManager(client)
+                     ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 83, in __init__
+    self._load_phase_state()
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 112, in _load_phase_state
+    self._log(f"Error loading phase state: {str(e)}", "ERROR")
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 88, in _log
+    self.client.log(f"PHASE [{level}] {message}")
+    ^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'log'
+</pre></div><div class='error-item'><strong>test_dashboard_data_rendering (test_dashboard_server.TestDashboardServer.test_dashboard_data_rendering)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 105, in _load_phase_state
+    self._log(f"Loaded phase state: {Phase.get_name(self._current_phase)}")
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 88, in _log
+    self.client.log(f"PHASE [{level}] {message}")
+    ^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'log'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 294, in test_dashboard_data_rendering
+    server = DashboardServer(self.test_host, self.test_port)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py", line 1342, in __init__
+    self.phase_manager = get_phase_manager(client)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 513, in get_phase_manager
+    _phase_manager = PhaseManager(client)
+                     ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 83, in __init__
+    self._load_phase_state()
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 112, in _load_phase_state
+    self._log(f"Error loading phase state: {str(e)}", "ERROR")
+  File "/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py", line 88, in _log
+    self.client.log(f"PHASE [{level}] {message}")
+    ^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'log'
+</pre></div><div class='error-item'><strong>test_security_integration (test_dashboard_server.TestDashboardServer.test_security_integration)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/anaconda3/lib/python3.12/unittest/mock.py", line 1395, in patched
+    return func(*newargs, **newkeywargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 212, in test_security_integration
+    mock_security_manager.validate_ip_access.return_value = SecurityDecision('granted')
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: SecurityDecision.__init__() missing 3 required positional arguments: 'client_ip', 'phase_id', and 'timestamp'
+</pre></div><div class='error-item'><strong>test_server_lifecycle (test_dashboard_server.TestDashboardServer.test_server_lifecycle)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py", line 1395, in start
+    self._log(f"Dashboard server not started - phase {current_phase} does not allow dashboard access", "WARNING")
+  File "/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py", line 1380, in _log
+    self.client.log(f"DASHBOARD [{level}] {message}")
+    ^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'log'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 102, in test_server_lifecycle
+    result = self.dashboard_server.start()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py", line 1440, in start
+    self._log(f"Failed to start dashboard server: {str(e)}", "ERROR")
+  File "/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py", line 1380, in _log
+    self.client.log(f"DASHBOARD [{level}] {message}")
+    ^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'log'
+</pre></div></div></div>
+        </div>
+        
+        <div class="recommendations">
+            <h2>Recommendations</h2><ul><li class='recommendation-item'>❌ Address test failures before deployment</li><li class='recommendation-item'>⚠️ Fix test errors - these indicate code issues</li><li class='recommendation-item'>📈 Improve test coverage and fix failing tests</li><li class='recommendation-item'>🔧 test_dashboard_server: Critical issues need attention</li></ul>
+        </div>
+    </div>
+</body>
+</html>

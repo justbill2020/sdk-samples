@@ -1,0 +1,51 @@
+{
+  "timestamp": "2025-06-25T10:30:12.334796",
+  "summary": {
+    "total_tests": 9,
+    "total_failures": 2,
+    "total_errors": 4,
+    "total_skipped": 0,
+    "success_rate": 33.33333333333333,
+    "execution_time": 0.5532379150390625,
+    "passed": false
+  },
+  "modules": {
+    "test_dashboard_server": {
+      "tests_run": 9,
+      "failures": 2,
+      "errors": 4,
+      "skipped": 0,
+      "success_rate": 33.33333333333333,
+      "execution_time": 0.029607057571411133,
+      "failure_details": [
+        {
+          "test": "test_error_handling (test_dashboard_server.TestDashboardServer.test_error_handling)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 105, in _load_phase_state\n    self._log(f\"Loaded phase state: {Phase.get_name(self._current_phase)}\")\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 88, in _log\n    self.client.log(f\"PHASE [{level}] {message}\")\n    ^^^^^^^^^^^^^^^\nAttributeError: 'str' object has no attribute 'log'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py\", line 179, in test_error_handling\n    server = DashboardServer('invalid_host', -1)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py\", line 1342, in __init__\n    self.phase_manager = get_phase_manager(client)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 513, in get_phase_manager\n    _phase_manager = PhaseManager(client)\n                     ^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 83, in __init__\n    self._load_phase_state()\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 112, in _load_phase_state\n    self._log(f\"Error loading phase state: {str(e)}\", \"ERROR\")\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 88, in _log\n    self.client.log(f\"PHASE [{level}] {message}\")\n    ^^^^^^^^^^^^^^^\nAttributeError: 'str' object has no attribute 'log'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py\", line 184, in test_error_handling\n    self.fail(f\"Server creation should handle invalid parameters: {e}\")\nAssertionError: Server creation should handle invalid parameters: 'str' object has no attribute 'log'\n"
+        },
+        {
+          "test": "test_server_initialization (test_dashboard_server.TestDashboardServer.test_server_initialization)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py\", line 115, in test_server_initialization\n    self.assertEqual(server.host, '127.0.0.1')\nAssertionError: '0.0.0.0' != '127.0.0.1'\n- 0.0.0.0\n+ 127.0.0.1\n\n"
+        }
+      ],
+      "error_details": [
+        {
+          "test": "test_concurrent_requests (test_dashboard_server.TestDashboardServer.test_concurrent_requests)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 105, in _load_phase_state\n    self._log(f\"Loaded phase state: {Phase.get_name(self._current_phase)}\")\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 88, in _log\n    self.client.log(f\"PHASE [{level}] {message}\")\n    ^^^^^^^^^^^^^^^\nAttributeError: 'str' object has no attribute 'log'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py\", line 238, in test_concurrent_requests\n    server = DashboardServer(self.test_host, self.test_port)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py\", line 1342, in __init__\n    self.phase_manager = get_phase_manager(client)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 513, in get_phase_manager\n    _phase_manager = PhaseManager(client)\n                     ^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 83, in __init__\n    self._load_phase_state()\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 112, in _load_phase_state\n    self._log(f\"Error loading phase state: {str(e)}\", \"ERROR\")\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 88, in _log\n    self.client.log(f\"PHASE [{level}] {message}\")\n    ^^^^^^^^^^^^^^^\nAttributeError: 'str' object has no attribute 'log'\n"
+        },
+        {
+          "test": "test_dashboard_data_rendering (test_dashboard_server.TestDashboardServer.test_dashboard_data_rendering)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 105, in _load_phase_state\n    self._log(f\"Loaded phase state: {Phase.get_name(self._current_phase)}\")\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 88, in _log\n    self.client.log(f\"PHASE [{level}] {message}\")\n    ^^^^^^^^^^^^^^^\nAttributeError: 'str' object has no attribute 'log'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py\", line 294, in test_dashboard_data_rendering\n    server = DashboardServer(self.test_host, self.test_port)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py\", line 1342, in __init__\n    self.phase_manager = get_phase_manager(client)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 513, in get_phase_manager\n    _phase_manager = PhaseManager(client)\n                     ^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 83, in __init__\n    self._load_phase_state()\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 112, in _load_phase_state\n    self._log(f\"Error loading phase state: {str(e)}\", \"ERROR\")\n  File \"/Users/bill/dev/sdk-samples/SimSelector/phase_manager.py\", line 88, in _log\n    self.client.log(f\"PHASE [{level}] {message}\")\n    ^^^^^^^^^^^^^^^\nAttributeError: 'str' object has no attribute 'log'\n"
+        },
+        {
+          "test": "test_security_integration (test_dashboard_server.TestDashboardServer.test_security_integration)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/anaconda3/lib/python3.12/unittest/mock.py\", line 1395, in patched\n    return func(*newargs, **newkeywargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py\", line 212, in test_security_integration\n    mock_security_manager.validate_ip_access.return_value = SecurityDecision('granted')\n                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: SecurityDecision.__init__() missing 3 required positional arguments: 'client_ip', 'phase_id', and 'timestamp'\n"
+        },
+        {
+          "test": "test_server_lifecycle (test_dashboard_server.TestDashboardServer.test_server_lifecycle)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py\", line 1395, in start\n    self._log(f\"Dashboard server not started - phase {current_phase} does not allow dashboard access\", \"WARNING\")\n  File \"/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py\", line 1380, in _log\n    self.client.log(f\"DASHBOARD [{level}] {message}\")\n    ^^^^^^^^^^^^^^^\nAttributeError: 'str' object has no attribute 'log'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py\", line 102, in test_server_lifecycle\n    result = self.dashboard_server.start()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py\", line 1440, in start\n    self._log(f\"Failed to start dashboard server: {str(e)}\", \"ERROR\")\n  File \"/Users/bill/dev/sdk-samples/SimSelector/dashboard_server.py\", line 1380, in _log\n    self.client.log(f\"DASHBOARD [{level}] {message}\")\n    ^^^^^^^^^^^^^^^\nAttributeError: 'str' object has no attribute 'log'\n"
+        }
+      ]
+    }
+  },
+  "coverage": {}
+}
