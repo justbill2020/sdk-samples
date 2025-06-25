@@ -1,0 +1,344 @@
+/* SimSelector Dashboard - Responsive Styles */
+
+/* Tablet styles */
+@media screen and (max-width: 1024px) {
+    .dashboard-container {
+        padding: 15px;
+    }
+    
+    .dashboard-header {
+        padding: 15px 20px;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.6em;
+    }
+    
+    .status-cards {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 15px;
+    }
+    
+    .action-section {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+    
+    .footer-links {
+        justify-content: center;
+        gap: 15px;
+    }
+}
+
+/* Mobile styles */
+@media screen and (max-width: 768px) {
+    .dashboard-container {
+        padding: 10px;
+    }
+    
+    .dashboard-header {
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.4em;
+    }
+    
+    .phase-indicator {
+        padding: 8px 15px;
+        font-size: 0.9em;
+    }
+    
+    .status-cards {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .card-header {
+        padding: 15px 15px 0 15px;
+    }
+    
+    .card-content {
+        padding: 0 15px 15px 15px;
+    }
+    
+    .phase-display {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+    
+    .phase-number {
+        font-size: 2.5em;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .btn {
+        justify-content: center;
+        padding: 12px 20px;
+    }
+    
+    .info-grid {
+        gap: 8px;
+    }
+    
+    .info-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .log-content {
+        max-height: 200px;
+        font-size: 0.8em;
+    }
+    
+    .log-entry {
+        flex-direction: column;
+        gap: 2px;
+        padding: 4px 0;
+    }
+    
+    .log-time, .log-level {
+        min-width: auto;
+    }
+    
+    .footer-content {
+        padding: 15px;
+    }
+    
+    .footer-links {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .notification-container {
+        left: 10px;
+        right: 10px;
+        max-width: none;
+    }
+    
+    .notification {
+        margin-bottom: 8px;
+    }
+}
+
+/* Small mobile styles */
+@media screen and (max-width: 480px) {
+    .dashboard-container {
+        padding: 8px;
+    }
+    
+    .dashboard-header {
+        padding: 12px;
+        margin-bottom: 15px;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.3em;
+    }
+    
+    .card-header h3 {
+        font-size: 1.1em;
+    }
+    
+    .phase-number {
+        font-size: 2em;
+    }
+    
+    .btn {
+        padding: 10px 15px;
+        font-size: 0.85em;
+    }
+    
+    .log-content {
+        max-height: 150px;
+        padding: 8px;
+    }
+    
+    .loading-content {
+        padding: 30px 20px;
+    }
+    
+    .notification {
+        padding: 12px 15px;
+    }
+}
+
+/* Landscape mobile adjustments */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+    .dashboard-main {
+        gap: 20px;
+    }
+    
+    .log-content {
+        max-height: 120px;
+    }
+    
+    .dashboard-footer {
+        margin-top: 20px;
+    }
+}
+
+/* High DPI displays */
+@media screen and (-webkit-min-device-pixel-ratio: 2), 
+       screen and (min-resolution: 192dpi) {
+    .card-status::after {
+        border-width: 0.5px;
+    }
+    
+    .progress-bar {
+        height: 8px;
+    }
+    
+    .notification {
+        border-left-width: 3px;
+    }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .card-status::after {
+        animation: none;
+    }
+    
+    .loading-spinner::before,
+    .loading-spinner-large {
+        animation: none;
+        border-top-color: var(--secondary-color);
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-primary: #1a1a1a;
+        --bg-secondary: #2d2d2d;
+        --bg-tertiary: #404040;
+        --bg-dark: #0d1117;
+        
+        --text-primary: #f0f6fc;
+        --text-secondary: #8b949e;
+        --text-light: #ffffff;
+        
+        --border-color: #30363d;
+        
+        --shadow-small: 0 2px 4px rgba(0,0,0,0.3);
+        --shadow-medium: 0 4px 8px rgba(0,0,0,0.4);
+        --shadow-large: 0 8px 16px rgba(0,0,0,0.5);
+    }
+    
+    .dashboard-header {
+        background: linear-gradient(135deg, #1f2937, #374151);
+    }
+    
+    .log-content {
+        background: var(--bg-dark);
+        border: 1px solid var(--border-color);
+    }
+}
+
+/* Print styles */
+@media print {
+    .dashboard-header,
+    .dashboard-footer,
+    .action-section,
+    .log-panel,
+    .notification-container,
+    .loading-overlay {
+        display: none !important;
+    }
+    
+    .dashboard-container {
+        padding: 0;
+        max-width: none;
+    }
+    
+    .status-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+    
+    .card {
+        box-shadow: none;
+        border: 2px solid var(--border-color);
+        break-inside: avoid;
+    }
+    
+    body {
+        background: white;
+        color: black;
+        font-size: 12pt;
+    }
+}
+
+/* Focus and accessibility improvements */
+@media (prefers-reduced-motion: no-preference) {
+    .btn:focus,
+    .footer-link:focus,
+    .notification-close:focus {
+        outline: 2px solid var(--secondary-color);
+        outline-offset: 2px;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    .card:hover {
+        transform: none;
+        box-shadow: var(--shadow-small);
+    }
+    
+    .notification-close {
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
+    .log-controls .btn {
+        padding: 8px 16px;
+        margin: 2px;
+    }
+}
+
+/* Very wide screens */
+@media screen and (min-width: 1600px) {
+    .dashboard-container {
+        max-width: 1600px;
+        padding: 30px;
+    }
+    
+    .status-cards {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .action-section {
+        grid-template-columns: 3fr 1fr;
+    }
+} 

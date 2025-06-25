@@ -1,274 +1,599 @@
 #!/usr/bin/env python3
 """
-SimSelector Test Runner - Comprehensive testing for SimSelector 2.5.9
+SimSelector v2.6.0 Test Runner
 
-This test runner provides comprehensive mock testing of the SimSelector application
-without requiring actual Cradlepoint hardware. It includes multiple test scenarios
-covering various real-world situations including:
+Provides consistent test execution with individual test control, comprehensive testing,
+and detailed reporting. Supports running specific tests, test suites, or full system validation.
 
-- Basic dual SIM scenarios (good signals, weak signal, failed connection)
-- Multi-SIM scenarios (triple and quad SIM configurations)
-- Edge cases (all weak signals, all failed connections, tie-breaker logic)
-- Performance scenarios (ultra-high 5G speeds)
-- Carrier/network scenarios (APN testing, roaming, MVNO carriers)
-
-Usage:
-    python test_runner.py [scenario]
+Usage Examples:
+    # Run all tests with coverage
+    python tests/test_runner.py --all --coverage
     
-    Available scenarios:
-    - all: Run all test scenarios
-    - good, weak, failed: Basic dual SIM scenarios
-    - triple, quad: Multi-SIM scenarios  
-    - allweak, allfailed: Edge case scenarios
-    - highspeed, tiebreaker: Performance scenarios
-    - apn, roaming, mvno: Carrier/network scenarios
-    - interactive: Interactive testing mode
+    # Run specific test suite
+    python tests/test_runner.py --suite dashboard
+    python tests/test_runner.py --suite security
+    python tests/test_runner.py --suite integration
+    
+    # Run individual test
+    python tests/test_runner.py --test test_dashboard_server.py::TestDashboardServer::test_server_lifecycle
+    
+    # Run with specific scenarios
+    python tests/test_runner.py --scenario phase_transitions
+    python tests/test_runner.py --scenario security_validation
+    
+    # Generate detailed report
+    python tests/test_runner.py --all --report --output-dir ./test_reports
+    
+    # Quick smoke test
+    python tests/test_runner.py --smoke
 """
 
-import sys
 import os
+import sys
 import argparse
-from unittest.mock import patch
+import subprocess
+import json
+import time
+from datetime import datetime
+from typing import List, Dict, Any, Optional
+import unittest
+import importlib.util
 
-# Add the SimSelector directory to the Python path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from tests.mock_framework import TestHarness, MockScenarios
-
-
-def run_all_scenarios():
-    """Run all predefined test scenarios."""
-    harness = TestHarness()
-    
-    print("🚀 SimSelector 2.5.9 Comprehensive Testing Suite")
-    print("=" * 60)
-    print("Testing with full mocking - no hardware required!")
-    print()
-    
-    # Define all test scenarios
-    scenarios = [
-        ("Dual SIM - Good Signals", MockScenarios.dual_sim_good_signals()),
-        ("Dual SIM - One Weak Signal", MockScenarios.dual_sim_one_weak()),
-        ("Dual SIM - One Failed Connection", MockScenarios.dual_sim_one_failed()),
-        ("Triple SIM - Mixed Performance", MockScenarios.triple_sim_mixed_performance()),
-        ("Quad SIM - All Major Carriers", MockScenarios.quad_sim_all_carriers()),
-        ("All Weak Signals - Minimum Speed Test", MockScenarios.all_weak_signals()),
-        ("All Failed Connections - Error Handling", MockScenarios.all_failed_connections()),
-        ("High Speed 5G - Ultra Performance", MockScenarios.high_speed_5g_scenario()),
-        ("Edge Case - Tie Breaker Logic", MockScenarios.edge_case_tie_breaker()),
-        ("Carrier Specific - APN Testing", MockScenarios.carrier_specific_apn_test()),
-        ("International Roaming", MockScenarios.international_roaming()),
-        ("MVNO Carriers", MockScenarios.mvno_carriers()),
-    ]
-    
-    results = {}
-    
-    for scenario_name, scenario_data in scenarios:
-        try:
-            harness.run_test_scenario(scenario_name, scenario_data)
-            results[scenario_name] = "✅ PASSED"
-        except Exception as e:
-            results[scenario_name] = f"❌ FAILED: {str(e)}"
-        
-        print("\n" + "="*60 + "\n")
-    
-    # Print final summary
-    print("🏁 Final Test Results Summary:")
-    print("=" * 40)
-    for scenario, result in results.items():
-        print(f"{result} - {scenario}")
-    
-    # Overall result
-    passed = sum(1 for r in results.values() if "PASSED" in r)
-    total = len(results)
-    
-    print(f"\n📊 Overall: {passed}/{total} scenarios passed")
-    
-    if passed == total:
-        print("🎉 All tests passed! SimSelector 2.5.9 is ready for deployment!")
-        return True
-    else:
-        print("⚠️  Some tests failed. Please review and fix issues before deployment.")
-        return False
+# Add project root to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 
-def run_single_scenario(scenario_name: str):
-    """Run a single test scenario."""
-    harness = TestHarness()
+class TestRunner:
+    """Comprehensive test runner for SimSelector v2.6.0"""
     
-    scenarios = {
-        "good": ("Dual SIM - Good Signals", MockScenarios.dual_sim_good_signals()),
-        "weak": ("Dual SIM - One Weak Signal", MockScenarios.dual_sim_one_weak()),
-        "failed": ("Dual SIM - One Failed Connection", MockScenarios.dual_sim_one_failed()),
-        "triple": ("Triple SIM - Mixed Performance", MockScenarios.triple_sim_mixed_performance()),
-        "quad": ("Quad SIM - All Major Carriers", MockScenarios.quad_sim_all_carriers()),
-        "allweak": ("All Weak Signals - Minimum Speed Test", MockScenarios.all_weak_signals()),
-        "allfailed": ("All Failed Connections - Error Handling", MockScenarios.all_failed_connections()),
-        "highspeed": ("High Speed 5G - Ultra Performance", MockScenarios.high_speed_5g_scenario()),
-        "tiebreaker": ("Edge Case - Tie Breaker Logic", MockScenarios.edge_case_tie_breaker()),
-        "apn": ("Carrier Specific - APN Testing", MockScenarios.carrier_specific_apn_test()),
-        "roaming": ("International Roaming", MockScenarios.international_roaming()),
-        "mvno": ("MVNO Carriers", MockScenarios.mvno_carriers()),
-    }
-    
-    if scenario_name not in scenarios:
-        print(f"❌ Unknown scenario: {scenario_name}")
-        print(f"Available scenarios: {', '.join(scenarios.keys())}")
-        return False
-    
-    name, data = scenarios[scenario_name]
-    harness.run_test_scenario(name, data)
-    return True
-
-
-def interactive_test():
-    """Run interactive testing mode."""
-    print("🔧 SimSelector Interactive Test Mode")
-    print("=" * 40)
-    
-    harness = TestHarness()
-    
-    while True:
-        print("\nAvailable commands:")
-        print("📊 Basic Scenarios:")
-        print("  1. run all - Run all test scenarios")
-        print("  2. run good - Test with good signals")
-        print("  3. run weak - Test with one weak signal")
-        print("  4. run failed - Test with one failed connection")
+    def __init__(self):
+        self.project_root = os.path.dirname(os.path.dirname(__file__))
+        self.tests_dir = os.path.join(self.project_root, 'tests')
+        self.results = {}
+        self.start_time = None
+        self.end_time = None
         
-        print("\n🔄 Multi-SIM Scenarios:")
-        print("  5. run triple - Triple SIM mixed performance")
-        print("  6. run quad - Quad SIM all major carriers")
+        # Test suites configuration
+        self.test_suites = {
+            'unit': [
+                'test_phase_manager.py',
+                'test_security_manager.py',
+                'test_firewall_manager.py',
+                'test_dashboard_server.py'
+            ],
+            'integration': [
+                'test_comprehensive_system.py'
+            ],
+            'dashboard': [
+                'test_dashboard_server.py'
+            ],
+            'security': [
+                'test_security_manager.py'
+            ],
+            'phase': [
+                'test_phase_manager.py'
+            ],
+            'firewall': [
+                'test_firewall_manager.py'
+            ]
+        }
         
-        print("\n⚠️ Edge Case Scenarios:")
-        print("  7. run allweak - All SIMs have weak signals")
-        print("  8. run allfailed - All SIMs fail to connect")
-        print("  9. run tiebreaker - Similar speeds (tie-breaker logic)")
-        
-        print("\n🚀 Performance Scenarios:")
-        print("  10. run highspeed - Ultra-high 5G speeds")
-        
-        print("\n🌐 Carrier/Network Scenarios:")
-        print("  11. run apn - Carrier-specific APN testing")
-        print("  12. run roaming - International roaming")
-        print("  13. run mvno - MVNO carrier testing")
-        
-        print("\n🛠️ Other Options:")
-        print("  14. custom - Create custom scenario")
-        print("  15. exit - Exit test mode")
-        
-        choice = input("\nEnter command: ").strip().lower()
-        
-        if choice == "exit":
-            break
-        elif choice == "run all":
-            run_all_scenarios()
-        elif choice.startswith("run "):
-            scenario = choice.split(" ", 1)[1]
-            run_single_scenario(scenario)
-        elif choice == "custom":
-            create_custom_scenario(harness)
-        else:
-            print("❌ Invalid command. Please try again.")
-
-
-def create_custom_scenario(harness: TestHarness):
-    """Create and run a custom test scenario."""
-    print("\n🛠️  Custom Scenario Builder")
-    print("-" * 30)
-    
-    # Get number of SIMs
-    try:
-        num_sims = int(input("Number of SIMs (1-4): "))
-        if num_sims < 1 or num_sims > 4:
-            print("❌ Please enter 1-4 SIMs")
-            return
-    except ValueError:
-        print("❌ Invalid number")
-        return
-    
-    scenario_data = {}
-    
-    for i in range(num_sims):
-        print(f"\n📱 Configuring SIM {i+1}:")
-        
-        # Get basic info
-        port = input(f"  Port (e.g., MODEM{i+1}): ") or f"MODEM{i+1}"
-        sim = input(f"  SIM slot (e.g., SIM1): ") or "SIM1"
-        tech = input(f"  Technology (5G/LTE): ") or "LTE"
-        carrier = input(f"  Carrier (e.g., Verizon): ") or "Unknown"
-        
-        # Get signal strength
-        try:
-            rsrp = int(input(f"  RSRP signal strength (-50 to -120): ") or "-85")
-            if rsrp > -50 or rsrp < -120:
-                print("  ⚠️  Unusual RSRP value, using -85")
-                rsrp = -85
-        except ValueError:
-            rsrp = -85
-        
-        # Get expected speeds
-        try:
-            download = float(input(f"  Expected download speed (Mbps): ") or "50.0")
-            upload = float(input(f"  Expected upload speed (Mbps): ") or "15.0")
-        except ValueError:
-            download, upload = 50.0, 15.0
-        
-        # Connection status
-        connected = input(f"  Connected? (y/n): ").lower().startswith('y')
-        
-        sim_id = f"mdm-sim{i+1}"
-        scenario_data[sim_id] = {
-            'info': {'port': port, 'sim': sim, 'tech': tech, 'iface': f'wwan{i}'},
-            'config': {'_id_': f'rule_{i+1:03d}', 'priority': 1.0 + i * 0.1},
-            'diagnostics': {'RSRP': rsrp, 'PRD': carrier, 'HOMECARRID': '000000', 'RFBAND': 'B1'},
-            'status': {
-                'connection_state': 'connected' if connected else 'disconnected',
-                'error_text': '' if connected else 'TIMEOUT'
+        # Test scenarios configuration
+        self.test_scenarios = {
+            'smoke': {
+                'description': 'Quick smoke tests to verify basic functionality',
+                'tests': [
+                    'test_phase_manager.py::TestPhaseManager::test_phase_initialization',
+                    'test_security_manager.py::TestSecurityManager::test_security_initialization',
+                    'test_dashboard_server.py::TestDashboardServer::test_server_lifecycle'
+                ]
             },
-            'expected_download': download,
-            'expected_upload': upload
+            'phase_transitions': {
+                'description': 'Complete phase transition workflow testing',
+                'tests': [
+                    'test_phase_manager.py::TestPhaseManager::test_phase_transitions',
+                    'test_phase_manager.py::TestPhaseManager::test_transition_validation',
+                    'test_comprehensive_system.py::TestSystemIntegration::test_phase_transitions'
+                ]
+            },
+            'security_validation': {
+                'description': 'Comprehensive security framework testing',
+                'tests': [
+                    'test_security_manager.py::TestSecurityManager::test_ip_validation',
+                    'test_security_manager.py::TestSecurityManager::test_phase_access_control',
+                    'test_security_manager.py::TestSecurityManager::test_request_validation',
+                    'test_comprehensive_system.py::TestSystemIntegration::test_security_integration'
+                ]
+            },
+            'dashboard_functionality': {
+                'description': 'Dashboard server functionality and integration',
+                'tests': [
+                    'test_dashboard_server.py::TestDashboardServer::test_server_lifecycle',
+                    'test_dashboard_server.py::TestDashboardServer::test_api_endpoints',
+                    'test_dashboard_server.py::TestDashboardServer::test_template_rendering',
+                    'test_dashboard_server.py::TestDashboardServer::test_static_file_serving'
+                ]
+            },
+            'error_handling': {
+                'description': 'Error handling and recovery testing',
+                'tests': [
+                    'test_dashboard_server.py::TestDashboardServer::test_error_handling',
+                    'test_comprehensive_system.py::TestSystemIntegration::test_error_handling_integration'
+                ]
+            },
+            'performance': {
+                'description': 'Performance and reliability testing',
+                'tests': [
+                    'test_dashboard_server.py::TestDashboardServer::test_concurrent_requests',
+                    'test_comprehensive_system.py::TestSystemIntegration::test_performance_benchmarks',
+                    'test_comprehensive_system.py::TestSystemIntegration::test_concurrent_operations'
+                ]
+            }
         }
     
-    # Run the custom scenario
-    scenario_name = input("\nScenario name: ") or "Custom Test"
-    harness.run_test_scenario(scenario_name, scenario_data)
+    def run_tests(self, args) -> bool:
+        """Run tests based on provided arguments"""
+        self.start_time = time.time()
+        
+        try:
+            if args.all:
+                return self._run_all_tests(args)
+            elif args.suite:
+                return self._run_test_suite(args.suite, args)
+            elif args.test:
+                return self._run_specific_test(args.test, args)
+            elif args.scenario:
+                return self._run_test_scenario(args.scenario, args)
+            elif args.smoke:
+                return self._run_test_scenario('smoke', args)
+            else:
+                print("No test selection specified. Use --help for options.")
+                return False
+        
+        finally:
+            self.end_time = time.time()
+            if args.report:
+                self._generate_report(args)
+    
+    def _run_all_tests(self, args) -> bool:
+        """Run all available tests"""
+        print("Running all SimSelector v2.6.0 tests...")
+        print("=" * 60)
+        
+        success = True
+        total_tests = 0
+        passed_tests = 0
+        failed_tests = 0
+        
+        # Run all test suites
+        for suite_name, test_files in self.test_suites.items():
+            print(f"\n📋 Running {suite_name.upper()} test suite...")
+            
+            suite_success = self._run_test_suite(suite_name, args, verbose=False)
+            if not suite_success:
+                success = False
+            
+            # Count results
+            if suite_name in self.results:
+                suite_results = self.results[suite_name]
+                total_tests += suite_results.get('total', 0)
+                passed_tests += suite_results.get('passed', 0)
+                failed_tests += suite_results.get('failed', 0)
+        
+        # Print summary
+        print("\n" + "=" * 60)
+        print("🏁 ALL TESTS SUMMARY")
+        print("=" * 60)
+        print(f"Total Tests: {total_tests}")
+        print(f"✅ Passed: {passed_tests}")
+        print(f"❌ Failed: {failed_tests}")
+        print(f"Success Rate: {(passed_tests/total_tests*100):.1f}%" if total_tests > 0 else "N/A")
+        print(f"Duration: {self.end_time - self.start_time:.2f}s")
+        
+        return success
+    
+    def _run_test_suite(self, suite_name: str, args, verbose: bool = True) -> bool:
+        """Run a specific test suite"""
+        if suite_name not in self.test_suites:
+            print(f"❌ Unknown test suite: {suite_name}")
+            print(f"Available suites: {', '.join(self.test_suites.keys())}")
+            return False
+        
+        if verbose:
+            print(f"Running {suite_name.upper()} test suite...")
+            print("-" * 40)
+        
+        test_files = self.test_suites[suite_name]
+        suite_success = True
+        suite_results = {'total': 0, 'passed': 0, 'failed': 0, 'tests': []}
+        
+        for test_file in test_files:
+            test_path = os.path.join(self.tests_dir, test_file)
+            if not os.path.exists(test_path):
+                print(f"⚠️  Test file not found: {test_file}")
+                continue
+            
+            print(f"🧪 Running {test_file}...")
+            
+            # Build pytest command
+            cmd = self._build_pytest_command(test_path, args)
+            
+            # Run test
+            result = subprocess.run(cmd, capture_output=True, text=True, cwd=self.project_root)
+            
+            # Parse results
+            test_result = self._parse_test_output(result, test_file)
+            suite_results['tests'].append(test_result)
+            suite_results['total'] += test_result.get('total', 0)
+            suite_results['passed'] += test_result.get('passed', 0)
+            suite_results['failed'] += test_result.get('failed', 0)
+            
+            if result.returncode != 0:
+                suite_success = False
+                print(f"❌ {test_file} failed")
+                if verbose and args.verbose:
+                    print(f"Error output:\n{result.stderr}")
+            else:
+                print(f"✅ {test_file} passed")
+        
+        self.results[suite_name] = suite_results
+        
+        if verbose:
+            print(f"\n📊 {suite_name.upper()} Suite Results:")
+            print(f"Total: {suite_results['total']}, Passed: {suite_results['passed']}, Failed: {suite_results['failed']}")
+        
+        return suite_success
+    
+    def _run_specific_test(self, test_spec: str, args) -> bool:
+        """Run a specific test"""
+        print(f"Running specific test: {test_spec}")
+        print("-" * 40)
+        
+        # Parse test specification
+        if '::' in test_spec:
+            test_file, test_method = test_spec.split('::', 1)
+        else:
+            test_file = test_spec
+            test_method = None
+        
+        test_path = os.path.join(self.tests_dir, test_file)
+        if not os.path.exists(test_path):
+            print(f"❌ Test file not found: {test_file}")
+            return False
+        
+        # Build pytest command
+        if test_method:
+            cmd = self._build_pytest_command(f"{test_path}::{test_method}", args)
+        else:
+            cmd = self._build_pytest_command(test_path, args)
+        
+        # Run test
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd=self.project_root)
+        
+        # Parse and display results
+        test_result = self._parse_test_output(result, test_spec)
+        self.results['specific'] = test_result
+        
+        if result.returncode == 0:
+            print(f"✅ Test passed: {test_spec}")
+            return True
+        else:
+            print(f"❌ Test failed: {test_spec}")
+            if args.verbose:
+                print(f"Output:\n{result.stdout}")
+                print(f"Error:\n{result.stderr}")
+            return False
+    
+    def _run_test_scenario(self, scenario_name: str, args) -> bool:
+        """Run a specific test scenario"""
+        if scenario_name not in self.test_scenarios:
+            print(f"❌ Unknown test scenario: {scenario_name}")
+            print(f"Available scenarios: {', '.join(self.test_scenarios.keys())}")
+            return False
+        
+        scenario = self.test_scenarios[scenario_name]
+        print(f"Running {scenario_name.upper()} scenario...")
+        print(f"Description: {scenario['description']}")
+        print("-" * 60)
+        
+        scenario_success = True
+        scenario_results = {'total': 0, 'passed': 0, 'failed': 0, 'tests': []}
+        
+        for test_spec in scenario['tests']:
+            print(f"🧪 Running {test_spec}...")
+            
+            # Parse test specification
+            if '::' in test_spec:
+                test_file, test_method = test_spec.split('::', 1)
+            else:
+                test_file = test_spec
+                test_method = None
+            
+            test_path = os.path.join(self.tests_dir, test_file)
+            if not os.path.exists(test_path):
+                print(f"⚠️  Test file not found: {test_file}")
+                continue
+            
+            # Build pytest command
+            if test_method:
+                cmd = self._build_pytest_command(f"{test_path}::{test_method}", args)
+            else:
+                cmd = self._build_pytest_command(test_path, args)
+            
+            # Run test
+            result = subprocess.run(cmd, capture_output=True, text=True, cwd=self.project_root)
+            
+            # Parse results
+            test_result = self._parse_test_output(result, test_spec)
+            scenario_results['tests'].append(test_result)
+            scenario_results['total'] += test_result.get('total', 0)
+            scenario_results['passed'] += test_result.get('passed', 0)
+            scenario_results['failed'] += test_result.get('failed', 0)
+            
+            if result.returncode != 0:
+                scenario_success = False
+                print(f"❌ {test_spec} failed")
+            else:
+                print(f"✅ {test_spec} passed")
+        
+        self.results[scenario_name] = scenario_results
+        
+        print(f"\n📊 {scenario_name.upper()} Scenario Results:")
+        print(f"Total: {scenario_results['total']}, Passed: {scenario_results['passed']}, Failed: {scenario_results['failed']}")
+        
+        return scenario_success
+    
+    def _build_pytest_command(self, test_path: str, args) -> List[str]:
+        """Build pytest command with appropriate options"""
+        cmd = ['python', '-m', 'pytest', test_path]
+        
+        # Add verbosity
+        if args.verbose:
+            cmd.append('-v')
+        else:
+            cmd.append('-q')
+        
+        # Add coverage if requested
+        if args.coverage:
+            cmd.extend([
+                '--cov=.',
+                '--cov-report=term-missing',
+                '--cov-report=html:htmlcov'
+            ])
+        
+        # Add other pytest options
+        cmd.extend([
+            '--tb=short',  # Short traceback format
+            '--strict-markers',  # Strict marker checking
+            '-ra'  # Show all test results
+        ])
+        
+        return cmd
+    
+    def _parse_test_output(self, result: subprocess.CompletedProcess, test_name: str) -> Dict[str, Any]:
+        """Parse pytest output to extract test results"""
+        output = result.stdout
+        
+        test_result = {
+            'name': test_name,
+            'success': result.returncode == 0,
+            'total': 0,
+            'passed': 0,
+            'failed': 0,
+            'skipped': 0,
+            'duration': 0.0,
+            'output': output,
+            'errors': result.stderr
+        }
+        
+        # Parse pytest output for detailed results
+        lines = output.split('\n')
+        for line in lines:
+            if 'passed' in line and 'failed' in line:
+                # Parse summary line like "5 passed, 2 failed in 1.23s"
+                parts = line.split()
+                for i, part in enumerate(parts):
+                    if part == 'passed':
+                        test_result['passed'] = int(parts[i-1])
+                    elif part == 'failed':
+                        test_result['failed'] = int(parts[i-1])
+                    elif part == 'skipped':
+                        test_result['skipped'] = int(parts[i-1])
+                    elif part == 'in' and i+1 < len(parts) and 's' in parts[i+1]:
+                        duration_str = parts[i+1].replace('s', '')
+                        try:
+                            test_result['duration'] = float(duration_str)
+                        except ValueError:
+                            pass
+        
+        test_result['total'] = test_result['passed'] + test_result['failed'] + test_result['skipped']
+        
+        return test_result
+    
+    def _generate_report(self, args):
+        """Generate detailed test report"""
+        if not args.output_dir:
+            args.output_dir = os.path.join(self.project_root, 'test_reports')
+        
+        os.makedirs(args.output_dir, exist_ok=True)
+        
+        # Generate JSON report
+        report_data = {
+            'timestamp': datetime.now().isoformat(),
+            'duration': self.end_time - self.start_time if self.end_time and self.start_time else 0,
+            'results': self.results,
+            'summary': self._generate_summary()
+        }
+        
+        json_report_path = os.path.join(args.output_dir, 'test_report.json')
+        with open(json_report_path, 'w') as f:
+            json.dump(report_data, f, indent=2)
+        
+        # Generate HTML report
+        html_report_path = os.path.join(args.output_dir, 'test_report.html')
+        self._generate_html_report(report_data, html_report_path)
+        
+        print(f"\n📄 Test reports generated:")
+        print(f"   JSON: {json_report_path}")
+        print(f"   HTML: {html_report_path}")
+    
+    def _generate_summary(self) -> Dict[str, Any]:
+        """Generate test results summary"""
+        total_tests = 0
+        total_passed = 0
+        total_failed = 0
+        total_skipped = 0
+        
+        for suite_results in self.results.values():
+            if isinstance(suite_results, dict):
+                total_tests += suite_results.get('total', 0)
+                total_passed += suite_results.get('passed', 0)
+                total_failed += suite_results.get('failed', 0)
+                total_skipped += suite_results.get('skipped', 0)
+        
+        return {
+            'total_tests': total_tests,
+            'total_passed': total_passed,
+            'total_failed': total_failed,
+            'total_skipped': total_skipped,
+            'success_rate': (total_passed / total_tests * 100) if total_tests > 0 else 0
+        }
+    
+    def _generate_html_report(self, report_data: Dict[str, Any], output_path: str):
+        """Generate HTML test report"""
+        html_content = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimSelector v2.6.0 Test Report</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }}
+        .container {{ max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
+        .header {{ text-align: center; margin-bottom: 30px; }}
+        .summary {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }}
+        .metric {{ background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; }}
+        .metric h3 {{ margin: 0 0 10px 0; color: #333; }}
+        .metric .value {{ font-size: 2em; font-weight: bold; }}
+        .passed {{ color: #28a745; }}
+        .failed {{ color: #dc3545; }}
+        .skipped {{ color: #ffc107; }}
+        .results {{ margin-top: 30px; }}
+        .suite {{ margin-bottom: 30px; padding: 20px; border: 1px solid #dee2e6; border-radius: 8px; }}
+        .suite h3 {{ margin: 0 0 15px 0; color: #495057; }}
+        .test {{ padding: 10px; margin: 5px 0; border-radius: 4px; }}
+        .test.passed {{ background: #d4edda; border-left: 4px solid #28a745; }}
+        .test.failed {{ background: #f8d7da; border-left: 4px solid #dc3545; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>SimSelector v2.6.0 Test Report</h1>
+            <p>Generated on {report_data['timestamp']}</p>
+            <p>Duration: {report_data['duration']:.2f} seconds</p>
+        </div>
+        
+        <div class="summary">
+            <div class="metric">
+                <h3>Total Tests</h3>
+                <div class="value">{report_data['summary']['total_tests']}</div>
+            </div>
+            <div class="metric">
+                <h3>Passed</h3>
+                <div class="value passed">{report_data['summary']['total_passed']}</div>
+            </div>
+            <div class="metric">
+                <h3>Failed</h3>
+                <div class="value failed">{report_data['summary']['total_failed']}</div>
+            </div>
+            <div class="metric">
+                <h3>Success Rate</h3>
+                <div class="value">{report_data['summary']['success_rate']:.1f}%</div>
+            </div>
+        </div>
+        
+        <div class="results">
+            <h2>Detailed Results</h2>
+"""
+        
+        # Add detailed results for each suite
+        for suite_name, suite_results in report_data['results'].items():
+            if isinstance(suite_results, dict) and 'tests' in suite_results:
+                html_content += f"""
+            <div class="suite">
+                <h3>{suite_name.upper()} Suite</h3>
+                <p>Total: {suite_results['total']}, Passed: {suite_results['passed']}, Failed: {suite_results['failed']}</p>
+"""
+                for test in suite_results['tests']:
+                    status_class = 'passed' if test['success'] else 'failed'
+                    html_content += f"""
+                <div class="test {status_class}">
+                    <strong>{test['name']}</strong> - {test['total']} tests, {test['duration']:.2f}s
+                </div>
+"""
+                html_content += "</div>"
+        
+        html_content += """
+        </div>
+    </div>
+</body>
+</html>
+"""
+        
+        with open(output_path, 'w') as f:
+            f.write(html_content)
 
 
 def main():
-    """Main entry point for test runner."""
-    parser = argparse.ArgumentParser(description='SimSelector Test Runner')
-    parser.add_argument('scenario', nargs='?', 
-                       help='Test scenario: all, good, weak, failed, triple, quad, allweak, allfailed, highspeed, tiebreaker, apn, roaming, mvno, interactive')
+    """Main entry point for test runner"""
+    parser = argparse.ArgumentParser(
+        description='SimSelector v2.6.0 Test Runner',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=__doc__
+    )
+    
+    # Test selection options
+    parser.add_argument('--all', action='store_true', help='Run all tests')
+    parser.add_argument('--suite', choices=list(TestRunner().test_suites.keys()), help='Run specific test suite')
+    parser.add_argument('--test', help='Run specific test (e.g., test_file.py::TestClass::test_method)')
+    parser.add_argument('--scenario', choices=list(TestRunner().test_scenarios.keys()), help='Run test scenario')
+    parser.add_argument('--smoke', action='store_true', help='Run smoke tests')
+    
+    # Output options
+    parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
+    parser.add_argument('--coverage', action='store_true', help='Generate coverage report')
+    parser.add_argument('--report', action='store_true', help='Generate detailed test report')
+    parser.add_argument('--output-dir', help='Output directory for reports')
+    
+    # Information options
+    parser.add_argument('--list-suites', action='store_true', help='List available test suites')
+    parser.add_argument('--list-scenarios', action='store_true', help='List available test scenarios')
     
     args = parser.parse_args()
     
-    if not args.scenario:
-        print("SimSelector Test Runner")
-        print("Available scenarios:")
-        print("  all       - Run all test scenarios")
-        print("  good      - Dual SIM with good signals")
-        print("  weak      - Dual SIM with one weak signal")
-        print("  failed    - Dual SIM with one failed connection")
-        print("  triple    - Triple SIM mixed performance")
-        print("  quad      - Quad SIM all major carriers")
-        print("  allweak   - All SIMs have weak signals")
-        print("  allfailed - All SIMs fail to connect")
-        print("  highspeed - Ultra-high 5G speeds")
-        print("  tiebreaker- Similar speeds (tie-breaker logic)")
-        print("  apn       - Carrier-specific APN testing")
-        print("  roaming   - International roaming")
-        print("  mvno      - MVNO carrier testing")
-        print("  interactive - Interactive mode")
-        sys.exit(1)
+    runner = TestRunner()
     
-    if args.scenario == "all":
-        run_all_scenarios()
-    elif args.scenario == "interactive":
-        interactive_test()
-    else:
-        run_single_scenario(args.scenario)
+    # Handle information requests
+    if args.list_suites:
+        print("Available test suites:")
+        for suite_name, test_files in runner.test_suites.items():
+            print(f"  {suite_name}: {', '.join(test_files)}")
+        return
+    
+    if args.list_scenarios:
+        print("Available test scenarios:")
+        for scenario_name, scenario_data in runner.test_scenarios.items():
+            print(f"  {scenario_name}: {scenario_data['description']}")
+        return
+    
+    # Run tests
+    success = runner.run_tests(args)
+    
+    # Exit with appropriate code
+    sys.exit(0 if success else 1)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main() 

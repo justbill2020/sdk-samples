@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimSelector Tech Dashboard - {{phase_name}}</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/responsive.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <div class="header-content">
+                <h1>SimSelector Tech Dashboard</h1>
+                <div class="phase-indicator phase-{{current_phase}}">
+                    <span class="phase-label">Phase:</span>
+                    <span class="phase-name">{{phase_name}}</span>
+                </div>
+            </div>
+        </header>
+        
+        <main class="dashboard-main">
+            <div class="status-cards">
+                <div class="card phase-card" id="phase-card">
+                    <div class="card-header">
+                        <h3>Current Phase</h3>
+                        <div class="card-status status-{{current_phase}}"></div>
+                    </div>
+                    <div class="card-content">
+                        <div class="phase-display">
+                            <div class="phase-number">{{current_phase}}</div>
+                            <div class="phase-details">
+                                <div class="phase-name">{{phase_name}}</div>
+                                <div class="phase-description" id="phase-description">Loading...</div>
+                            </div>
+                        </div>
+                        <div class="phase-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="phase-progress"></div>
+                            </div>
+                            <div class="progress-text" id="progress-text">Initializing...</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card sim-card" id="sim-card">
+                    <div class="card-header">
+                        <h3>SIM Status</h3>
+                        <div class="card-status" id="sim-status-indicator"></div>
+                    </div>
+                    <div class="card-content">
+                        <div class="sim-list" id="sim-status">
+                            <div class="loading-spinner">Loading SIM information...</div>
+                        </div>
+                        <div class="sim-summary" id="sim-summary">
+                            <span class="sim-count">0 SIMs detected</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card signal-card" id="signal-card">
+                    <div class="card-header">
+                        <h3>Signal Strength</h3>
+                        <div class="card-status" id="signal-status-indicator"></div>
+                    </div>
+                    <div class="card-content">
+                        <div class="signal-display" id="signal-status">
+                            <div class="loading-spinner">Loading signal data...</div>
+                        </div>
+                        <div class="signal-chart" id="signal-chart">
+                            <!-- Signal strength visualization will be added here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card security-card" id="security-card">
+                    <div class="card-header">
+                        <h3>Security Status</h3>
+                        <div class="card-status" id="security-status-indicator"></div>
+                    </div>
+                    <div class="card-content">
+                        <div class="security-info" id="security-status">
+                            <div class="loading-spinner">Loading security information...</div>
+                        </div>
+                        <div class="security-details" id="security-details">
+                            <!-- Security details will be populated -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="action-section">
+                <div class="action-panel">
+                    <h3>Available Actions</h3>
+                    <div class="action-buttons" id="action-buttons">
+                        <!-- Buttons will be populated by JavaScript -->
+                        <button class="btn btn-secondary" onclick="dashboard.refreshStatus()">
+                            <i class="icon-refresh"></i> Refresh Status
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="quick-info-panel">
+                    <h3>Quick Information</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">System Uptime:</span>
+                            <span class="info-value" id="system-uptime">--:--:--</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Phase Duration:</span>
+                            <span class="info-value" id="phase-duration">--:--:--</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Last Updated:</span>
+                            <span class="info-value" id="last-updated">--:--:--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="log-panel">
+                <div class="log-header">
+                    <h3>System Log</h3>
+                    <div class="log-controls">
+                        <button class="btn btn-small" onclick="dashboard.clearLogs()">Clear</button>
+                        <button class="btn btn-small" onclick="dashboard.toggleAutoScroll()">Auto-scroll</button>
+                    </div>
+                </div>
+                <div class="log-content" id="log-content">
+                    <div class="log-entry">
+                        <span class="log-time">[--:--:--]</span>
+                        <span class="log-level info">INFO</span>
+                        <span class="log-message">Dashboard initialized</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="dashboard-footer">
+            <div class="footer-content">
+                <div class="footer-links">
+                    <a href="/status" class="footer-link">System Status</a>
+                    <a href="/help" class="footer-link">Help & Documentation</a>
+                    <a href="/api/v1/status" class="footer-link">API Status</a>
+                </div>
+                <div class="footer-info">
+                    <span class="app-info">SimSelector v2.6.0</span>
+                    <span class="separator">|</span>
+                    <span class="update-info">Last Updated: <span id="footer-last-updated">--:--</span></span>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner-large"></div>
+            <div class="loading-text">Loading dashboard...</div>
+        </div>
+    </div>
+    
+    <!-- Notification system -->
+    <div class="notification-container" id="notification-container">
+        <!-- Notifications will be added here dynamically -->
+    </div>
+    
+    <script src="/static/js/dashboard.js"></script>
+    <script src="/static/js/notifications.js"></script>
+</body>
+</html> 
