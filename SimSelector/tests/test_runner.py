@@ -137,21 +137,24 @@ class TestRunner:
         
         try:
             if args.all:
-                return self._run_all_tests(args)
+                success = self._run_all_tests(args)
             elif args.suite:
-                return self._run_test_suite(args.suite, args)
+                success = self._run_test_suite(args.suite, args)
             elif args.test:
-                return self._run_specific_test(args.test, args)
+                success = self._run_specific_test(args.test, args)
             elif args.scenario:
-                return self._run_test_scenario(args.scenario, args)
+                success = self._run_test_scenario(args.scenario, args)
             elif args.smoke:
-                return self._run_test_scenario('smoke', args)
+                success = self._run_test_scenario('smoke', args)
             else:
                 print("No test selection specified. Use --help for options.")
-                return False
+                success = False
+            
+            return success
         
         finally:
-            self.end_time = time.time()
+            if self.end_time is None:
+                self.end_time = time.time()
             if args.report:
                 self._generate_report(args)
     
@@ -188,7 +191,8 @@ class TestRunner:
         print(f"✅ Passed: {passed_tests}")
         print(f"❌ Failed: {failed_tests}")
         print(f"Success Rate: {(passed_tests/total_tests*100):.1f}%" if total_tests > 0 else "N/A")
-        print(f"Duration: {self.end_time - self.start_time:.2f}s")
+        duration = (self.end_time or time.time()) - self.start_time
+        print(f"Duration: {duration:.2f}s")
         
         return success
     
