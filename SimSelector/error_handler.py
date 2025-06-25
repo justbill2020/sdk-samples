@@ -17,6 +17,9 @@ from enum import Enum
 from typing import Dict, List, Optional, Callable, Any
 from datetime import datetime, timedelta
 import threading
+import random
+import os
+import uuid
 
 
 class ErrorSeverity(Enum):
@@ -53,7 +56,29 @@ class SimSelectorError(Exception):
         self.recoverable = recoverable
         self.context = context or {}
         self.timestamp = datetime.now()
-        self.error_id = f"{category.value}_{int(time.time())}"
+        self.error_id = None  # Let __post_init__ handle unique ID generation
+        
+        # Call __post_init__ explicitly since this isn't a dataclass
+        self.__post_init__()
+
+    def __post_init__(self):
+        """Initialize error after dataclass creation"""
+        if not self.error_id:
+            import time
+            import random
+            import os
+            import threading
+            import uuid
+            # Use UUID + nanosecond precision for absolute uniqueness
+            unique_uuid = str(uuid.uuid4())[:8]  # First 8 chars of UUID
+            timestamp_ns = time.time_ns()  # Nanosecond precision  
+            process_id = os.getpid()
+            thread_id = threading.get_ident()
+            random_component = random.randint(1000, 9999)
+            self.error_id = f"{self.category.value}_{timestamp_ns}_{process_id}_{thread_id}_{unique_uuid}_{random_component}"
+        
+        if not self.timestamp:
+            self.timestamp = time.time()
 
 
 class CriticalError(SimSelectorError):

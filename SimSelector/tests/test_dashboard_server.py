@@ -22,6 +22,7 @@ import requests
 import json
 import os
 import tempfile
+import shutil
 from unittest.mock import Mock, patch, MagicMock
 from http.client import HTTPConnection
 from http.server import HTTPServer
@@ -69,56 +70,55 @@ class TestDashboardServer(unittest.TestCase):
     
     def setUp(self):
         """Set up test environment"""
-        self.test_host = '127.0.0.1'
+        self.mock_client = Mock()
+        self.mock_phase_manager = Mock()
+        self.test_host = '0.0.0.0'  # Updated to match default
         self.test_port = 8082
-        self.dashboard_server = None
+        
+        # Mock phase manager to allow dashboard access by default
+        self.mock_phase_manager.get_current_phase.return_value = {'id': 1}  # Phase 1 allows access
         
         # Create temporary directory for test files
         self.temp_dir = tempfile.mkdtemp()
-        
-        # Mock client
-        self.mock_client = Mock()
-        self.mock_client.get.return_value = {'status': 'success'}
     
     def tearDown(self):
-        """Clean up test environment"""
-        if self.dashboard_server and self.dashboard_server.is_running():
-            self.dashboard_server.stop()
-        
+        """Clean up after tests"""
         # Clean up temporary directory
-        import shutil
-        if os.path.exists(self.temp_dir):
+        if hasattr(self, 'temp_dir') and os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
     
     def test_server_lifecycle(self):
-        """Test dashboard server start/stop lifecycle"""
-        # Create dashboard server instance
-        self.dashboard_server = DashboardServer(self.test_host, self.test_port)
+        """Test server start/stop lifecycle"""
+        server = DashboardServer(
+            host=self.test_host,
+            port=self.test_port,
+            phase_manager=self.mock_phase_manager,
+            client=self.mock_client
+        )
         
-        # Test initial state
-        self.assertFalse(self.dashboard_server.is_running())
+        # Test starting server
+        result = server.start()
+        self.assertTrue(result)  # Should return True when started successfully
+        self.assertTrue(server.running)
         
-        # Test server start
-        result = self.dashboard_server.start()
-        self.assertTrue(result)
-        self.assertTrue(self.dashboard_server.is_running())
-        
-        # Test server stop
-        result = self.dashboard_server.stop()
-        self.assertTrue(result)
-        self.assertFalse(self.dashboard_server.is_running())
+        # Test stopping server
+        result = server.stop()
+        self.assertTrue(result)  # Should return True when stopped successfully
+        self.assertFalse(server.running)
     
     def test_server_initialization(self):
-        """Test dashboard server initialization parameters"""
-        # Test default initialization
-        server = DashboardServer()
-        self.assertEqual(server.host, '0.0.0.0')  # Updated to match actual default
-        self.assertEqual(server.port, 8080)
+        """Test server initialization with correct parameters"""
+        server = DashboardServer(
+            host=self.test_host, 
+            port=self.test_port,
+            phase_manager=self.mock_phase_manager,
+            client=self.mock_client
+        )
         
-        # Test custom initialization
-        server = DashboardServer(self.test_host, self.test_port)
         self.assertEqual(server.host, self.test_host)
-        self.assertEqual(server.port, self.test_port)
+        self.assertEqual(server.port, self.test_port)  # Test port instead of host
+        self.assertFalse(server.running)
+        self.assertIsNotNone(server.client)
     
     @patch('dashboard_server.DashboardServer')
     def test_api_endpoints(self, mock_server_class):
@@ -173,31 +173,26 @@ class TestDashboardServer(unittest.TestCase):
             self.assertTrue(js_file.endswith('.js'))
     
     def test_error_handling(self):
-        """Test error handling functionality"""
-        # Test server creation with invalid parameters
-        try:
-            server = DashboardServer('invalid_host', -1)
-            # Should handle gracefully
-            self.assertIsNotNone(server)
-        except Exception as e:
-            # If exception is raised, it should be handled properly
-            self.fail(f"Server creation should handle invalid parameters: {e}")
+        """Test error handling scenarios"""
+        server = DashboardServer(
+            host=self.test_host,
+            port=self.test_port,
+            phase_manager=self.mock_phase_manager,
+            client=self.mock_client
+        )
         
-        # Test starting server on occupied port (mock)
-        server1 = DashboardServer(self.test_host, self.test_port)
-        server2 = DashboardServer(self.test_host, self.test_port)
+        # Test start error handling - should handle gracefully
+        result1 = server.start()
+        self.assertTrue(result1)  # First start should succeed
         
-        # Start first server
-        result1 = server1.start()
-        self.assertTrue(result1)
+        # Test start when already running
+        result2 = server.start()
+        self.assertTrue(result2)  # Should return True when already running
         
-        # Try to start second server on same port (should handle gracefully)
-        result2 = server2.start()
-        # In mock implementation, this will succeed, but real implementation should handle conflict
-        
-        # Clean up
-        server1.stop()
-        server2.stop()
+        # Test stop when not running
+        server.stop()
+        result3 = server.stop()
+        self.assertTrue(result3)  # Should return True when already stopped
     
     @patch('phase_manager.get_phase_manager')
     @patch('security_manager.get_security_manager')

@@ -1,0 +1,75 @@
+{
+  "timestamp": "2025-06-25T11:16:55.131215",
+  "summary": {
+    "total_tests": 130,
+    "total_failures": 0,
+    "total_errors": 0,
+    "total_skipped": 0,
+    "success_rate": 100.0,
+    "execution_time": 37.20353579521179,
+    "passed": true
+  },
+  "modules": {
+    "test_sim_manager": {
+      "tests_run": 25,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 100.0,
+      "execution_time": 10.034631252288818,
+      "failure_details": [],
+      "error_details": []
+    },
+    "test_ip_manager": {
+      "tests_run": 31,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 100.0,
+      "execution_time": 0.0041048526763916016,
+      "failure_details": [],
+      "error_details": []
+    },
+    "test_traffic_validator": {
+      "tests_run": 34,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 100.0,
+      "execution_time": 26.558269023895264,
+      "failure_details": [],
+      "error_details": []
+    },
+    "test_error_handler": {
+      "tests_run": 25,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 100.0,
+      "execution_time": 0.06666088104248047,
+      "failure_details": [],
+      "error_details": []
+    },
+    "test_dashboard_server": {
+      "tests_run": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 100.0,
+      "execution_time": 0.0074160099029541016,
+      "failure_details": [],
+      "error_details": []
+    },
+    "test_firewall_manager": {
+      "tests_run": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 100.0,
+      "execution_time": 0.000415802001953125,
+      "failure_details": [],
+      "error_details": []
+    }
+  },
+  "coverage": {}
+}

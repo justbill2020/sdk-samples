@@ -1,0 +1,227 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimSelector v2.6.0 Unit Test Report</title>
+    <style>
+        
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        header { text-align: center; margin-bottom: 30px; }
+        h1 { color: #333; margin-bottom: 10px; }
+        .timestamp { color: #666; font-style: italic; }
+        .summary { background: #f8f9fa; padding: 20px; border-radius: 6px; margin-bottom: 30px; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .metric { text-align: center; }
+        .metric-value { font-size: 2em; font-weight: bold; margin-bottom: 5px; }
+        .metric-label { color: #666; font-size: 0.9em; }
+        .success { color: #28a745; }
+        .warning { color: #ffc107; }
+        .error { color: #dc3545; }
+        .module { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 6px; }
+        .module-header { display: flex; justify-content: between; align-items: center; margin-bottom: 15px; }
+        .module-name { font-size: 1.2em; font-weight: bold; }
+        .module-stats { display: flex; gap: 20px; }
+        .stat { text-align: center; }
+        .stat-value { font-weight: bold; }
+        .failures, .errors { margin-top: 15px; }
+        .failure-item, .error-item { margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-left: 4px solid #dc3545; }
+        .recommendations { background: #e7f3ff; padding: 20px; border-radius: 6px; }
+        .recommendation-item { margin-bottom: 10px; }
+        .progress-bar { width: 100%; height: 20px; background: #e9ecef; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; transition: width 0.3s ease; }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SimSelector v2.6.0 Unit Test Report</h1>
+            <p class="timestamp">Generated: 2025-06-25 11:16:55</p>
+        </header>
+        
+        <div class="summary">
+            
+        <h2>Test Summary</h2>
+        <div class="summary-grid">
+            <div class="metric">
+                <div class="metric-value success">100.0%</div>
+                <div class="metric-label">Success Rate</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">130</div>
+                <div class="metric-label">Total Tests</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value success">130</div>
+                <div class="metric-label">Passed</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value error">0</div>
+                <div class="metric-label">Failed</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value error">0</div>
+                <div class="metric-label">Errors</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">37.20s</div>
+                <div class="metric-label">Execution Time</div>
+            </div>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill success" style="width: 100.0%"></div>
+        </div>
+        
+        </div>
+        
+        <div class="modules">
+            <h2>Module Results</h2>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_sim_manager</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value success">100.0%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">25</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_ip_manager</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value success">100.0%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">31</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_traffic_validator</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value success">100.0%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">34</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_error_handler</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value success">100.0%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">25</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_dashboard_server</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value success">100.0%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">9</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_firewall_manager</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value success">100.0%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">6</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="recommendations">
+            <h2>Recommendations</h2><ul><li class='recommendation-item'>✅ All tests passing - ready for deployment!</li></ul>
+        </div>
+    </div>
+</body>
+</html>

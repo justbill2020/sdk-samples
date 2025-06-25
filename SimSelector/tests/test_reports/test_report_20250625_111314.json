@@ -1,0 +1,80 @@
+{
+  "timestamp": "2025-06-25T11:13:14.304739",
+  "summary": {
+    "total_tests": 130,
+    "total_failures": 1,
+    "total_errors": 0,
+    "total_skipped": 0,
+    "success_rate": 99.23076923076923,
+    "execution_time": 37.103190898895264,
+    "passed": false
+  },
+  "modules": {
+    "test_sim_manager": {
+      "tests_run": 25,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 100.0,
+      "execution_time": 10.018876314163208,
+      "failure_details": [],
+      "error_details": []
+    },
+    "test_ip_manager": {
+      "tests_run": 31,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 100.0,
+      "execution_time": 0.004227161407470703,
+      "failure_details": [],
+      "error_details": []
+    },
+    "test_traffic_validator": {
+      "tests_run": 34,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 100.0,
+      "execution_time": 26.589884996414185,
+      "failure_details": [],
+      "error_details": []
+    },
+    "test_error_handler": {
+      "tests_run": 25,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 96.0,
+      "execution_time": 0.07002973556518555,
+      "failure_details": [
+        {
+          "test": "test_error_id_uniqueness (test_error_handler.TestSimSelectorError.test_error_id_uniqueness)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/bill/dev/sdk-samples/SimSelector/tests/test_error_handler.py\", line 154, in test_error_id_uniqueness\n    self.assertNotEqual(error1.error_id, error2.error_id)\nAssertionError: 'UNKNOWN_1750867994' == 'UNKNOWN_1750867994'\n"
+        }
+      ],
+      "error_details": []
+    },
+    "test_dashboard_server": {
+      "tests_run": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 100.0,
+      "execution_time": 0.007114887237548828,
+      "failure_details": [],
+      "error_details": []
+    },
+    "test_firewall_manager": {
+      "tests_run": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 100.0,
+      "execution_time": 0.00021028518676757812,
+      "failure_details": [],
+      "error_details": []
+    }
+  },
+  "coverage": {}
+}

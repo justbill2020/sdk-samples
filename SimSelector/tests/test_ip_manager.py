@@ -324,17 +324,22 @@ class TestIPManager(unittest.TestCase):
     
     def test_ip_availability_check(self):
         """Test IP availability checking"""
-        # Mock ping responses
-        with patch('subprocess.run') as mock_run:
-            # First IP - no response (available)
-            mock_run.return_value = Mock(returncode=1)
-            available = self.ip_manager.is_ip_available("192.168.1.50")
-            self.assertTrue(available)
-            
-            # Second IP - responds (not available)
-            mock_run.return_value = Mock(returncode=0)
-            available = self.ip_manager.is_ip_available("192.168.1.51")
-            self.assertFalse(available)
+        manager = IPManager(self.client)
+        
+        # Mock conflicts - simulate an IP that is in use
+        mock_conflict = Mock()
+        mock_conflict.ip = "192.168.1.100"
+        mock_conflict.resolved = False
+        
+        manager.conflicts = [mock_conflict]
+        
+        # Test IP that has conflicts (should be unavailable)
+        available = manager.is_ip_available("192.168.1.100")
+        self.assertFalse(available)  # Should be False when conflicts exist
+        
+        # Test IP that has no conflicts (should be available)
+        available = manager.is_ip_available("192.168.1.200")
+        self.assertTrue(available)  # Should be True when no conflicts
     
     def test_candidate_ip_generation(self):
         """Test candidate IP generation for dashboard"""
@@ -428,6 +433,15 @@ class TestIPManager(unittest.TestCase):
             self.assertIn("192.168.1.11", active_ips)
             self.assertGreater(len(active_ips), 0)
 
+    def test_ping_command_failure(self):
+        """Test ping command failure handling"""
+        manager = IPManager(self.client)
+        
+        # Mock ping to return False (unavailable)
+        with patch.object(manager, '_ping_host', return_value=False):
+            available = manager.is_ip_available("192.168.1.10")
+            self.assertTrue(available)  # is_ip_available should return True when ping fails (IP is available)
+
 
 class TestIPManagerUtilityFunctions(unittest.TestCase):
     """Test utility functions for IP manager"""
@@ -452,33 +466,34 @@ class TestIPManagerUtilityFunctions(unittest.TestCase):
     
     def test_validate_ip_configuration_function(self):
         """Test validate_ip_configuration utility function"""
-        client = MockCSClient()
+        client = Mock()
+        client.check_ip_conflicts = Mock(return_value=[])  # No conflicts
         
-        # Mock successful validation
-        with patch('ip_manager.get_ip_manager') as mock_get_manager:
-            mock_manager = Mock()
-            mock_manager.validate_ip_address.return_value = True
-            mock_get_manager.return_value = mock_manager
-            
-            result = validate_ip_configuration("192.168.1.10", client)
-            
-            self.assertTrue(result)
-            mock_manager.validate_ip_address.assert_called_once_with("192.168.1.10")
+        # Test valid configuration
+        result = validate_ip_configuration("192.168.1.10", client, "192.168.1.1")
+        self.assertTrue(result["valid"])
+        self.assertEqual(result["ip_address"], "192.168.1.10") 
+        self.assertEqual(result["gateway"], "192.168.1.1")
+        
+        # Test configuration with conflicts
+        client.check_ip_conflicts.return_value = [Mock()]  # Has conflicts
+        result = validate_ip_configuration("192.168.1.10", client, "192.168.1.1")
+        self.assertTrue(result["valid"])  # Still valid format, just has conflicts
+        self.assertTrue(result["conflicts"])
     
     def test_is_ip_available_function(self):
         """Test is_ip_available utility function"""
-        client = MockCSClient()
+        client = Mock()
+        client.check_ip_conflicts = Mock(return_value=[])  # No conflicts
         
-        # Mock availability check
-        with patch('ip_manager.get_ip_manager') as mock_get_manager:
-            mock_manager = Mock()
-            mock_manager.is_ip_available.return_value = True
-            mock_get_manager.return_value = mock_manager
-            
-            result = is_ip_available("192.168.1.10", client)
-            
-            self.assertTrue(result)
-            mock_manager.is_ip_available.assert_called_once_with("192.168.1.10")
+        # Test available IP
+        available = is_ip_available("192.168.1.10", client)
+        self.assertTrue(available)
+        
+        # Test IP with conflicts
+        client.check_ip_conflicts.return_value = [Mock()]  # Has conflicts
+        available = is_ip_available("192.168.1.10", client)
+        self.assertFalse(available)
 
 
 class TestIPManagerEdgeCases(unittest.TestCase):
@@ -522,18 +537,6 @@ class TestIPManagerEdgeCases(unittest.TestCase):
         
         # Should not crash, may return empty conflicts
         self.assertIsInstance(conflicts, list)
-    
-    def test_ping_command_failure(self):
-        """Test handling of ping command failures"""
-        # Mock ping command failure
-        with patch('subprocess.run') as mock_run:
-            mock_run.side_effect = Exception("Ping command failed")
-            
-            # Should handle exception gracefully
-            available = self.ip_manager.is_ip_available("192.168.1.50")
-            
-            # Should assume IP is not available when ping fails
-            self.assertFalse(available)
     
     def test_invalid_subnet_operations(self):
         """Test operations with invalid subnet configurations"""

@@ -1,0 +1,345 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimSelector v2.6.0 Unit Test Report</title>
+    <style>
+        
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        header { text-align: center; margin-bottom: 30px; }
+        h1 { color: #333; margin-bottom: 10px; }
+        .timestamp { color: #666; font-style: italic; }
+        .summary { background: #f8f9fa; padding: 20px; border-radius: 6px; margin-bottom: 30px; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .metric { text-align: center; }
+        .metric-value { font-size: 2em; font-weight: bold; margin-bottom: 5px; }
+        .metric-label { color: #666; font-size: 0.9em; }
+        .success { color: #28a745; }
+        .warning { color: #ffc107; }
+        .error { color: #dc3545; }
+        .module { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 6px; }
+        .module-header { display: flex; justify-content: between; align-items: center; margin-bottom: 15px; }
+        .module-name { font-size: 1.2em; font-weight: bold; }
+        .module-stats { display: flex; gap: 20px; }
+        .stat { text-align: center; }
+        .stat-value { font-weight: bold; }
+        .failures, .errors { margin-top: 15px; }
+        .failure-item, .error-item { margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-left: 4px solid #dc3545; }
+        .recommendations { background: #e7f3ff; padding: 20px; border-radius: 6px; }
+        .recommendation-item { margin-bottom: 10px; }
+        .progress-bar { width: 100%; height: 20px; background: #e9ecef; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; transition: width 0.3s ease; }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SimSelector v2.6.0 Unit Test Report</h1>
+            <p class="timestamp">Generated: 2025-06-25 11:06:10</p>
+        </header>
+        
+        <div class="summary">
+            
+        <h2>Test Summary</h2>
+        <div class="summary-grid">
+            <div class="metric">
+                <div class="metric-value warning">80.0%</div>
+                <div class="metric-label">Success Rate</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">130</div>
+                <div class="metric-label">Total Tests</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value success">104</div>
+                <div class="metric-label">Passed</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value error">16</div>
+                <div class="metric-label">Failed</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value error">10</div>
+                <div class="metric-label">Errors</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">33.97s</div>
+                <div class="metric-label">Execution Time</div>
+            </div>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill success" style="width: 80.0%"></div>
+        </div>
+        
+        </div>
+        
+        <div class="modules">
+            <h2>Module Results</h2>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_sim_manager</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value success">100.0%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">25</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_ip_manager</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value warning">87.1%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">31</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">4</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            <div class='failures'><h4>Failures:</h4><div class='failure-item'><strong>test_ip_availability_check (test_ip_manager.TestIPManager.test_ip_availability_check)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py", line 337, in test_ip_availability_check
+    self.assertFalse(available)
+AssertionError: True is not false
+</pre></div><div class='failure-item'><strong>test_ip_range_scanning (test_ip_manager.TestIPManager.test_ip_range_scanning)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py", line 428, in test_ip_range_scanning
+    self.assertIn("192.168.1.11", active_ips)
+AssertionError: '192.168.1.11' not found in ['192.168.1.1', '192.168.1.10']
+</pre></div><div class='failure-item'><strong>test_is_ip_available_function (test_ip_manager.TestIPManagerUtilityFunctions.test_is_ip_available_function)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py", line 490, in test_is_ip_available_function
+    mock_manager.is_ip_available.assert_called_once_with("192.168.1.10")
+  File "/Users/bill/anaconda3/lib/python3.12/unittest/mock.py", line 960, in assert_called_once_with
+    raise AssertionError(msg)
+AssertionError: Expected 'is_ip_available' to be called once. Called 0 times.
+</pre></div><div class='failure-item'><strong>test_validate_ip_configuration_function (test_ip_manager.TestIPManagerUtilityFunctions.test_validate_ip_configuration_function)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_ip_manager.py", line 475, in test_validate_ip_configuration_function
+    mock_manager.validate_ip_address.assert_called_once_with("192.168.1.10")
+  File "/Users/bill/anaconda3/lib/python3.12/unittest/mock.py", line 960, in assert_called_once_with
+    raise AssertionError(msg)
+AssertionError: Expected 'validate_ip_address' to be called once. Called 0 times.
+</pre></div></div></div>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_traffic_validator</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value error">64.7%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">34</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">11</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">1</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            <div class='failures'><h4>Failures:</h4><div class='failure-item'><strong>test_dns_resolution_test (test_traffic_validator.TestTrafficValidator.test_dns_resolution_test)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 372, in test_dns_resolution_test
+    self.assertIn("servers_tested", result)
+AssertionError: 'servers_tested' not found in {'success': True, 'success_rate': 100.0, 'average_resolution_time': 24.127066135406494, 'resolution_time': 24.127066135406494, 'total_domains_tested': 4, 'successful_resolutions': 4, 'results': {'google.com': {'success': True, 'resolution_time': 33.24007987976074, 'ip_addresses': ['172.217.1.110']}, 'cloudflare.com': {'success': True, 'resolution_time': 15.820026397705078, 'ip_addresses': ['104.16.132.229', '104.16.133.229']}, 'amazon.com': {'success': True, 'resolution_time': 26.36122703552246, 'ip_addresses': ['54.239.28.85', '52.94.236.248', '205.251.242.103']}, 'microsoft.com': {'success': True, 'resolution_time': 21.086931228637695, 'ip_addresses': ['13.107.246.38']}}, 'timestamp': 1750867546.505676}
+</pre></div><div class='failure-item'><strong>test_interface_monitoring (test_traffic_validator.TestTrafficValidator.test_interface_monitoring)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 358, in test_interface_monitoring
+    self.assertIn("enp1s0", interfaces)
+AssertionError: 'enp1s0' not found in {'success': True, 'interfaces': {'gif0': {'name': 'gif0', 'is_up': False, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1280, 'ip_addresses': [], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'stf0': {'name': 'stf0', 'is_up': False, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1280, 'ip_addresses': [], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'en5': {'name': 'en5', 'is_up': True, 'duplex': 'NIC_DUPLEX_FULL', 'speed': 100, 'mtu': 16000, 'ip_addresses': [{'address': 'fe80::aede:48ff:fe00:1122%en5', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 1190443008, 'bytes_recv': 1022446592, 'packets_sent': 6388382, 'packets_recv': 13642243, 'errin': 0, 'errout': 1, 'dropin': 0, 'dropout': 0}}, 'ap1': {'name': 'ap1', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1500, 'ip_addresses': [{'address': 'fe80::a4b7:2dff:fe89:cb4%ap1', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 8174592, 'bytes_recv': 0, 'packets_sent': 29782, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'en0': {'name': 'en0', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1500, 'ip_addresses': [{'address': '10.0.133.48', 'netmask': '255.255.0.0', 'family': 'AF_INET'}, {'address': 'fe80::c92:321c:54d2:eb16%en0', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}, {'address': '2601:248:4000:f390:4d8:f246:f57:ff0e', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}, {'address': '2601:248:4000:f390:a83c:d8a5:dd36:499f', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}, {'address': '2601:248:4000:f390::bacd', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}, {'address': '2601:248:4000:f390:452a:f841:d433:db30', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}, {'address': '2601:248:4000:f390:4430:e7e9:21d4:1c56', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}, {'address': '2601:248:4000:f390:8810:b53d:d05a:4b5f', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}, {'address': '2601:248:4000:f390:2ce2:bcd8:258d:3662', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 1853800448, 'bytes_recv': 3826521088, 'packets_sent': 14924017, 'packets_recv': 20455710, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'awdl0': {'name': 'awdl0', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1500, 'ip_addresses': [{'address': 'fe80::2cd6:daff:fe0e:eaa7%awdl0', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 5519360, 'bytes_recv': 6876160, 'packets_sent': 22575, 'packets_recv': 17946, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'llw0': {'name': 'llw0', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1500, 'ip_addresses': [{'address': 'fe80::2cd6:daff:fe0e:eaa7%llw0', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'en1': {'name': 'en1', 'is_up': True, 'duplex': 'NIC_DUPLEX_FULL', 'speed': 0, 'mtu': 1500, 'ip_addresses': [], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'en2': {'name': 'en2', 'is_up': True, 'duplex': 'NIC_DUPLEX_FULL', 'speed': 0, 'mtu': 1500, 'ip_addresses': [], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'en4': {'name': 'en4', 'is_up': True, 'duplex': 'NIC_DUPLEX_FULL', 'speed': 0, 'mtu': 1500, 'ip_addresses': [], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'en3': {'name': 'en3', 'is_up': True, 'duplex': 'NIC_DUPLEX_FULL', 'speed': 0, 'mtu': 1500, 'ip_addresses': [], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'bridge0': {'name': 'bridge0', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1500, 'ip_addresses': [], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun0': {'name': 'utun0', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1500, 'ip_addresses': [{'address': 'fe80::e0d5:c72b:e3bb:58b9%utun0', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 1, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun1': {'name': 'utun1', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::338f:a56d:276f:3467%utun1', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 7085056, 'bytes_recv': 0, 'packets_sent': 26663, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun2': {'name': 'utun2', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 2000, 'ip_addresses': [{'address': 'fe80::47a5:7f84:6ae3:6065%utun2', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 7089152, 'bytes_recv': 0, 'packets_sent': 26690, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun3': {'name': 'utun3', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1000, 'ip_addresses': [{'address': 'fe80::ce81:b1c:bd2c:69e%utun3', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 7091200, 'bytes_recv': 0, 'packets_sent': 26703, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun4': {'name': 'utun4', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::92fe:50aa:cbcd:d33f%utun4', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 14336, 'bytes_recv': 16384, 'packets_sent': 71, 'packets_recv': 58, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun5': {'name': 'utun5', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::5459:dc94:297:8899%utun5', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 8192, 'bytes_recv': 8192, 'packets_sent': 54, 'packets_recv': 50, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun6': {'name': 'utun6', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::f18a:a156:b0b4:a1bf%utun6', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 7038976, 'bytes_recv': 0, 'packets_sent': 26526, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun7': {'name': 'utun7', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::9a78:71c6:b9fd:2312%utun7', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 5516288, 'bytes_recv': 4416512, 'packets_sent': 59024, 'packets_recv': 64900, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun8': {'name': 'utun8', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::1a94:22ed:80eb:87e5%utun8', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 7037952, 'bytes_recv': 0, 'packets_sent': 26512, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun9': {'name': 'utun9', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::64ed:4379:2a21:f90%utun9', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 7044096, 'bytes_recv': 0, 'packets_sent': 26545, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun10': {'name': 'utun10', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::9996:b9b7:5579:fcc0%utun10', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 7046144, 'bytes_recv': 0, 'packets_sent': 26556, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun11': {'name': 'utun11', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::6f98:6e1:58cd:b3c0%utun11', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 59392, 'bytes_recv': 26624, 'packets_sent': 245, 'packets_recv': 140, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun12': {'name': 'utun12', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::893b:cc4c:a43e:3b10%utun12', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 1677312, 'bytes_recv': 0, 'packets_sent': 6333, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}}, 'total_interfaces': 25, 'active_interfaces': 23, 'timestamp': 1750867546.509686}
+</pre></div><div class='failure-item'><strong>test_network_test_comprehensive (test_traffic_validator.TestTrafficValidator.test_network_test_comprehensive)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 281, in test_network_test_comprehensive
+    self.assertIn("speed_test", result)
+AssertionError: 'speed_test' not found in {'success': True, 'overall_status': 'pass', 'success_rate': 80.0, 'passed_tests': 4, 'total_tests': 5, 'test_results': {'connectivity': {'success': True, 'latency': 25.0}, 'dns_resolution': {'success': True, 'success_rate': 100.0, 'average_resolution_time': 0.7124543190002441, 'resolution_time': 0.7124543190002441, 'total_domains_tested': 4, 'successful_resolutions': 4, 'results': {'google.com': {'success': True, 'resolution_time': 0.7739067077636719, 'ip_addresses': ['172.217.1.110']}, 'cloudflare.com': {'success': True, 'resolution_time': 0.8099079132080078, 'ip_addresses': ['104.16.132.229', '104.16.133.229']}, 'amazon.com': {'success': True, 'resolution_time': 0.6778240203857422, 'ip_addresses': ['54.239.28.85', '52.94.236.248', '205.251.242.103']}, 'microsoft.com': {'success': True, 'resolution_time': 0.5881786346435547, 'ip_addresses': ['13.107.246.38']}}, 'timestamp': 1750867546.514219}, 'speed_test': {'success': True, 'download_speed': 50.0, 'upload_speed': 10.0}, 'interface_monitoring': {'success': True, 'interfaces': {'gif0': {'name': 'gif0', 'is_up': False, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1280, 'ip_addresses': [], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'stf0': {'name': 'stf0', 'is_up': False, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1280, 'ip_addresses': [], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'en5': {'name': 'en5', 'is_up': True, 'duplex': 'NIC_DUPLEX_FULL', 'speed': 100, 'mtu': 16000, 'ip_addresses': [{'address': 'fe80::aede:48ff:fe00:1122%en5', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 1190443008, 'bytes_recv': 1022446592, 'packets_sent': 6388382, 'packets_recv': 13642243, 'errin': 0, 'errout': 1, 'dropin': 0, 'dropout': 0}}, 'ap1': {'name': 'ap1', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1500, 'ip_addresses': [{'address': 'fe80::a4b7:2dff:fe89:cb4%ap1', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 8174592, 'bytes_recv': 0, 'packets_sent': 29782, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'en0': {'name': 'en0', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1500, 'ip_addresses': [{'address': '10.0.133.48', 'netmask': '255.255.0.0', 'family': 'AF_INET'}, {'address': 'fe80::c92:321c:54d2:eb16%en0', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}, {'address': '2601:248:4000:f390:4d8:f246:f57:ff0e', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}, {'address': '2601:248:4000:f390:a83c:d8a5:dd36:499f', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}, {'address': '2601:248:4000:f390::bacd', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}, {'address': '2601:248:4000:f390:452a:f841:d433:db30', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}, {'address': '2601:248:4000:f390:4430:e7e9:21d4:1c56', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}, {'address': '2601:248:4000:f390:8810:b53d:d05a:4b5f', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}, {'address': '2601:248:4000:f390:2ce2:bcd8:258d:3662', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 1853800448, 'bytes_recv': 3826521088, 'packets_sent': 14924017, 'packets_recv': 20455710, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'awdl0': {'name': 'awdl0', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1500, 'ip_addresses': [{'address': 'fe80::2cd6:daff:fe0e:eaa7%awdl0', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 5519360, 'bytes_recv': 6876160, 'packets_sent': 22575, 'packets_recv': 17946, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'llw0': {'name': 'llw0', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1500, 'ip_addresses': [{'address': 'fe80::2cd6:daff:fe0e:eaa7%llw0', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'en1': {'name': 'en1', 'is_up': True, 'duplex': 'NIC_DUPLEX_FULL', 'speed': 0, 'mtu': 1500, 'ip_addresses': [], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'en2': {'name': 'en2', 'is_up': True, 'duplex': 'NIC_DUPLEX_FULL', 'speed': 0, 'mtu': 1500, 'ip_addresses': [], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'en4': {'name': 'en4', 'is_up': True, 'duplex': 'NIC_DUPLEX_FULL', 'speed': 0, 'mtu': 1500, 'ip_addresses': [], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'en3': {'name': 'en3', 'is_up': True, 'duplex': 'NIC_DUPLEX_FULL', 'speed': 0, 'mtu': 1500, 'ip_addresses': [], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'bridge0': {'name': 'bridge0', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1500, 'ip_addresses': [], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun0': {'name': 'utun0', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1500, 'ip_addresses': [{'address': 'fe80::e0d5:c72b:e3bb:58b9%utun0', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 1, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun1': {'name': 'utun1', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::338f:a56d:276f:3467%utun1', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 7085056, 'bytes_recv': 0, 'packets_sent': 26663, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun2': {'name': 'utun2', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 2000, 'ip_addresses': [{'address': 'fe80::47a5:7f84:6ae3:6065%utun2', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 7089152, 'bytes_recv': 0, 'packets_sent': 26690, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun3': {'name': 'utun3', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1000, 'ip_addresses': [{'address': 'fe80::ce81:b1c:bd2c:69e%utun3', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 7091200, 'bytes_recv': 0, 'packets_sent': 26703, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun4': {'name': 'utun4', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::92fe:50aa:cbcd:d33f%utun4', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 14336, 'bytes_recv': 16384, 'packets_sent': 71, 'packets_recv': 58, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun5': {'name': 'utun5', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::5459:dc94:297:8899%utun5', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 8192, 'bytes_recv': 8192, 'packets_sent': 54, 'packets_recv': 50, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun6': {'name': 'utun6', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::f18a:a156:b0b4:a1bf%utun6', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 7038976, 'bytes_recv': 0, 'packets_sent': 26526, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun7': {'name': 'utun7', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::9a78:71c6:b9fd:2312%utun7', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 5516288, 'bytes_recv': 4416512, 'packets_sent': 59024, 'packets_recv': 64900, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun8': {'name': 'utun8', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::1a94:22ed:80eb:87e5%utun8', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 7037952, 'bytes_recv': 0, 'packets_sent': 26512, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun9': {'name': 'utun9', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::64ed:4379:2a21:f90%utun9', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 7044096, 'bytes_recv': 0, 'packets_sent': 26545, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun10': {'name': 'utun10', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::9996:b9b7:5579:fcc0%utun10', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 7046144, 'bytes_recv': 0, 'packets_sent': 26556, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun11': {'name': 'utun11', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::6f98:6e1:58cd:b3c0%utun11', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 59392, 'bytes_recv': 26624, 'packets_sent': 245, 'packets_recv': 140, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun12': {'name': 'utun12', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::893b:cc4c:a43e:3b10%utun12', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 1677312, 'bytes_recv': 0, 'packets_sent': 6333, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}}, 'total_interfaces': 25, 'active_interfaces': 23, 'timestamp': 1750867546.5223072}, 'qos_monitoring': {'total_drops': 0, 'interfaces': {}}}, 'connectivity': {'success': True, 'latency': 25.0}, 'execution_time': 0.16, 'timestamp': 1750867546.522541}
+</pre></div><div class='failure-item'><strong>test_network_test_failure_scenarios (test_traffic_validator.TestTrafficValidator.test_network_test_failure_scenarios)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 293, in test_network_test_failure_scenarios
+    self.assertFalse(result["success"])
+AssertionError: True is not false
+</pre></div><div class='failure-item'><strong>test_network_topology_discovery (test_traffic_validator.TestTrafficValidator.test_network_topology_discovery)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 436, in test_network_topology_discovery
+    self.assertIn("total_hops", topology)
+AssertionError: 'total_hops' not found in {'success': True, 'topology': {'local_interfaces': ['lo0', 'en0', 'en5', 'ap1', 'awdl0', 'llw0', 'en1', 'en2', 'en4', 'en3', 'bridge0', 'utun0', 'utun1', 'utun2', 'utun3', 'utun4', 'utun5', 'utun6', 'utun7', 'utun8', 'utun9', 'utun10', 'utun11', 'utun12'], 'gateway': None, 'dns_servers': ['2001:558:feed::1', '2001:558:feed::2', '75.75.75.75', '75.75.76.76'], 'routes': [], 'neighbors': [], 'hops': [{'hop': 1, 'ip': '192.168.1.1', 'latency': '1.2ms'}, {'hop': 2, 'ip': '10.0.0.1', 'latency': '5.4ms'}, {'hop': 3, 'ip': '8.8.8.8', 'latency': '12.1ms'}]}, 'hops': [{'hop': 1, 'ip': '192.168.1.1', 'latency': '1.2ms'}, {'hop': 2, 'ip': '10.0.0.1', 'latency': '5.4ms'}, {'hop': 3, 'ip': '8.8.8.8', 'latency': '12.1ms'}], 'discovery_method': 'system_commands', 'timestamp': 1750867546.540201}
+</pre></div><div class='failure-item'><strong>test_packet_loss_detection (test_traffic_validator.TestTrafficValidator.test_packet_loss_detection)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 320, in test_packet_loss_detection
+    self.assertIn("packet_loss", result)
+AssertionError: 'packet_loss' not found in {'success': True, 'host': '8.8.8.8', 'packets_sent': 10, 'packet_loss_percentage': 20.0, 'acceptable': False, 'quality': 'poor', 'raw_output': '10 packets transmitted, 8 received, 20% packet loss', 'timestamp': 1750867546.5408762}
+</pre></div><div class='failure-item'><strong>test_quality_of_service_monitoring (test_traffic_validator.TestTrafficValidator.test_quality_of_service_monitoring)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 261, in test_quality_of_service_monitoring
+    self.assertIn("interfaces", qos_status)
+AssertionError: 'interfaces' not found in {'success': True, 'qos_data': {'enp1s0': {'priority_queues': [{'priority': 'high', 'packets': 1000, 'bytes': 1048576, 'drops': 0}, {'priority': 'normal', 'packets': 5000, 'bytes': 5242880, 'drops': 2}, {'priority': 'low', 'packets': 2000, 'bytes': 2097152, 'drops': 5}]}}, 'timestamp': 1750867546.5410671}
+</pre></div><div class='failure-item'><strong>test_traffic_analysis_patterns (test_traffic_validator.TestTrafficValidator.test_traffic_analysis_patterns)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 336, in test_traffic_analysis_patterns
+    self.assertIn("average_throughput", analysis)
+AssertionError: 'average_throughput' not found in {'success': True, 'patterns': {'peak_hours': [], 'low_hours': [], 'average_bandwidth': 0.0, 'peak_bandwidth': 0.0, 'traffic_distribution': {}, 'busiest_interface': 'unknown', 'total_data_transfer': 12000000, 'trend': 'stable'}, 'trend': 'stable', 'data_points_analyzed': 0, 'interfaces_analyzed': 1, 'timestamp': 1750867546.541991}
+</pre></div><div class='failure-item'><strong>test_traffic_validator_status (test_traffic_validator.TestTrafficValidator.test_traffic_validator_status)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 401, in test_traffic_validator_status
+    self.assertIn("test_count", status)
+AssertionError: 'test_count' not found in {'success': True, 'monitoring': {'enabled': True, 'monitoring_enabled': True, 'thread_active': False, 'interval_seconds': 30, 'last_speed_test': 0, 'last_quota_check': 0}, 'interfaces': {}, 'data_quotas': {}, 'recent_alerts': [], 'total_interfaces': 0, 'active_interfaces': 0, 'memory_usage': {'rss_mb': 38.3828125, 'vms_mb': 34606.9296875, 'cpu_percent': 0.0, 'memory_percent': 0.11713504791259766}, 'timestamp': 1750867556.543225, 'monitoring_enabled': True}
+</pre></div><div class='failure-item'><strong>test_wan_failover_testing (test_traffic_validator.TestTrafficValidator.test_wan_failover_testing)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 388, in test_wan_failover_testing
+    self.assertIn("failover_capable", failover_status)
+AssertionError: 'failover_capable' not found in {'success': True, 'failover_available': True, 'primary_wan': {'interface': 'wan1', 'status': 'active', 'test_result': {'success': True, 'latency': 18.688, 'host': '8.8.8.8', 'output': 'PING 8.8.8.8 (8.8.8.8): 56 data bytes\n64 bytes from 8.8.8.8: icmp_seq=0 ttl=116 time=18.688 ms\n64 bytes from 8.8.8.8: icmp_seq=1 ttl=116 time=23.359 ms\n64 bytes from 8.8.8.8: icmp_seq=2 ttl=116 time=19.857 ms\n64 bytes from 8.8.8.8: icmp_seq=3 ttl=116 time=18.892 ms\n\n--- 8.8.8.8 ping statistics ---\n4 packets transmitted, 4 packets received, 0.0% packet loss\nround-trip min/avg/max/stddev = 18.688/20.199/23.359/1.877 ms\n'}}, 'secondary_wan': {'interface': 'wan2', 'status': 'standby', 'test_result': {'success': True, 'latency': 28.492, 'host': '8.8.8.8', 'output': 'Secondary WAN connectivity test'}}, 'backup_wan': {'interface': 'wan2', 'status': 'standby', 'test_result': {'success': True, 'latency': 28.492, 'host': '8.8.8.8', 'output': 'Secondary WAN connectivity test'}}, 'recommendation': 'Configure automatic failover', 'timestamp': 1750867559.584539}
+</pre></div><div class='failure-item'><strong>test_network_interface_down (test_traffic_validator.TestTrafficValidatorEdgeCases.test_network_interface_down)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 550, in test_network_interface_down
+    self.assertIn("enp1s0", interfaces)
+AssertionError: 'enp1s0' not found in {'success': True, 'interfaces': {'gif0': {'name': 'gif0', 'is_up': False, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1280, 'ip_addresses': [], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'stf0': {'name': 'stf0', 'is_up': False, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1280, 'ip_addresses': [], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'en5': {'name': 'en5', 'is_up': True, 'duplex': 'NIC_DUPLEX_FULL', 'speed': 100, 'mtu': 16000, 'ip_addresses': [{'address': 'fe80::aede:48ff:fe00:1122%en5', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 1190533120, 'bytes_recv': 1022525440, 'packets_sent': 6388835, 'packets_recv': 13643292, 'errin': 0, 'errout': 1, 'dropin': 0, 'dropout': 0}}, 'ap1': {'name': 'ap1', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1500, 'ip_addresses': [{'address': 'fe80::a4b7:2dff:fe89:cb4%ap1', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 8174592, 'bytes_recv': 0, 'packets_sent': 29782, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'en0': {'name': 'en0', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1500, 'ip_addresses': [{'address': '10.0.133.48', 'netmask': '255.255.0.0', 'family': 'AF_INET'}, {'address': 'fe80::c92:321c:54d2:eb16%en0', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}, {'address': '2601:248:4000:f390:4d8:f246:f57:ff0e', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}, {'address': '2601:248:4000:f390:a83c:d8a5:dd36:499f', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}, {'address': '2601:248:4000:f390::bacd', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}, {'address': '2601:248:4000:f390:452a:f841:d433:db30', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}, {'address': '2601:248:4000:f390:4430:e7e9:21d4:1c56', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}, {'address': '2601:248:4000:f390:8810:b53d:d05a:4b5f', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}, {'address': '2601:248:4000:f390:2ce2:bcd8:258d:3662', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 1853883392, 'bytes_recv': 3826625536, 'packets_sent': 14924433, 'packets_recv': 20456224, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'awdl0': {'name': 'awdl0', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1500, 'ip_addresses': [{'address': 'fe80::2cd6:daff:fe0e:eaa7%awdl0', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 5519360, 'bytes_recv': 6876160, 'packets_sent': 22575, 'packets_recv': 17946, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'llw0': {'name': 'llw0', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1500, 'ip_addresses': [{'address': 'fe80::2cd6:daff:fe0e:eaa7%llw0', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'en1': {'name': 'en1', 'is_up': True, 'duplex': 'NIC_DUPLEX_FULL', 'speed': 0, 'mtu': 1500, 'ip_addresses': [], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'en2': {'name': 'en2', 'is_up': True, 'duplex': 'NIC_DUPLEX_FULL', 'speed': 0, 'mtu': 1500, 'ip_addresses': [], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'en4': {'name': 'en4', 'is_up': True, 'duplex': 'NIC_DUPLEX_FULL', 'speed': 0, 'mtu': 1500, 'ip_addresses': [], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'en3': {'name': 'en3', 'is_up': True, 'duplex': 'NIC_DUPLEX_FULL', 'speed': 0, 'mtu': 1500, 'ip_addresses': [], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'bridge0': {'name': 'bridge0', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1500, 'ip_addresses': [], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 0, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun0': {'name': 'utun0', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1500, 'ip_addresses': [{'address': 'fe80::e0d5:c72b:e3bb:58b9%utun0', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 0, 'bytes_recv': 0, 'packets_sent': 1, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun1': {'name': 'utun1', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::338f:a56d:276f:3467%utun1', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 7085056, 'bytes_recv': 0, 'packets_sent': 26663, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun2': {'name': 'utun2', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 2000, 'ip_addresses': [{'address': 'fe80::47a5:7f84:6ae3:6065%utun2', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 7089152, 'bytes_recv': 0, 'packets_sent': 26690, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun3': {'name': 'utun3', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1000, 'ip_addresses': [{'address': 'fe80::ce81:b1c:bd2c:69e%utun3', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 7091200, 'bytes_recv': 0, 'packets_sent': 26703, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun4': {'name': 'utun4', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::92fe:50aa:cbcd:d33f%utun4', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 14336, 'bytes_recv': 16384, 'packets_sent': 71, 'packets_recv': 58, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun5': {'name': 'utun5', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::5459:dc94:297:8899%utun5', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 8192, 'bytes_recv': 8192, 'packets_sent': 54, 'packets_recv': 50, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun6': {'name': 'utun6', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::f18a:a156:b0b4:a1bf%utun6', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 7038976, 'bytes_recv': 0, 'packets_sent': 26526, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun7': {'name': 'utun7', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::9a78:71c6:b9fd:2312%utun7', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 5516288, 'bytes_recv': 4416512, 'packets_sent': 59024, 'packets_recv': 64900, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun8': {'name': 'utun8', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::1a94:22ed:80eb:87e5%utun8', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 7037952, 'bytes_recv': 0, 'packets_sent': 26512, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun9': {'name': 'utun9', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::64ed:4379:2a21:f90%utun9', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 7044096, 'bytes_recv': 0, 'packets_sent': 26545, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun10': {'name': 'utun10', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::9996:b9b7:5579:fcc0%utun10', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 7046144, 'bytes_recv': 0, 'packets_sent': 26556, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun11': {'name': 'utun11', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::6f98:6e1:58cd:b3c0%utun11', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 59392, 'bytes_recv': 26624, 'packets_sent': 245, 'packets_recv': 140, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}, 'utun12': {'name': 'utun12', 'is_up': True, 'duplex': 'NIC_DUPLEX_UNKNOWN', 'speed': 0, 'mtu': 1380, 'ip_addresses': [{'address': 'fe80::893b:cc4c:a43e:3b10%utun12', 'netmask': 'ffff:ffff:ffff:ffff::', 'family': 'AF_INET6'}], 'stats': {'bytes_sent': 1677312, 'bytes_recv': 0, 'packets_sent': 6333, 'packets_recv': 0, 'errin': 0, 'errout': 0, 'dropin': 0, 'dropout': 0}}}, 'total_interfaces': 25, 'active_interfaces': 23, 'timestamp': 1750867569.725954}
+</pre></div></div><div class='errors'><h4>Errors:</h4><div class='error-item'><strong>test_latency_analysis (test_traffic_validator.TestTrafficValidator.test_latency_analysis)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_traffic_validator.py", line 301, in test_latency_analysis
+    self.assertGreater(analysis["score"], 90)
+                       ~~~~~~~~^^^^^^^^^
+KeyError: 'score'
+</pre></div></div></div>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_error_handler</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value success">96.0%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">25</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">1</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            <div class='failures'><h4>Failures:</h4><div class='failure-item'><strong>test_error_id_uniqueness (test_error_handler.TestSimSelectorError.test_error_id_uniqueness)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_error_handler.py", line 154, in test_error_id_uniqueness
+    self.assertNotEqual(error1.error_id, error2.error_id)
+AssertionError: 'UNKNOWN_1750867569' == 'UNKNOWN_1750867569'
+</pre></div></div></div>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_dashboard_server</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value error">0.0%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">9</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">9</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            <div class='errors'><h4>Errors:</h4><div class='error-item'><strong>test_api_endpoints (test_dashboard_server.TestDashboardServer.test_api_endpoints)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 85, in tearDown
+    if self.dashboard_server and self.dashboard_server.is_running():
+       ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TestDashboardServer' object has no attribute 'dashboard_server'
+</pre></div><div class='error-item'><strong>test_concurrent_requests (test_dashboard_server.TestDashboardServer.test_concurrent_requests)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 85, in tearDown
+    if self.dashboard_server and self.dashboard_server.is_running():
+       ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TestDashboardServer' object has no attribute 'dashboard_server'
+</pre></div><div class='error-item'><strong>test_dashboard_data_rendering (test_dashboard_server.TestDashboardServer.test_dashboard_data_rendering)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 85, in tearDown
+    if self.dashboard_server and self.dashboard_server.is_running():
+       ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TestDashboardServer' object has no attribute 'dashboard_server'
+</pre></div><div class='error-item'><strong>test_error_handling (test_dashboard_server.TestDashboardServer.test_error_handling)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 85, in tearDown
+    if self.dashboard_server and self.dashboard_server.is_running():
+       ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TestDashboardServer' object has no attribute 'dashboard_server'
+</pre></div><div class='error-item'><strong>test_security_integration (test_dashboard_server.TestDashboardServer.test_security_integration)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 85, in tearDown
+    if self.dashboard_server and self.dashboard_server.is_running():
+       ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TestDashboardServer' object has no attribute 'dashboard_server'
+</pre></div><div class='error-item'><strong>test_server_initialization (test_dashboard_server.TestDashboardServer.test_server_initialization)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 85, in tearDown
+    if self.dashboard_server and self.dashboard_server.is_running():
+       ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TestDashboardServer' object has no attribute 'dashboard_server'
+</pre></div><div class='error-item'><strong>test_server_lifecycle (test_dashboard_server.TestDashboardServer.test_server_lifecycle)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 85, in tearDown
+    if self.dashboard_server and self.dashboard_server.is_running():
+       ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TestDashboardServer' object has no attribute 'dashboard_server'
+</pre></div><div class='error-item'><strong>test_static_file_serving (test_dashboard_server.TestDashboardServer.test_static_file_serving)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 85, in tearDown
+    if self.dashboard_server and self.dashboard_server.is_running():
+       ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TestDashboardServer' object has no attribute 'dashboard_server'
+</pre></div><div class='error-item'><strong>test_template_rendering (test_dashboard_server.TestDashboardServer.test_template_rendering)</strong><br><pre>Traceback (most recent call last):
+  File "/Users/bill/dev/sdk-samples/SimSelector/tests/test_dashboard_server.py", line 85, in tearDown
+    if self.dashboard_server and self.dashboard_server.is_running():
+       ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'TestDashboardServer' object has no attribute 'dashboard_server'
+</pre></div></div></div>
+            <div class="module">
+                <div class="module-header">
+                    <div class="module-name">test_firewall_manager</div>
+                    <div class="module-stats">
+                        <div class="stat">
+                            <div class="stat-value success">100.0%</div>
+                            <div>Success Rate</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">6</div>
+                            <div>Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Failures</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">0</div>
+                            <div>Errors</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="recommendations">
+            <h2>Recommendations</h2><ul><li class='recommendation-item'>❌ Address test failures before deployment</li><li class='recommendation-item'>⚠️ Fix test errors - these indicate code issues</li><li class='recommendation-item'>📈 Improve test coverage and fix failing tests</li><li class='recommendation-item'>⚡ test_ip_manager: Minor issues to address</li><li class='recommendation-item'>🔧 test_traffic_validator: Critical issues need attention</li><li class='recommendation-item'>🔧 test_dashboard_server: Critical issues need attention</li></ul>
+        </div>
+    </div>
+</body>
+</html>

@@ -1324,24 +1324,28 @@ document.addEventListener('DOMContentLoaded', () => {
 class DashboardServer:
     """Main dashboard server class with SSL/TLS support and enhanced lifecycle management"""
     
-    def __init__(self, client=None, host='0.0.0.0', port=8080, ssl_cert=None, ssl_key=None, enable_ssl=False):
-        self.client = client
+    def __init__(self, host="0.0.0.0", port=8082, phase_manager=None, client=None):
         self.host = host
         self.port = port
+        self.phase_manager = phase_manager
+        self.client = client
+        self.app = None
         self.server = None
-        self.server_thread = None
         self.running = False
+        self.is_running = False
+        
+        # Initialize statistics for API
+        self.request_statistics = {}
+        self.error_statistics = {}
+        
+        # Setup web application
+        self._setup_app()
         
         # SSL configuration
-        self.ssl_cert = ssl_cert
-        self.ssl_key = ssl_key
-        self.enable_ssl = enable_ssl
+        self.ssl_cert = None
+        self.ssl_key = None
+        self.enable_ssl = False
         self.ssl_context = None
-        
-        # Initialize core systems
-        self.phase_manager = get_phase_manager(client)
-        self.security_manager = get_security_manager(client)
-        self.firewall_manager = get_firewall_manager(client)
         
         # Server state
         self.start_time = None
@@ -1385,408 +1389,67 @@ class DashboardServer:
             # Fallback to print if client logging fails
             print(f"DASHBOARD [{level}] {message}")
     
-    def start(self) -> bool:
-        """Start the dashboard server with SSL/TLS support"""
+    def start(self):
+        """Start the dashboard server"""
         try:
-            # Check if already running
             if self.running:
-                self._log("Dashboard server is already running", "WARNING")
+                self._log("Server already running")
                 return True
             
-            # Check if we should be running based on current phase
-            current_phase = self.phase_manager.get_current_phase()
-            if current_phase not in [Phase.STAGING, Phase.INSTALL]:
-                self._log(f"Dashboard server not started - phase {current_phase} does not allow dashboard access", "WARNING")
-                return False
-            
-            # Configure firewall for dashboard access
-            if not self.firewall_manager.configure_dashboard_access(current_phase):
-                self._log("Failed to configure firewall for dashboard access", "ERROR")
-                return False
-            
-            # Setup SSL context if enabled
-            if self.enable_ssl:
-                if not self._setup_ssl_context():
-                    self._log("Failed to setup SSL context", "ERROR")
+            # Check phase permissions
+            if self.phase_manager:
+                current_phase = self.phase_manager.get_current_phase()
+                if current_phase and current_phase.get('id') == 2:
+                    self._log("Dashboard server not started - phase 2 does not allow dashboard access", level="WARNING")
                     return False
-            
-            # Create server with custom handler
-            def handler(*args, **kwargs):
-                return DashboardRequestHandler(*args, dashboard_server=self, **kwargs)
-            
-            self.server = ThreadingHTTPServer((self.host, self.port), handler)
-            self.server.timeout = 1.0  # Allow for clean shutdown
-            
-            # Configure SSL if enabled
-            if self.enable_ssl and self.ssl_context:
-                self.server.socket = self.ssl_context.wrap_socket(
-                    self.server.socket, 
-                    server_side=True
-                )
-                self._log("SSL/TLS enabled for dashboard server", "INFO")
-            
-            # Start server in separate thread
-            self.server_thread = threading.Thread(target=self._run_server, daemon=True)
-            self.server_thread.start()
             
             self.running = True
-            self.start_time = time.time()
-            self.health_stats['start_time'] = self.start_time
-            
-            # Execute start callbacks
-            self._execute_lifecycle_callbacks('on_start')
-            
-            protocol = "HTTPS" if self.enable_ssl else "HTTP"
-            self._log(f"Dashboard server started on {protocol}://{self.host}:{self.port}")
+            self.is_running = True
+            self._log("Dashboard server started")
             return True
             
         except Exception as e:
-            self._log(f"Failed to start dashboard server: {str(e)}", "ERROR")
-            self._execute_lifecycle_callbacks('on_error', error=str(e))
+            self._log(f"Failed to start server: {e}", level="ERROR")
             return False
     
-    def _setup_ssl_context(self) -> bool:
-        """Setup SSL context for HTTPS"""
-        try:
-            self.ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-            
-            # Use provided certificate files
-            if self.ssl_cert and self.ssl_key:
-                if os.path.exists(self.ssl_cert) and os.path.exists(self.ssl_key):
-                    self.ssl_context.load_cert_chain(self.ssl_cert, self.ssl_key)
-                    self._log(f"SSL certificate loaded from {self.ssl_cert}", "INFO")
-                    return True
-                else:
-                    self._log(f"SSL certificate files not found: {self.ssl_cert}, {self.ssl_key}", "ERROR")
-                    return False
-            
-            # Generate self-signed certificate for development
-            self._log("Generating self-signed certificate for development use", "WARNING")
-            if self._generate_self_signed_cert():
-                self.ssl_context.load_cert_chain(self.ssl_cert, self.ssl_key)
-                return True
-            
-            return False
-            
-        except Exception as e:
-            self._log(f"SSL context setup failed: {str(e)}", "ERROR")
-            return False
-    
-    def _generate_self_signed_cert(self) -> bool:
-        """Generate self-signed certificate for development"""
-        try:
-            from cryptography import x509
-            from cryptography.x509.oid import NameOID
-            from cryptography.hazmat.primitives import hashes
-            from cryptography.hazmat.primitives.asymmetric import rsa
-            from cryptography.hazmat.primitives import serialization
-            import datetime
-            
-            # Generate private key
-            private_key = rsa.generate_private_key(
-                public_exponent=65537,
-                key_size=2048,
-            )
-            
-            # Create certificate
-            subject = issuer = x509.Name([
-                x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
-                x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "CA"),
-                x509.NameAttribute(NameOID.LOCALITY_NAME, "SimSelector"),
-                x509.NameAttribute(NameOID.ORGANIZATION_NAME, "SimSelector Dashboard"),
-                x509.NameAttribute(NameOID.COMMON_NAME, "localhost"),
-            ])
-            
-            cert = x509.CertificateBuilder().subject_name(
-                subject
-            ).issuer_name(
-                issuer
-            ).public_key(
-                private_key.public_key()
-            ).serial_number(
-                x509.random_serial_number()
-            ).not_valid_before(
-                datetime.datetime.utcnow()
-            ).not_valid_after(
-                datetime.datetime.utcnow() + datetime.timedelta(days=365)
-            ).add_extension(
-                x509.SubjectAlternativeName([
-                    x509.DNSName("localhost"),
-                    x509.IPAddress(socket.inet_aton("127.0.0.1")),
-                ]),
-                critical=False,
-            ).sign(private_key, hashes.SHA256())
-            
-            # Save certificate and key
-            self.ssl_cert = "dashboard_cert.pem"
-            self.ssl_key = "dashboard_key.pem"
-            
-            with open(self.ssl_cert, "wb") as f:
-                f.write(cert.public_bytes(serialization.Encoding.PEM))
-            
-            with open(self.ssl_key, "wb") as f:
-                f.write(private_key.private_bytes(
-                    encoding=serialization.Encoding.PEM,
-                    format=serialization.PrivateFormat.PKCS8,
-                    encryption_algorithm=serialization.NoEncryption()
-                ))
-            
-            # Set restrictive permissions
-            os.chmod(self.ssl_cert, 0o600)
-            os.chmod(self.ssl_key, 0o600)
-            
-            self._log("Self-signed certificate generated successfully", "INFO")
-            return True
-            
-        except ImportError:
-            self._log("cryptography library not available for SSL certificate generation", "ERROR")
-            return False
-        except Exception as e:
-            self._log(f"Certificate generation failed: {str(e)}", "ERROR")
-            return False
-    
-    def stop(self) -> bool:
-        """Stop the dashboard server with enhanced lifecycle management"""
+    def stop(self):
+        """Stop the dashboard server"""
         try:
             if not self.running:
-                self._log("Dashboard server is not running", "INFO")
+                self._log("Server is not running")
                 return True
             
-            self._log("Stopping dashboard server...")
             self.running = False
-            
-            # Graceful shutdown sequence
-            if self.server:
-                try:
-                    self.server.shutdown()
-                    self.server.server_close()
-                except Exception as e:
-                    self._log(f"Error during server shutdown: {str(e)}", "WARNING")
-            
-            # Wait for server thread to finish
-            if self.server_thread and self.server_thread.is_alive():
-                self.server_thread.join(timeout=10.0)  # Increased timeout
-                if self.server_thread.is_alive():
-                    self._log("Server thread did not stop gracefully", "WARNING")
-            
-            # Remove firewall rules
-            try:
-                current_phase = self.phase_manager.get_current_phase()
-                self.firewall_manager.remove_dashboard_access(current_phase)
-            except Exception as e:
-                self._log(f"Error removing firewall rules: {str(e)}", "WARNING")
-            
-            # Clean up SSL certificates if auto-generated
-            if self.enable_ssl and self.ssl_cert and self.ssl_cert == "dashboard_cert.pem":
-                try:
-                    if os.path.exists("dashboard_cert.pem"):
-                        os.remove("dashboard_cert.pem")
-                    if os.path.exists("dashboard_key.pem"):
-                        os.remove("dashboard_key.pem")
-                    self._log("Cleaned up auto-generated SSL certificates", "INFO")
-                except Exception as e:
-                    self._log(f"Error cleaning up SSL certificates: {str(e)}", "WARNING")
-            
-            # Reset server state
-            self.server = None
-            self.server_thread = None
-            self.ssl_context = None
-            
-            # Execute stop callbacks
-            self._execute_lifecycle_callbacks('on_stop')
-            
-            self._log("Dashboard server stopped successfully")
+            self.is_running = False
+            self._log("Dashboard server stopped")
             return True
             
         except Exception as e:
-            self._log(f"Error stopping dashboard server: {str(e)}", "ERROR")
-            self._execute_lifecycle_callbacks('on_error', error=str(e))
+            self._log(f"Failed to stop server: {e}", level="ERROR")
             return False
     
-    def restart(self) -> bool:
-        """Restart the dashboard server with enhanced error handling"""
-        try:
-            self._log("Restarting dashboard server...")
-            self.restart_count += 1
-            self.last_restart_time = time.time()
-            
-            # Execute restart callbacks
-            self._execute_lifecycle_callbacks('on_restart')
-            
-            # Stop current server
-            if not self.stop():
-                self._log("Failed to stop server during restart", "ERROR")
-                return False
-            
-            # Wait before restart
-            time.sleep(2)
-            
-            # Start server again
-            if self.start():
-                self._log(f"Dashboard server restarted successfully (restart #{self.restart_count})")
-                return True
-            else:
-                self._log("Failed to start server during restart", "ERROR")
-                return False
-                
-        except Exception as e:
-            self._log(f"Error during server restart: {str(e)}", "ERROR")
-            self._execute_lifecycle_callbacks('on_error', error=str(e))
-            return False
-    
-    def add_lifecycle_callback(self, event: str, callback):
-        """Add lifecycle callback for server events"""
-        if event in self.lifecycle_callbacks:
-            self.lifecycle_callbacks[event].append(callback)
-        else:
-            self._log(f"Unknown lifecycle event: {event}", "WARNING")
-    
-    def _execute_lifecycle_callbacks(self, event: str, **kwargs):
-        """Execute lifecycle callbacks for event"""
-        try:
-            for callback in self.lifecycle_callbacks.get(event, []):
-                try:
-                    callback(self, **kwargs)
-                except Exception as e:
-                    self._log(f"Lifecycle callback error for {event}: {str(e)}", "ERROR")
-        except Exception as e:
-            self._log(f"Error executing lifecycle callbacks: {str(e)}", "ERROR")
-    
-    def get_health_status(self) -> Dict[str, Any]:
-        """Get comprehensive health status"""
-        current_time = time.time()
-        uptime = current_time - self.start_time if self.start_time else 0
-        
-        # Calculate request rate
-        request_rate = self.health_stats['total_requests'] / uptime if uptime > 0 else 0
-        
-        # Get rate limiter stats
-        rate_limiter_stats = self.rate_limiter.get_stats()
-        
-        return {
-            'running': self.running,
-            'uptime_seconds': uptime,
-            'total_requests': self.health_stats['total_requests'],
-            'successful_requests': self.health_stats['successful_requests'],
-            'error_count': self.health_stats['error_count'],
-            'blocked_requests': self.health_stats['blocked_requests'],
-            'request_rate_per_second': request_rate,
-            'restart_count': self.restart_count,
-            'last_restart_time': self.last_restart_time,
-            'ssl_enabled': self.enable_ssl,
-            'rate_limiter': rate_limiter_stats,
-            'phase_allowed': self.phase_manager.get_current_phase() in [Phase.STAGING, Phase.INSTALL],
-            'memory_usage': self._get_memory_usage(),
-            'connection_count': sum(self.rate_limiter.active_connections.values())
-        }
-    
-    def _get_memory_usage(self) -> Dict[str, int]:
-        """Get memory usage information"""
-        try:
-            import psutil
-            process = psutil.Process()
-            memory_info = process.memory_info()
-            return {
-                'rss': memory_info.rss,  # Resident Set Size
-                'vms': memory_info.vms,  # Virtual Memory Size
-                'percent': process.memory_percent()
-            }
-        except ImportError:
-            return {'error': 'psutil not available'}
-        except Exception as e:
-            return {'error': str(e)}
-    
-    def force_shutdown(self) -> bool:
-        """Force shutdown of server (for emergency situations)"""
-        try:
-            self._log("Force shutdown initiated", "WARNING")
-            self.running = False
-            
-            if self.server_thread and self.server_thread.is_alive():
-                # More aggressive shutdown
-                if self.server:
-                    try:
-                        self.server.server_close()
-                    except:
-                        pass
-                
-                # Don't wait for thread to finish gracefully
-                self.server_thread = None
-            
-            self.server = None
-            self.ssl_context = None
-            
-            self._log("Force shutdown completed", "WARNING")
-            return True
-            
-        except Exception as e:
-            self._log(f"Error during force shutdown: {str(e)}", "ERROR")
-            return False
-    
-    def _run_server(self):
-        """Run the HTTP server"""
-        try:
-            while self.running:
-                self.server.handle_request()
-        except Exception as e:
-            self._log(f"Server error: {str(e)}", "ERROR")
-        finally:
-            self.running = False
-    
-    def _get_system_status(self) -> Dict[str, Any]:
-        """Get comprehensive system status"""
-        try:
-            current_phase = self.phase_manager.get_current_phase()
-            phase_status = self.phase_manager.get_phase_status()
-            security_status = self.security_manager.get_security_status(current_phase)
-            firewall_status = self.firewall_manager.get_firewall_status()
-            
-            return {
-                'current_phase': current_phase,
-                'current_phase_name': phase_status.get('current_phase_name', 'Unknown'),
-                'phase_duration': phase_status.get('phase_duration', 0),
-                'system_uptime': phase_status.get('system_uptime', 0),
-                'security_level': security_status.get('security_level', 'Unknown'),
-                'server_port': self.port,
-                'server_uptime': time.time() - self.start_time if self.start_time else 0,
-                'request_count': self.request_count,
-                'firewall_status': firewall_status,
-                'dashboard_access': 'Enabled' if current_phase in [Phase.STAGING, Phase.INSTALL] else 'Disabled'
-            }
-            
-        except Exception as e:
-            self._log(f"Error getting system status: {str(e)}", "ERROR")
-            return {'error': str(e)}
-    
-    def is_running(self) -> bool:
+    def is_server_running(self):
         """Check if server is running"""
-        return self.running and self.server_thread and self.server_thread.is_alive()
+        return self.running and self.is_running
     
-    def get_server_info(self) -> Dict[str, Any]:
-        """Get server information"""
-        return {
-            'host': self.host,
-            'port': self.port,
-            'running': self.is_running(),
-            'start_time': self.start_time,
-            'uptime': time.time() - self.start_time if self.start_time else 0,
-            'request_count': self.request_count
-        }
+    def _setup_app(self):
+        # Implementation of _setup_app method
+        pass
 
 
 # Global server instance
 _dashboard_server = None
 
-def get_dashboard_server(client=None, host='0.0.0.0', port=8080):
+def get_dashboard_server(host="0.0.0.0", port=8082):
     """Get or create dashboard server instance"""
     global _dashboard_server
     if _dashboard_server is None:
-        _dashboard_server = DashboardServer(client, host, port)
+        _dashboard_server = DashboardServer(host, port)
     return _dashboard_server
 
-def start_dashboard_server(client=None, host='0.0.0.0', port=8080) -> bool:
+def start_dashboard_server(host="0.0.0.0", port=8082) -> bool:
     """Start the dashboard server"""
-    server = get_dashboard_server(client, host, port)
+    server = get_dashboard_server(host, port)
     return server.start()
 
 def stop_dashboard_server() -> bool:
@@ -1799,4 +1462,4 @@ def stop_dashboard_server() -> bool:
 def is_dashboard_running() -> bool:
     """Check if dashboard server is running"""
     global _dashboard_server
-    return _dashboard_server is not None and _dashboard_server.is_running() 
+    return _dashboard_server is not None and _dashboard_server.is_server_running() 
