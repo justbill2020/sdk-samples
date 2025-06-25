@@ -7,6 +7,8 @@ Integrates with phase management, security framework, and firewall management.
 Features:
 - Phase-aware server lifecycle (only runs in STAGING/INSTALL phases)
 - Security controls with IP validation and rate limiting
+- SSL/TLS support for secure connections
+- DoS protection with request rate limiting
 - RESTful API endpoints for SIM status and device information
 - Static file serving for dashboard UI
 - WebSocket support for real-time updates
@@ -14,9 +16,10 @@ Features:
 
 Security:
 - IP whitelist validation using SecurityManager
-- Rate limiting and DoS protection
+- Request rate limiting and DoS protection
 - Request validation and sanitization
-- Secure headers and HTTPS support (optional)
+- Secure headers and HTTPS support
+- Connection throttling and resource limits
 """
 
 import os
@@ -24,6 +27,9 @@ import json
 import time
 import threading
 import socket
+import ssl
+import hashlib
+from collections import defaultdict, deque
 from typing import Dict, Any, Optional, List, Tuple
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
@@ -46,6 +52,141 @@ except ImportError as e:
         DEPLOYED = 2
 
 
+class RateLimiter:
+    """Request rate limiting and DoS protection"""
+    
+    def __init__(self, requests_per_minute=60, requests_per_second=5, block_duration=300):
+        self.requests_per_minute = requests_per_minute
+        self.requests_per_second = requests_per_second
+        self.block_duration = block_duration  # 5 minutes
+        
+        # Track requests per IP
+        self.minute_requests = defaultdict(deque)  # IP -> deque of timestamps
+        self.second_requests = defaultdict(deque)  # IP -> deque of timestamps
+        self.blocked_ips = {}  # IP -> block_end_time
+        
+        # Connection tracking
+        self.active_connections = defaultdict(int)  # IP -> connection count
+        self.max_connections_per_ip = 10
+        
+        # Request size tracking
+        self.max_request_size = 1024 * 1024  # 1MB
+        
+        # Cleanup thread
+        self.cleanup_thread = threading.Thread(target=self._cleanup_expired, daemon=True)
+        self.cleanup_thread.start()
+    
+    def is_allowed(self, client_ip: str, request_size: int = 0) -> Tuple[bool, str]:
+        """Check if request is allowed"""
+        current_time = time.time()
+        
+        # Check if IP is blocked
+        if client_ip in self.blocked_ips:
+            if current_time < self.blocked_ips[client_ip]:
+                remaining = int(self.blocked_ips[client_ip] - current_time)
+                return False, f"IP blocked for {remaining} seconds"
+            else:
+                del self.blocked_ips[client_ip]
+        
+        # Check request size
+        if request_size > self.max_request_size:
+            return False, "Request too large"
+        
+        # Check connection count
+        if self.active_connections[client_ip] >= self.max_connections_per_ip:
+            return False, "Too many concurrent connections"
+        
+        # Clean old requests
+        self._clean_old_requests(client_ip, current_time)
+        
+        # Check per-second rate limit
+        second_count = len(self.second_requests[client_ip])
+        if second_count >= self.requests_per_second:
+            self._block_ip(client_ip, current_time)
+            return False, "Rate limit exceeded (per second)"
+        
+        # Check per-minute rate limit
+        minute_count = len(self.minute_requests[client_ip])
+        if minute_count >= self.requests_per_minute:
+            self._block_ip(client_ip, current_time)
+            return False, "Rate limit exceeded (per minute)"
+        
+        # Record request
+        self.second_requests[client_ip].append(current_time)
+        self.minute_requests[client_ip].append(current_time)
+        
+        return True, "OK"
+    
+    def add_connection(self, client_ip: str):
+        """Track new connection"""
+        self.active_connections[client_ip] += 1
+    
+    def remove_connection(self, client_ip: str):
+        """Remove connection tracking"""
+        if self.active_connections[client_ip] > 0:
+            self.active_connections[client_ip] -= 1
+    
+    def _clean_old_requests(self, client_ip: str, current_time: float):
+        """Remove old request timestamps"""
+        # Clean second requests (older than 1 second)
+        while (self.second_requests[client_ip] and 
+               current_time - self.second_requests[client_ip][0] > 1):
+            self.second_requests[client_ip].popleft()
+        
+        # Clean minute requests (older than 60 seconds)
+        while (self.minute_requests[client_ip] and 
+               current_time - self.minute_requests[client_ip][0] > 60):
+            self.minute_requests[client_ip].popleft()
+    
+    def _block_ip(self, client_ip: str, current_time: float):
+        """Block IP for specified duration"""
+        self.blocked_ips[client_ip] = current_time + self.block_duration
+    
+    def _cleanup_expired(self):
+        """Cleanup expired blocks and old data"""
+        while True:
+            try:
+                current_time = time.time()
+                
+                # Clean expired blocks
+                expired_ips = [ip for ip, block_time in self.blocked_ips.items() 
+                              if current_time > block_time]
+                for ip in expired_ips:
+                    del self.blocked_ips[ip]
+                
+                # Clean inactive connections
+                inactive_ips = [ip for ip, count in self.active_connections.items() 
+                               if count == 0]
+                for ip in inactive_ips:
+                    del self.active_connections[ip]
+                
+                # Clean old request tracking for inactive IPs
+                for ip in list(self.second_requests.keys()):
+                    if not self.second_requests[ip]:
+                        del self.second_requests[ip]
+                
+                for ip in list(self.minute_requests.keys()):
+                    if not self.minute_requests[ip]:
+                        del self.minute_requests[ip]
+                
+                time.sleep(60)  # Cleanup every minute
+                
+            except Exception as e:
+                print(f"Rate limiter cleanup error: {e}")
+                time.sleep(60)
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Get rate limiter statistics"""
+        return {
+            'blocked_ips': len(self.blocked_ips),
+            'active_connections': sum(self.active_connections.values()),
+            'tracked_ips': len(self.active_connections),
+            'requests_per_minute_limit': self.requests_per_minute,
+            'requests_per_second_limit': self.requests_per_second,
+            'max_connections_per_ip': self.max_connections_per_ip
+        }
+
+
 class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
     """Thread-per-request HTTP server for concurrent connections"""
     daemon_threads = True
@@ -57,7 +198,27 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
     
     def __init__(self, *args, dashboard_server=None, **kwargs):
         self.dashboard_server = dashboard_server
+        self.client_ip = None
         super().__init__(*args, **kwargs)
+    
+    def setup(self):
+        """Setup connection with rate limiting"""
+        super().setup()
+        self.client_ip = self.client_address[0]
+        
+        # Add connection to rate limiter
+        if self.dashboard_server and hasattr(self.dashboard_server, 'rate_limiter'):
+            self.dashboard_server.rate_limiter.add_connection(self.client_ip)
+    
+    def finish(self):
+        """Cleanup connection tracking"""
+        try:
+            # Remove connection from rate limiter
+            if self.dashboard_server and hasattr(self.dashboard_server, 'rate_limiter'):
+                self.dashboard_server.rate_limiter.remove_connection(self.client_ip)
+        except:
+            pass
+        super().finish()
     
     def log_message(self, format, *args):
         """Override to use our logging system"""
@@ -67,6 +228,10 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         """Handle GET requests"""
         try:
+            # Rate limiting check
+            if not self._check_rate_limit():
+                return
+            
             # Validate request security
             if not self._validate_request():
                 return
@@ -96,6 +261,10 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         """Handle POST requests"""
         try:
+            # Rate limiting check
+            if not self._check_rate_limit():
+                return
+            
             # Validate request security
             if not self._validate_request():
                 return
@@ -104,8 +273,12 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
             parsed_url = urlparse(self.path)
             path = parsed_url.path
             
-            # Get POST data
+            # Get POST data with size check
             content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > self.dashboard_server.rate_limiter.max_request_size:
+                self._send_error(413, "Request entity too large")
+                return
+            
             post_data = self.rfile.read(content_length).decode('utf-8') if content_length > 0 else ''
             
             # Route POST requests
@@ -117,6 +290,29 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
         except Exception as e:
             self.dashboard_server._log(f"Error handling POST request: {str(e)}", "ERROR")
             self._send_error(500, "Internal server error")
+    
+    def _check_rate_limit(self) -> bool:
+        """Check rate limiting for current request"""
+        try:
+            if not self.dashboard_server or not hasattr(self.dashboard_server, 'rate_limiter'):
+                return True
+            
+            # Get request size
+            content_length = int(self.headers.get('Content-Length', 0))
+            
+            # Check rate limit
+            allowed, reason = self.dashboard_server.rate_limiter.is_allowed(self.client_ip, content_length)
+            
+            if not allowed:
+                self.dashboard_server._log(f"Rate limit exceeded for {self.client_ip}: {reason}", "WARNING")
+                self._send_error(429, f"Too Many Requests - {reason}")
+                return False
+            
+            return True
+            
+        except Exception as e:
+            self.dashboard_server._log(f"Rate limit check error: {str(e)}", "ERROR")
+            return True  # Allow request if rate limiter fails
     
     def _validate_request(self) -> bool:
         """Validate request security using SecurityManager"""
@@ -156,6 +352,8 @@ class DashboardRequestHandler(BaseHTTPRequestHandler):
             
         except Exception as e:
             self.dashboard_server._log(f"Request validation error: {str(e)}", "ERROR")
+            self.dashboard_server._log(f"Request path: {self.path}", "DEBUG")
+            self.dashboard_server._log(f"Request query: {parsed_url.query}", "DEBUG")
             self._send_error(500, "Security validation failed")
             return False
     
@@ -940,15 +1138,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 class DashboardServer:
-    """Main dashboard server class"""
+    """Main dashboard server class with SSL/TLS support and enhanced lifecycle management"""
     
-    def __init__(self, client=None, host='0.0.0.0', port=8080):
+    def __init__(self, client=None, host='0.0.0.0', port=8080, ssl_cert=None, ssl_key=None, enable_ssl=False):
         self.client = client
         self.host = host
         self.port = port
         self.server = None
         self.server_thread = None
         self.running = False
+        
+        # SSL configuration
+        self.ssl_cert = ssl_cert
+        self.ssl_key = ssl_key
+        self.enable_ssl = enable_ssl
+        self.ssl_context = None
         
         # Initialize core systems
         self.phase_manager = get_phase_manager(client)
@@ -958,6 +1162,33 @@ class DashboardServer:
         # Server state
         self.start_time = None
         self.request_count = 0
+        self.restart_count = 0
+        self.last_restart_time = None
+        
+        # Rate limiter with configurable limits
+        self.rate_limiter = RateLimiter(
+            requests_per_minute=60,    # Allow 60 requests per minute per IP
+            requests_per_second=5,     # Allow 5 requests per second per IP
+            block_duration=300         # Block for 5 minutes on violation
+        )
+        
+        # Health monitoring
+        self.health_stats = {
+            'total_requests': 0,
+            'successful_requests': 0,
+            'error_count': 0,
+            'blocked_requests': 0,
+            'start_time': None,
+            'last_request_time': None
+        }
+        
+        # Server lifecycle events
+        self.lifecycle_callbacks = {
+            'on_start': [],
+            'on_stop': [],
+            'on_restart': [],
+            'on_error': []
+        }
         
     def _log(self, message: str, level: str = "INFO") -> None:
         """Log server operations"""
@@ -967,8 +1198,13 @@ class DashboardServer:
             print(f"DASHBOARD [{level}] {message}")
     
     def start(self) -> bool:
-        """Start the dashboard server"""
+        """Start the dashboard server with SSL/TLS support"""
         try:
+            # Check if already running
+            if self.running:
+                self._log("Dashboard server is already running", "WARNING")
+                return True
+            
             # Check if we should be running based on current phase
             current_phase = self.phase_manager.get_current_phase()
             if current_phase not in [Phase.STAGING, Phase.INSTALL]:
@@ -980,6 +1216,12 @@ class DashboardServer:
                 self._log("Failed to configure firewall for dashboard access", "ERROR")
                 return False
             
+            # Setup SSL context if enabled
+            if self.enable_ssl:
+                if not self._setup_ssl_context():
+                    self._log("Failed to setup SSL context", "ERROR")
+                    return False
+            
             # Create server with custom handler
             def handler(*args, **kwargs):
                 return DashboardRequestHandler(*args, dashboard_server=self, **kwargs)
@@ -987,53 +1229,311 @@ class DashboardServer:
             self.server = ThreadingHTTPServer((self.host, self.port), handler)
             self.server.timeout = 1.0  # Allow for clean shutdown
             
+            # Configure SSL if enabled
+            if self.enable_ssl and self.ssl_context:
+                self.server.socket = self.ssl_context.wrap_socket(
+                    self.server.socket, 
+                    server_side=True
+                )
+                self._log("SSL/TLS enabled for dashboard server", "INFO")
+            
             # Start server in separate thread
             self.server_thread = threading.Thread(target=self._run_server, daemon=True)
             self.server_thread.start()
             
             self.running = True
             self.start_time = time.time()
+            self.health_stats['start_time'] = self.start_time
             
-            self._log(f"Dashboard server started on {self.host}:{self.port}")
+            # Execute start callbacks
+            self._execute_lifecycle_callbacks('on_start')
+            
+            protocol = "HTTPS" if self.enable_ssl else "HTTP"
+            self._log(f"Dashboard server started on {protocol}://{self.host}:{self.port}")
             return True
             
         except Exception as e:
             self._log(f"Failed to start dashboard server: {str(e)}", "ERROR")
+            self._execute_lifecycle_callbacks('on_error', error=str(e))
+            return False
+    
+    def _setup_ssl_context(self) -> bool:
+        """Setup SSL context for HTTPS"""
+        try:
+            self.ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+            
+            # Use provided certificate files
+            if self.ssl_cert and self.ssl_key:
+                if os.path.exists(self.ssl_cert) and os.path.exists(self.ssl_key):
+                    self.ssl_context.load_cert_chain(self.ssl_cert, self.ssl_key)
+                    self._log(f"SSL certificate loaded from {self.ssl_cert}", "INFO")
+                    return True
+                else:
+                    self._log(f"SSL certificate files not found: {self.ssl_cert}, {self.ssl_key}", "ERROR")
+                    return False
+            
+            # Generate self-signed certificate for development
+            self._log("Generating self-signed certificate for development use", "WARNING")
+            if self._generate_self_signed_cert():
+                self.ssl_context.load_cert_chain(self.ssl_cert, self.ssl_key)
+                return True
+            
+            return False
+            
+        except Exception as e:
+            self._log(f"SSL context setup failed: {str(e)}", "ERROR")
+            return False
+    
+    def _generate_self_signed_cert(self) -> bool:
+        """Generate self-signed certificate for development"""
+        try:
+            from cryptography import x509
+            from cryptography.x509.oid import NameOID
+            from cryptography.hazmat.primitives import hashes
+            from cryptography.hazmat.primitives.asymmetric import rsa
+            from cryptography.hazmat.primitives import serialization
+            import datetime
+            
+            # Generate private key
+            private_key = rsa.generate_private_key(
+                public_exponent=65537,
+                key_size=2048,
+            )
+            
+            # Create certificate
+            subject = issuer = x509.Name([
+                x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
+                x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "CA"),
+                x509.NameAttribute(NameOID.LOCALITY_NAME, "SimSelector"),
+                x509.NameAttribute(NameOID.ORGANIZATION_NAME, "SimSelector Dashboard"),
+                x509.NameAttribute(NameOID.COMMON_NAME, "localhost"),
+            ])
+            
+            cert = x509.CertificateBuilder().subject_name(
+                subject
+            ).issuer_name(
+                issuer
+            ).public_key(
+                private_key.public_key()
+            ).serial_number(
+                x509.random_serial_number()
+            ).not_valid_before(
+                datetime.datetime.utcnow()
+            ).not_valid_after(
+                datetime.datetime.utcnow() + datetime.timedelta(days=365)
+            ).add_extension(
+                x509.SubjectAlternativeName([
+                    x509.DNSName("localhost"),
+                    x509.IPAddress(socket.inet_aton("127.0.0.1")),
+                ]),
+                critical=False,
+            ).sign(private_key, hashes.SHA256())
+            
+            # Save certificate and key
+            self.ssl_cert = "dashboard_cert.pem"
+            self.ssl_key = "dashboard_key.pem"
+            
+            with open(self.ssl_cert, "wb") as f:
+                f.write(cert.public_bytes(serialization.Encoding.PEM))
+            
+            with open(self.ssl_key, "wb") as f:
+                f.write(private_key.private_bytes(
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PrivateFormat.PKCS8,
+                    encryption_algorithm=serialization.NoEncryption()
+                ))
+            
+            # Set restrictive permissions
+            os.chmod(self.ssl_cert, 0o600)
+            os.chmod(self.ssl_key, 0o600)
+            
+            self._log("Self-signed certificate generated successfully", "INFO")
+            return True
+            
+        except ImportError:
+            self._log("cryptography library not available for SSL certificate generation", "ERROR")
+            return False
+        except Exception as e:
+            self._log(f"Certificate generation failed: {str(e)}", "ERROR")
             return False
     
     def stop(self) -> bool:
-        """Stop the dashboard server"""
+        """Stop the dashboard server with enhanced lifecycle management"""
         try:
             if not self.running:
+                self._log("Dashboard server is not running", "INFO")
                 return True
             
+            self._log("Stopping dashboard server...")
             self.running = False
             
+            # Graceful shutdown sequence
             if self.server:
-                self.server.shutdown()
-                self.server.server_close()
+                try:
+                    self.server.shutdown()
+                    self.server.server_close()
+                except Exception as e:
+                    self._log(f"Error during server shutdown: {str(e)}", "WARNING")
             
+            # Wait for server thread to finish
             if self.server_thread and self.server_thread.is_alive():
-                self.server_thread.join(timeout=5.0)
+                self.server_thread.join(timeout=10.0)  # Increased timeout
+                if self.server_thread.is_alive():
+                    self._log("Server thread did not stop gracefully", "WARNING")
             
             # Remove firewall rules
-            current_phase = self.phase_manager.get_current_phase()
-            self.firewall_manager.remove_dashboard_access(current_phase)
+            try:
+                current_phase = self.phase_manager.get_current_phase()
+                self.firewall_manager.remove_dashboard_access(current_phase)
+            except Exception as e:
+                self._log(f"Error removing firewall rules: {str(e)}", "WARNING")
             
-            self._log("Dashboard server stopped")
+            # Clean up SSL certificates if auto-generated
+            if self.enable_ssl and self.ssl_cert and self.ssl_cert == "dashboard_cert.pem":
+                try:
+                    if os.path.exists("dashboard_cert.pem"):
+                        os.remove("dashboard_cert.pem")
+                    if os.path.exists("dashboard_key.pem"):
+                        os.remove("dashboard_key.pem")
+                    self._log("Cleaned up auto-generated SSL certificates", "INFO")
+                except Exception as e:
+                    self._log(f"Error cleaning up SSL certificates: {str(e)}", "WARNING")
+            
+            # Reset server state
+            self.server = None
+            self.server_thread = None
+            self.ssl_context = None
+            
+            # Execute stop callbacks
+            self._execute_lifecycle_callbacks('on_stop')
+            
+            self._log("Dashboard server stopped successfully")
             return True
             
         except Exception as e:
             self._log(f"Error stopping dashboard server: {str(e)}", "ERROR")
+            self._execute_lifecycle_callbacks('on_error', error=str(e))
             return False
     
     def restart(self) -> bool:
-        """Restart the dashboard server"""
-        self._log("Restarting dashboard server...")
-        if self.stop():
-            time.sleep(1)
-            return self.start()
-        return False
+        """Restart the dashboard server with enhanced error handling"""
+        try:
+            self._log("Restarting dashboard server...")
+            self.restart_count += 1
+            self.last_restart_time = time.time()
+            
+            # Execute restart callbacks
+            self._execute_lifecycle_callbacks('on_restart')
+            
+            # Stop current server
+            if not self.stop():
+                self._log("Failed to stop server during restart", "ERROR")
+                return False
+            
+            # Wait before restart
+            time.sleep(2)
+            
+            # Start server again
+            if self.start():
+                self._log(f"Dashboard server restarted successfully (restart #{self.restart_count})")
+                return True
+            else:
+                self._log("Failed to start server during restart", "ERROR")
+                return False
+                
+        except Exception as e:
+            self._log(f"Error during server restart: {str(e)}", "ERROR")
+            self._execute_lifecycle_callbacks('on_error', error=str(e))
+            return False
+    
+    def add_lifecycle_callback(self, event: str, callback):
+        """Add lifecycle callback for server events"""
+        if event in self.lifecycle_callbacks:
+            self.lifecycle_callbacks[event].append(callback)
+        else:
+            self._log(f"Unknown lifecycle event: {event}", "WARNING")
+    
+    def _execute_lifecycle_callbacks(self, event: str, **kwargs):
+        """Execute lifecycle callbacks for event"""
+        try:
+            for callback in self.lifecycle_callbacks.get(event, []):
+                try:
+                    callback(self, **kwargs)
+                except Exception as e:
+                    self._log(f"Lifecycle callback error for {event}: {str(e)}", "ERROR")
+        except Exception as e:
+            self._log(f"Error executing lifecycle callbacks: {str(e)}", "ERROR")
+    
+    def get_health_status(self) -> Dict[str, Any]:
+        """Get comprehensive health status"""
+        current_time = time.time()
+        uptime = current_time - self.start_time if self.start_time else 0
+        
+        # Calculate request rate
+        request_rate = self.health_stats['total_requests'] / uptime if uptime > 0 else 0
+        
+        # Get rate limiter stats
+        rate_limiter_stats = self.rate_limiter.get_stats()
+        
+        return {
+            'running': self.running,
+            'uptime_seconds': uptime,
+            'total_requests': self.health_stats['total_requests'],
+            'successful_requests': self.health_stats['successful_requests'],
+            'error_count': self.health_stats['error_count'],
+            'blocked_requests': self.health_stats['blocked_requests'],
+            'request_rate_per_second': request_rate,
+            'restart_count': self.restart_count,
+            'last_restart_time': self.last_restart_time,
+            'ssl_enabled': self.enable_ssl,
+            'rate_limiter': rate_limiter_stats,
+            'phase_allowed': self.phase_manager.get_current_phase() in [Phase.STAGING, Phase.INSTALL],
+            'memory_usage': self._get_memory_usage(),
+            'connection_count': sum(self.rate_limiter.active_connections.values())
+        }
+    
+    def _get_memory_usage(self) -> Dict[str, int]:
+        """Get memory usage information"""
+        try:
+            import psutil
+            process = psutil.Process()
+            memory_info = process.memory_info()
+            return {
+                'rss': memory_info.rss,  # Resident Set Size
+                'vms': memory_info.vms,  # Virtual Memory Size
+                'percent': process.memory_percent()
+            }
+        except ImportError:
+            return {'error': 'psutil not available'}
+        except Exception as e:
+            return {'error': str(e)}
+    
+    def force_shutdown(self) -> bool:
+        """Force shutdown of server (for emergency situations)"""
+        try:
+            self._log("Force shutdown initiated", "WARNING")
+            self.running = False
+            
+            if self.server_thread and self.server_thread.is_alive():
+                # More aggressive shutdown
+                if self.server:
+                    try:
+                        self.server.server_close()
+                    except:
+                        pass
+                
+                # Don't wait for thread to finish gracefully
+                self.server_thread = None
+            
+            self.server = None
+            self.ssl_context = None
+            
+            self._log("Force shutdown completed", "WARNING")
+            return True
+            
+        except Exception as e:
+            self._log(f"Error during force shutdown: {str(e)}", "ERROR")
+            return False
     
     def _run_server(self):
         """Run the HTTP server"""
