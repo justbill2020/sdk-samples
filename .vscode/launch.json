@@ -14,13 +14,13 @@
       "justMyCode": true
     },
     {
-      "name": "Python: Debug SimSelector",
-      "type": "python",
+      "name": "Python: SimSelector",
+      "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/SimSelector/SimSelector.py",
+      "python": "${workspaceFolder}/SimSelector/.ncos-env/bin/python",
       "console": "integratedTerminal",
-      "cwd": "${workspaceFolder}/SimSelector",
-      "justMyCode": true
+      "cwd": "${workspaceFolder}/SimSelector"
     },
     {
       "name": "Python Attach Process",

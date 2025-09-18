@@ -2,6 +2,7 @@
 This is the NCOS SDK tool used to created applications
 for Cradlepoint NCOS devices. It will work on Linux,
 OS X, and Windows once the computer environment is setup.
+
 '''
 
 import os
@@ -14,9 +15,221 @@ import subprocess
 import configparser
 import unittest
 import urllib3
+import datetime
+import hashlib
+import re
+import tarfile
+import gzip
 urllib3.disable_warnings()
 
 from requests.auth import HTTPDigestAuth
+from OpenSSL import crypto
+
+# Upgrade functionality for checking and updating files from GitHub
+def get_github_commit_timestamp(file_path):
+    """
+    Get the timestamp of the last commit for a specific file in cradlepoint/sdk-samples.
+    
+    Args:
+        file_path (str): Path to the file (e.g., 'app_template/cp.py')
+    
+    Returns:
+        datetime: Timestamp of the last commit, or None if error
+    """
+    url = "https://api.github.com/repos/cradlepoint/sdk-samples/commits"
+    params = {'path': file_path, 'per_page': 1,'verify':False}
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        
+        commit_data = response.json()[0]
+        timestamp_str = commit_data['commit']['committer']['date']
+        
+        # Convert to datetime object (compatible with all Python versions)
+        # GitHub returns ISO format like: 2024-01-15T10:30:45Z
+        # Remove 'Z' and parse manually
+        timestamp_str = timestamp_str.replace('Z', '')
+        return datetime.datetime.strptime(timestamp_str, '%Y-%m-%dT%H:%M:%S')
+        
+    except (requests.exceptions.RequestException, KeyError, IndexError) as e:
+        print(f"Error getting GitHub commit timestamp: {e}")
+        return None
+
+def get_local_file_timestamp(file_path):
+    """
+    Get the modification timestamp of a local file.
+    
+    Args:
+        file_path (str): Path to the local file
+    
+    Returns:
+        datetime: Timestamp of the file modification, or None if file doesn't exist
+    """
+    if not os.path.exists(file_path):
+        return None
+    
+    timestamp = os.path.getmtime(file_path)
+    return datetime.datetime.fromtimestamp(timestamp)
+
+def download_file_from_github(file_path, output_path=None):
+    """
+    Download a file from cradlepoint/sdk-samples repository.
+    
+    Args:
+        file_path (str): Path to the file in the repo (e.g., 'app_template/cp.py')
+        output_path (str, optional): Local path to save the file
+    
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    # GitHub raw URL format
+    raw_url = f"https://raw.githubusercontent.com/cradlepoint/sdk-samples/master/{file_path}"
+    
+    try:
+        response = requests.get(raw_url,verify=False)
+        response.raise_for_status()
+        
+        # If no output path specified, use the original file path
+        if output_path is None:
+            output_path = file_path
+        
+        # Create directory if it doesn't exist (only if there's a directory path)
+        dir_path = os.path.dirname(output_path)
+        if dir_path:
+            os.makedirs(dir_path, exist_ok=True)
+        
+        # Write the file
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(response.text)
+        
+        # Update file timestamp to current time to prevent repeated downloads
+        import time
+        current_time = time.time()
+        os.utime(output_path, (current_time, current_time))
+        
+        print(f"File downloaded successfully to: {output_path}")
+        return True
+        
+    except requests.exceptions.RequestException as e:
+        print(f"Error downloading file: {e}")
+        return False
+
+def check_and_update_file(file_path, local_path=None):
+    """
+    Check if the GitHub version of a file is newer than the local version,
+    and download if it is.
+    
+    Args:
+        file_path (str): Path to the file in the repo (e.g., 'app_template/cp.py')
+        local_path (str, optional): Local path to the file. If None, uses file_path
+    
+    Returns:
+        dict: Status information about the check and update
+    """
+    if local_path is None:
+        local_path = file_path
+    
+    print(f"Checking file: {file_path}")
+    
+    # Get GitHub commit timestamp
+    github_timestamp = get_github_commit_timestamp(file_path)
+    if github_timestamp is None:
+        return {'status': 'error', 'message': 'Could not get GitHub timestamp'}
+    
+    # Get local file timestamp
+    local_timestamp = get_local_file_timestamp(local_path)
+    
+    print(f"GitHub last commit: {github_timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}")
+    
+    if local_timestamp is None:
+        print("Local file does not exist. Downloading...")
+        success = download_file_from_github(file_path, local_path)
+        return {
+            'status': 'downloaded' if success else 'error',
+            'message': 'File downloaded' if success else 'Download failed',
+            'github_timestamp': github_timestamp,
+            'local_timestamp': None
+        }
+    else:
+        # Compare timestamps (GitHub timestamp is in UTC, local is in local timezone)
+        # Convert local timestamp to UTC for proper comparison
+        import time
+        local_utc_offset = time.timezone if (time.daylight == 0) else time.altzone
+        # time.timezone is negative for timezones behind UTC, so we add the absolute value to get UTC
+        local_utc_timestamp = local_timestamp + datetime.timedelta(seconds=abs(local_utc_offset))
+        print(f"Local file modified: {local_utc_timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}")
+        
+        if github_timestamp > local_utc_timestamp:
+            print("GitHub version is newer. Downloading...")
+            success = download_file_from_github(file_path, local_path)
+            return {
+                'status': 'updated' if success else 'error',
+                'message': 'File updated' if success else 'Update failed',
+                'github_timestamp': github_timestamp,
+                'local_timestamp': local_timestamp
+            }
+        else:
+            print("Local file is up to date.")
+            return {
+                'status': 'up_to_date',
+                'message': 'Local file is current',
+                'github_timestamp': github_timestamp,
+                'local_timestamp': local_timestamp
+            }
+
+def update():
+    """
+    Check and update core files from the GitHub repository.
+    Updates: cp.py, cp_methods_reference.md, make.py, and app_template/cp.py
+    """
+    print("Checking for updates to core SDK files...")
+    print("=" * 50)
+    
+    # Files to check and update
+    files_to_check = [
+        "cp.py",
+        "cp_methods_reference.md", 
+        "make.py",
+        "app_template/cp.py"
+    ]
+    
+    results = {}
+    updated_count = 0
+    error_count = 0
+    
+    for file_path in files_to_check:
+        print(f"\n--- {file_path} ---")
+        result = check_and_update_file(file_path)
+        results[file_path] = result
+        
+        if result['status'] == 'updated':
+            updated_count += 1
+        elif result['status'] == 'downloaded':
+            updated_count += 1
+        elif result['status'] == 'error':
+            error_count += 1
+        
+        print(f"Status: {result['status']}")
+    
+    # Summary
+    print("\n" + "=" * 50)
+    print("UPGRADE SUMMARY")
+    print("=" * 50)
+    
+    for file_path, result in results.items():
+        status_icon = "✓" if result['status'] in ['updated', 'downloaded', 'up_to_date'] else "✗"
+        print(f"{status_icon} {file_path}: {result['status']}")
+    
+    print(f"\nFiles updated: {updated_count}")
+    print(f"Errors: {error_count}")
+    print(f"Files up to date: {len(files_to_check) - updated_count - error_count}")
+    
+    if updated_count > 0:
+        print(f"\n{updated_count} file(s) have been updated.")
+    
+    if error_count > 0:
+        print(f"\n{error_count} file(s) had errors during the update process.")
 
 # These will be set in init() by using the sdk_settings.ini file.
 # They are used by various functions in the file.
@@ -26,6 +239,15 @@ g_dev_client_ip = ''
 g_dev_client_username = ''
 g_dev_client_password = ''
 g_python_cmd = 'python3'  # Default for Linux and OS X
+
+# Constants for packaging
+META_DATA_FOLDER = 'METADATA'
+CONFIG_FILE = 'package.ini'
+SIGNATURE_FILE = 'SIGNATURE.DS'
+MANIFEST_FILE = 'MANIFEST.json'
+
+BYTE_CODE_FILES = re.compile(r'^.*/.(pyc|pyo|pyd)$')
+BYTE_CODE_FOLDERS = re.compile('^(__pycache__)$')
 
 
 # Returns the proper HTTP Auth for the global username and password.
@@ -62,7 +284,7 @@ def is_NCOS_device_in_DEV_mode():
 
 # Returns the app package name based on the global app name.
 def get_app_pack(app_name=None):
-    package_name = g_app_name + ".tar.gz"
+    package_name = (app_name or g_app_name) + ".tar.gz"
     if app_name is not None:
         package_name = app_name + ".tar.gz"
     return package_name
@@ -121,11 +343,9 @@ def put(value):
 
 # Cleans the SDK directory for a given app by removing files created during packaging.
 def clean(app=None):
-    app_name = g_app_name
-    if app is not None:
-        app_name = app
+    app_name = app or g_app_name
     print("Cleaning {}".format(app_name))
-    app_pack_name = get_app_pack(app_name)
+    app_pack_name = app_name + ".tar.gz"
     try:
         files_to_clean = [app_name + ".tar.gz", app_name + ".tar"]
         for file_name in files_to_clean:
@@ -164,23 +384,170 @@ def scan_for_cr(path):
     scanfiles = ('.py', '.sh')
     for root, _, files in os.walk(path):
         for fl in files:
-            with open(os.path.join(root, fl), 'rb') as f:
-                if b'\r' in f.read() and [x for x in scanfiles if fl.endswith(x)]:
-                    raise Exception('Carriage return (\\r) found in file %s' % (os.path.join(root, fl)))
+            # Only process files with the specified extensions
+            if any(fl.endswith(ext) for ext in scanfiles):
+                file_path = os.path.join(root, fl)
+                with open(file_path, 'rb') as f:
+                    content = f.read()
+                if b'\r' in content:
+                    # Remove carriage returns and write back to the file
+                    new_content = content.replace(b'\r', b'')
+                    with open(file_path, 'wb') as f:
+                        f.write(new_content)
+                    print(f'Removed carriage return (\\r) from file {file_path}')
+
+
+def file_checksum(hash_func=hashlib.sha256, file=None):
+    h = hash_func()
+    buffer_size = h.block_size * 64
+
+    with open(file, 'rb') as f:
+        for buffer in iter(lambda: f.read(buffer_size), b''):
+            h.update(buffer)
+    return h.hexdigest()
+
+
+def hash_dir(target, hash_func=hashlib.sha256):
+    hashed_files = {}
+    for path, d, f in os.walk(target):
+        for fl in f:
+            if not fl.startswith('.') and not os.path.basename(path).startswith('.'):
+                # we need this be LINUX fashion!
+                if sys.platform == "win32":
+                    # swap the network\\tcp_echo to be network/tcp_echo
+                    fully_qualified_file = path.replace('\\', '/') + '/' + fl
+                else:  # else allow normal method
+                    fully_qualified_file = os.path.join(path, fl)
+                hashed_files[fully_qualified_file[len(target) + 1:]] =\
+                    file_checksum(hash_func, fully_qualified_file)
+            else:
+                print("Did not include {} in the App package.".format(fl))
+
+    return hashed_files
+
+
+def pack_package(app_root, app_name):
+    tar_name = f"{app_name}.tar"
+    with tarfile.open(tar_name, 'w') as tar:
+        tar.add(app_root, arcname=os.path.basename(app_root))
+
+    gzip_name = "{}.tar.gz".format(app_name)
+    with open(tar_name, 'rb') as f_in:
+        with gzip.open(gzip_name, 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+
+    if os.path.isfile(tar_name):
+        os.remove(tar_name)
+
+
+def create_signature(meta_data_folder, pkey):
+    manifest_file = os.path.join(meta_data_folder, MANIFEST_FILE)
+    with open(os.path.join(meta_data_folder, SIGNATURE_FILE), 'wb') as sf:
+        checksum = file_checksum(hashlib.sha256, manifest_file).encode('utf-8')
+        if pkey:
+            sf.write(crypto.sign(pkey, checksum, 'sha256'))
+        else:
+            sf.write(checksum)
+
+
+def clean_manifest_folder(app_metadata_folder):
+    path, dirs, files = next(os.walk(app_metadata_folder))
+
+    for file in files:
+        fully_qualified_file = os.path.join(path, file)
+        os.remove(fully_qualified_file)
+
+    for d in dirs:
+        shutil.rmtree(os.path.join(path, d))
+
+
+def clean_bytecode_files(app_root):
+    for path, dirs, files in os.walk(app_root):
+        for file in filter(lambda x: BYTE_CODE_FILES.match(x), files):
+            os.remove(os.path.join(path, file))
+        for d in filter(lambda x: BYTE_CODE_FOLDERS.match(x), dirs):
+            shutil.rmtree(os.path.join(path, d))
+    pass
+
+
+def package_application(app_root, pkey):
+    app_root = os.path.realpath(app_root)
+    app_config_file = os.path.join(app_root, CONFIG_FILE)
+    app_metadata_folder = os.path.join(app_root, META_DATA_FOLDER)
+    app_manifest_file = os.path.join(app_metadata_folder, MANIFEST_FILE)
+    config = configparser.ConfigParser()
+    config.read(app_config_file)
+    if not os.path.exists(app_metadata_folder):
+        os.makedirs(app_metadata_folder)
+
+    for section in config.sections():
+        app_name = section
+        assert os.path.basename(app_root) == app_name
+
+        clean_manifest_folder(app_metadata_folder)
+
+        clean_bytecode_files(app_root)
+
+        pmf = {}
+        pmf['version_major'] = int(1)
+        pmf['version_minor'] = int(0)
+        pmf['version_patch'] = int(0)
+
+        app = {}
+        app['name'] = str(section)
+        try:
+            app['uuid'] = config[section]['uuid']
+        except KeyError:
+            if not pkey:
+                app['uuid'] = str(uuid.uuid4())
+            else:
+                raise
+        app['vendor'] = config[section]['vendor']
+        app['notes'] = config[section]['notes']
+        app['version_major'] = int(config[section].get('version_major', '0'))
+        app['version_minor'] = int(config[section].get('version_minor', '0'))
+        app['version_patch'] = int(config[section].get('version_patch', '0'))
+        app['firmware_major'] = int(config[section].get('firmware_major', '0'))
+        app['firmware_minor'] = int(config[section].get('firmware_minor', '0'))
+        app['restart'] = config[section].getboolean('restart')
+        app['reboot'] = config[section].getboolean('reboot')
+        app['date'] = datetime.datetime.now().isoformat()
+        if config.has_option(section, 'auto_start'):
+            app['auto_start'] = config[section].getboolean('auto_start')
+        if config.has_option(section, 'app_type'):
+            app['app_type'] = int(config[section]['app_type'])
+
+        data = {}
+        data['pmf'] = pmf
+        data['app'] = app
+
+        app['files'] = hash_dir(app_root)
+
+        with open(app_manifest_file, 'w') as f:
+            f.write(json.dumps(data, indent=4, sort_keys=True))
+
+        create_signature(app_metadata_folder, pkey)
+
+        app_name_version = f"{section} v{app['version_major']}.{app['version_minor']}.{app['version_patch']}"
+        pack_package(app_root, app_name_version)
+
+        print(f'Package {app_name_version}.tar.gz created')
+
 
 # Package the app files into a tar.gz archive.
-def package():
-    print("Packaging {}".format(g_app_name))
+def package(app=None):
+    app_name = app or g_app_name
+    print("Packaging {}".format(app_name))
     success = True
-    package_dir = os.path.join('tools', 'bin')
-    package_script_path = os.path.join('tools', 'bin', 'package_application.py')
-    app_path = os.path.join(g_app_name)
+    app_path = os.path.join(app_name)
     scan_for_cr(app_path)
+    setup_script(app_path)
 
     try:
-        subprocess.check_output('{} {} {}'.format(g_python_cmd, package_script_path, app_path), shell=True)
-    except subprocess.CalledProcessError as err:
-        print('Error packaging {}: {}'.format(g_app_name, err))
+        # Call package_application directly instead of via subprocess
+        package_application(app_path, None)  # pkey=None for no signing
+    except Exception as err:
+        print('Error packaging {}: {}'.format(app_name, err))
         success = False
     finally:
         return success
@@ -193,18 +560,26 @@ def package_all():
     print("Scanning {} for app directories.".format(cwd))
     app_dirs = get_app_list()
 
-    package_script_path = os.path.join('tools', 'bin', 'package_application.py')
     for app in app_dirs:
-        app_path = os.path.join(app)
-        scan_for_cr(app_path)
-        try:
-            print('Build app: {}'.format(app_path))
-            subprocess.check_output('{} {} {}'.format(g_python_cmd, package_script_path, app_path), shell=True)
-        except subprocess.CalledProcessError as err:
-            print('Error packaging {}: {}'.format(app_path, err))
-            success = False
+        package(app)
 
     return success
+
+
+def setup_script(app_path):
+    # check app_path for setup.py and execute it
+    setup_path = os.path.join(app_path, 'setup.py')
+    if os.path.isfile(setup_path):
+        cwd = os.getcwd()
+        os.chdir(app_path)
+        print('Running setup.py for {}'.format(app_path))
+        try:
+            out = subprocess.check_output('{} {}'.format(g_python_cmd, 'setup.py'), stderr=subprocess.STDOUT, shell=True).decode()
+        except subprocess.CalledProcessError as e:
+            print ('[ERROR]: Exit code != 0')
+            out = e.output.decode()
+        print(out)
+        os.chdir(cwd)
 
 
 # Get the SDK status from the NCOS device
@@ -214,20 +589,60 @@ def status():
     response = get(status_tree)
     print(response)
 
+# Create new app from app_template using supplied app name
+def create(app_name=None):
+    if not app_name:
+        print('ERROR: No app name provided. Please provide a name. If you are using Cursor AI, it will generate a name for you based on your requested functionality.')
+        return
+    if os.path.exists(app_name):
+        print('App already exists.  Please choose a different name.')
+        return
 
-# Transfer the app app tar.gz package to the NCOS device
+    try:
+        # Copy app_template folder and rename to new app name
+        shutil.copytree('app_template', app_name)
+        os.rename(f'{app_name}/app_template.py', f'{app_name}/{app_name}.py')
+
+        # Replace app_template with new app name in all files
+        files = [f'{app_name}.py', 'package.ini', 'readme.md', 'start.sh']
+        for file in files:
+            path = f'{app_name}/{file}'
+            with open(path, 'r') as in_file:
+                filedata = in_file.read()
+            filedata = filedata.replace('app_template', app_name)
+            with open(path, 'w') as out_file:
+                out_file.write(filedata)
+        print(f'App {app_name} created successfully.')
+    except Exception as e:
+        print(f'Error creating app: {e}')
+
+# Transfer the app tar.gz package to the NCOS device
 def install():
     if is_NCOS_device_in_DEV_mode():
-        app_archive = get_app_pack()
+        # Try to read version from package.ini in the app folder
+        try:
+            package_ini_path = os.path.join(g_app_name, 'package.ini')
+            config = configparser.ConfigParser()
+            config.read(package_ini_path)
+            
+            version_major = config[g_app_name].get('version_major', '0')
+            version_minor = config[g_app_name].get('version_minor', '0') 
+            version_patch = config[g_app_name].get('version_patch', '0')
+            
+            app_archive = f"{g_app_name} v{version_major}.{version_minor}.{version_patch}.tar.gz"
+            if not os.path.exists(app_archive):
+                app_archive = f"{g_app_name}.tar.gz"
+        except Exception as e:
+            app_archive = f"{g_app_name}.tar.gz"
 
         # Use sshpass for Linux or OS X
-        cmd = 'sshpass -p {0} scp -O -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no {1} {2}@{3}:/app_upload'.format(
+        cmd = 'sshpass -p {0} scp -O -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no "{1}" {2}@{3}:/app_upload'.format(
                g_dev_client_password, app_archive,
                g_dev_client_username, g_dev_client_ip)
 
         # For Windows, use pscp.exe in the tools directory
         if sys.platform == 'win32':
-            cmd = "./tools/bin/pscp.exe -pw {0} -v {1} {2}@{3}:/app_upload".format(
+            cmd = './tools/bin/pscp.exe -pw {0} -v "{1}" {2}@{3}:/app_upload'.format(
                    g_dev_client_password, app_archive,
                    g_dev_client_username, g_dev_client_ip)
 
@@ -281,8 +696,7 @@ def uninstall():
 # Purge the app from the NCOS device
 def purge():
     if is_NCOS_device_in_DEV_mode():
-        print('Purged application {} for NCOS device at {}'.format(g_app_name, g_dev_client_ip))
-        print('Application UUID is {}.'.format(g_app_uuid))
+        print('Purging applications for NCOS device at {}'.format(g_dev_client_ip))
         response = put('purge')
         print(response)
     else:
@@ -294,6 +708,9 @@ def output_help():
     print('Command format is: {} make.py <action>\n'.format(g_python_cmd))
     print('Actions include:')
     print('================')
+    print('create: Create a new app from the app_template folder.')
+    print(f'\tYou must provide a new app name. Example: {g_python_cmd} make.py create my_new_app')
+    print(f'\tIf you do not provide a name, Cursor AI will generate one for you based on your requested functionality.\n')
     print('clean: Clean all project artifacts.')
     print('\tTo clean all the apps, add the option "all" (i.e. clean all).\n')
     print('build or package: Create the app archive tar.gz file.')
@@ -308,13 +725,15 @@ def output_help():
     print('uninstall: Uninstall the app from the locally connected NCOS device.\n')
     print('purge: Purge all apps from the locally connected NCOS device.\n')
     print('uuid: Create a UUID for the app and save it to the package.ini file.\n')
+    print('update: Check and update core SDK files from GitHub repository.\n')
+    print('\tUpdates: cp.py, cp_methods_reference.md, make.py, and app_template/cp.py\n')
     print('unit: Run any unit tests associated with selected app.\n')
     print('system: Run any system tests associated with selected app.\n')
     print('help: Print this help information.\n')
 
 
 # Get the uuid from application package.ini if not already set
-def get_app_uuid(ceate_new_uuid=False):
+def get_app_uuid():
     global g_app_uuid
 
     if g_app_uuid == '':
@@ -326,7 +745,7 @@ def get_app_uuid(ceate_new_uuid=False):
             if uuid_key in config[g_app_name]:
                 g_app_uuid = config[g_app_name][uuid_key]
 
-                if ceate_new_uuid or g_app_uuid == '':
+                if g_app_uuid == '':
                     # Create a UUID if it does not exist
                     _uuid = str(uuid.uuid4())
                     config.set(g_app_name, uuid_key, _uuid)
@@ -342,7 +761,7 @@ def get_app_uuid(ceate_new_uuid=False):
 
 
 # Setup all the globals based on the OS and the sdk_settings.ini file.
-def init(ceate_new_uuid):
+def init(app=None):
     global g_python_cmd
     global g_app_name
     global g_dev_client_ip
@@ -372,11 +791,16 @@ def init(ceate_new_uuid):
 
     # Initialize the globals based on the sdk_settings.ini contents.
     if sdk_key in config:
-        if app_key in config[sdk_key]:
+        if app is not None:
+            g_app_name = app
+        elif app_key in config[sdk_key]:
             g_app_name = config[sdk_key][app_key]
         else:
             success = False
             print('ERROR 1: The {} key does not exist in {}'.format(app_key, settings_file))
+
+        if g_app_name == '':
+            print('The app_name key is empty in {}'.format(settings_file))
 
         if ip_key in config[sdk_key]:
             g_dev_client_ip = config[sdk_key][ip_key]
@@ -399,9 +823,6 @@ def init(ceate_new_uuid):
         success = False
         print('ERROR 5: The {} section does not exist in {}'.format(sdk_key, settings_file))
 
-    # This will also create a UUID if needed.
-    get_app_uuid(ceate_new_uuid)
-
     return success
 
 
@@ -414,10 +835,14 @@ if __name__ == "__main__":
     utility_name = str(sys.argv[1]).lower()
     option = None
     if len(sys.argv) > 2:
-        option = str(sys.argv[2]).lower()
+        option = str(sys.argv[2])
 
-    if not init(ceate_new_uuid=utility_name == 'uuid'):
-        sys.exit(0)
+    if utility_name in ['clean', 'package', 'build', 'uuid', 'status', 'start', 'stop', 'install', 'uninstall', 'purge', 'update']:
+        # Load the settings from the sdk_settings.ini file.
+        if not init(option):
+            sys.exit(0)
+        if utility_name != 'install':
+            get_app_uuid()
 
     if utility_name == 'clean':
         if option == 'all':
@@ -430,6 +855,9 @@ if __name__ == "__main__":
             package_all()
         else:
             package()
+
+    elif utility_name == 'create':
+        create(option)
 
     elif utility_name == 'status':
         status()
@@ -452,6 +880,9 @@ if __name__ == "__main__":
     elif utility_name == 'uuid':
         # This is handled in init()
         pass
+
+    elif utility_name == 'update':
+        update()
 
     elif utility_name == 'unit':
         # load any tests in app/test/unit
