@@ -293,7 +293,7 @@ class SimSelector(object):
                 break
             if timeout_counter > self.CONNECTION_STATE_TIMEOUT:
                 self.client.log(f'Timeout waiting on {self.port_sim(sim)}. Testing Alternate APNs')
-                self.update_custom(sim)
+                self.update_custom(sim) #issue: this is passing the sim not the custom apn list. perhaps this should be checked first like during sim selector init
                 raise Timeout(conn_path)
             time.sleep(min(sleep_seconds, 45))
             timeout_counter += sleep_seconds
@@ -389,7 +389,7 @@ class SimSelector(object):
         self.client.put('/config/wan/custom_apns', new_customs)
         self.send_update('Custom APNs were updated')
 
-    def check_custom(self):
+    def check_custom(self): #ISSUE: this is not validating the APNs properly. if any custom apns are returned there's no validation that all the APNs are listed
         dev_apns = self.client.get('/config/wan/custom_apns') or {}
         if dev_apns == {}:
             try:

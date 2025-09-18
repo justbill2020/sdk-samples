@@ -13,8 +13,8 @@ config.ini
 settings.ini
 *.env
 .env*
-.*env*/*.*
-*ncos-env/*.*
+.env*/
+*ncos-env/
 secrets.json
 credentials.json
 
