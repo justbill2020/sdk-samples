@@ -87,6 +87,7 @@ class SimSelector(object):
             self._wait_for_internet_connectivity()
             self.speedtest = Speedtest()
             self.client.log("Speedtest library initialized successfully")
+            #issue: i need to get the 
         except Exception as e:
             self.client.log(f"Warning: Speedtest initialization failed: {e}")
             self.client.log("Will retry speedtest initialization when needed")
