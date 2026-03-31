@@ -98,21 +98,30 @@ jobs:
         if __name__ == "__main__":
             updated = update_cp_py_files()
             print(f"Updated {updated} cp.py files")
-            # Exit with code 1 if files were updated (to trigger commit)
-            exit(0)
+            # Exit with code 10 if files were updated.
+            # Use a non-error sentinel so shell logic can detect updates
+            # while still treating actual failures as errors.
+            exit(10 if updated > 0 else 0)
         PYTHON_EOF
         
+        # GitHub Actions runs bash with -e, so capture the script exit code
+        # without failing immediately on our sentinel/non-zero codes.
+        set +e
         python update_cp_py.py
         UPDATED=$?
+        set -e
         
         # Clean up the temporary script
         rm -f update_cp_py.py
         
-        if [ $UPDATED -eq 1 ]; then
+        if [ $UPDATED -eq 10 ]; then
           echo "Files were updated, proceeding with commit"
-        else
+        elif [ $UPDATED -eq 0 ]; then
           echo "No files were updated"
           exit 0
+        else
+          echo "cp.py update script failed with exit code: $UPDATED"
+          exit $UPDATED
         fi
     
     - name: Commit and push changes
