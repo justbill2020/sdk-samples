@@ -1,26 +1,28 @@
-# geofences - Send alert when entering and exiting geofences.
+# geofences.py
+# Take custom action when inside or outside a geofence
+# Requires 3 consecutive readings (3 seconds) before switching to prevent rapid changes
+# Example uses SIM1 when outside geofence, SIM2 when inside geofence
 
-from csclient import EventingCSClient
 from geopy import distance
 import time
 import json
+import cp
 
-config = [
+# Default geofences list
+default_geofences = [
     {
         "name": "Cradlepoint HQ",
-        "lat": 43.618515,
-        "lon": -116.206356,
-        "radius": 100
+        "lat": 43.618547,
+        "lon": -116.206389,
+        "radius": 200
     },
     {
-        "name": "Idaho State Capitol",
-        "lat": 43.617750,
-        "lon": -116.199702,
-        "radius": 250
+        "name": "Boise Airport",
+        "lat": 43.569282,
+        "lon": -116.222676,
+        "radius": 200
     }
 ]
-
-cp = EventingCSClient('geofences')
 
 def get_location():
     """Return latitude and longitude as floats"""
@@ -47,39 +49,65 @@ def dec(deg, min, sec):
         dec = deg + (min / 60) + (sec / 3600)
     return round(dec, 5)
 
-def check_geofence(geofence):
-    dist = distance.distance((lat, lon), (geofence["lat"], geofence["lon"])).m
-    return dist < geofence["radius"]
+def inside_geofence(lat, lon, geofences_list):
+    """Check if location is inside any of the geofences"""
+    for geofence in geofences_list:
+        dist = distance.distance((lat, lon), (geofence["lat"], geofence["lon"])).m
+        if dist < geofence["radius"]:
+            return True, geofence["name"]
+    return False, None
 
-def get_config(name):
-    try:
-        appdata = cp.get('config/system/sdk/appdata')
-        data = json.loads([x["value"] for x in appdata if x["name"] == name][0])
-        if data != config:
-            cp.log(f'Loaded config: {data}')
-            return data
-        else:
-            return config
-    except Exception as e:
-        cp.post('config/system/sdk/appdata', {"name": name, "value": json.dumps(config)})
-        cp.log(f'Saved config: {config}')
-        return config
+def get_geofences():
+    geofences = cp.get_appdata('geofences')
+    if geofences is None:
+        geofences = default_geofences
+        cp.post_appdata('geofences', json.dumps(geofences))
+        cp.log(f'Created default config: {geofences}')
+    return json.loads(geofences)
 
 cp.log('Starting...')
+# Initialize with a default state based on first reading
 in_geofence = None
-while True:
-    config = get_config('geofences')
-    lat, lon, accuracy = get_location()
-    if not in_geofence:
-        for fence in config:
-            if check_geofence(fence):
-                in_geofence = fence
-                cp.log(f'Entered {in_geofence["name"]} Geofence. {lat} {lon}')
-                cp.alert(f'Entered {in_geofence["name"]} Geofence. {lat} {lon}')
-                break
+consecutive_readings = 0
+last_state = None
+current_geofence = None
+
+# Get initial location and set default state
+lat, lon, accuracy = get_location()
+geofences = get_geofences()
+if lat and lon:
+    initial_state, geofence_name = inside_geofence(lat, lon, geofences)
+    last_state = initial_state
+    in_geofence = initial_state
+    current_geofence = geofence_name
+    # Set initial SIM based on location
+    if initial_state:
+        cp.log(f'Initial location inside {geofence_name} Geofence. Setting to SIM2. {lat} {lon}')
+        cp.put('config/wan/dual_sim_disable_mask', 'int1,2')
     else:
-        if not check_geofence(in_geofence):
-            cp.log(f'Exited {in_geofence["name"]} Geofence. {lat} {lon}')
-            cp.alert(f'Exited {in_geofence["name"]} Geofence. {lat} {lon}')
-            in_geofence = None
-    time.sleep(3)
+        cp.log(f'Initial location outside all Geofences. Setting to SIM1. {lat} {lon}')
+        cp.put('config/wan/dual_sim_disable_mask', 'int1,1')
+
+while True:
+    geofences = get_geofences()    
+    lat, lon, accuracy = get_location()
+    if lat and lon:
+        current_state, geofence_name = inside_geofence(lat, lon, geofences)
+        
+        if current_state == last_state and geofence_name == current_geofence:
+            consecutive_readings += 1
+        else:
+            consecutive_readings = 1
+            last_state = current_state
+            current_geofence = geofence_name
+        
+        if consecutive_readings >= 3:
+            if current_state and in_geofence is not True:
+                in_geofence = True
+                cp.log(f'Entered {geofence_name} Geofence. Switching to SIM2. {lat} {lon}')
+                cp.put('config/wan/dual_sim_disable_mask', 'int1,2')
+            elif not current_state and in_geofence is not False:
+                in_geofence = False
+                cp.log(f'Exited all Geofences. Switching to SIM1. {lat} {lon}')
+                cp.put('config/wan/dual_sim_disable_mask', 'int1,1')
+    time.sleep(1)

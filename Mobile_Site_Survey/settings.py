@@ -5,6 +5,7 @@ settings = {
     "enable_timer": False,
     "min_time": 0,
     "speedtests": True,
+    "dead_reckoning": False,
     "packet_loss": True,
     "write_csv": True,
     "debug": False,
@@ -14,5 +15,6 @@ settings = {
     "server_url": "https://5g-ready.io/injector",
     "server_token": "",
     "enable_surveyors": False,
-    "surveyors": []
+    "surveyors": [],
+    "speedtest_url": "www.speedtest.net/speedtest-config.php"
 }

@@ -1,0 +1,154 @@
+#!/bin/bash
+set -o pipefail
+set -o errexit
+
+logger -s -t tailscale -p 6 "tailscale is starting up..."
+
+logerr() {
+    if [ "$#" -gt 0 ]; then
+        logger -s -t tailscale -p 3 "$*"
+    else
+        cat | logger -s -t tailscale -p 3
+    fi
+}
+
+check_tskey() {
+    tskey="$(cppython ./get_tskey.py tskey)"
+    tskey_ec=$?
+}
+
+get_tsroutes() {
+    tsroutes="$(cppython ./get_tskey.py tsroutes)"
+}
+
+get_tsadvertise_tags() {
+    tsadvertise_tags="$(cppython ./get_tskey.py tstags)"
+}
+
+get_tshostname() {
+    tshostname="$(cppython ./get_tskey.py tshostname)"
+}
+
+get_tsserver() {
+    tsserver="$(cppython ./get_tskey.py tsserver)"
+}
+
+get_tsarch() {
+    arch="$(uname -m)"
+    if [ "$arch" = "armv7l" ]; then
+        tsarch="arm"
+    elif [ "$arch" = "x86_64" ]; then
+        tsarch="amd64"
+    elif [ "$arch" = "aarch64" ]; then
+        tsarch="arm64"
+    fi
+}
+
+download() {
+    cmd="cppython ./download.py $tsarch"
+    tsversion="$(cppython ./get_tskey.py tsversion)"
+    if [ -n "$tsversion" ]; then
+        cmd="$cmd -v $tsversion"
+    fi
+    eval $cmd | logerr
+    if [ $? -ne 0 ]; then
+        logerr "Failed to download tailscale binary"
+        exit 1
+    fi
+}
+
+tskey=""
+tskey_ec=0
+tsroutes=""
+tsadvertise_tags=""
+tshostname=""
+tsserver=""
+tsarch="arm64"
+tshostname="$(cppython ./get_tskey.py hostname)"
+
+check_tskey
+get_tsroutes
+get_tsadvertise_tags
+get_tshostname
+get_tsserver
+get_tsarch
+download
+
+tsdbinary="tailscaled_$tsarch"
+tsbinary="tailscale_$tsarch"
+
+if [ $tskey_ec -ne 0 ] || [ -z "$tskey" ]; then
+    sleep 10
+    logerr "Couldn't get tskey. Exiting..."
+    exit 1
+fi
+
+prev_tskey="$tskey"
+
+exit_safely() {
+    ./${tsbinary} --socket ./tailscaled.sock logout 2>&1 | logerr
+    killall ${tsdbinary}
+    exit 1
+}
+
+check_tskey_change() {
+    prev_tskey=$tskey
+    check_tskey
+    prev_tsroutes=$tsroutes
+    get_tsroutes
+    prev_tsadvertise_tags=$tsadvertise_tags
+    get_tsadvertise_tags
+    prev_tshostname=$tshostname
+    get_tshostname
+    prev_tsserver=$tsserver
+    get_tsserver
+
+    if [ $tskey_ec -ne 0 ] || [ -z "$tskey" ]; then
+        logerr "Couldn't get tskey. Exiting..."
+        exit_safely
+    fi
+
+    if [ "$tskey" != "$prev_tskey" ]; then
+        logerr "tskey has changed. Exiting..."
+        exit_safely
+    fi
+
+    if [ "$tsroutes" != "$prev_tsroutes" ]; then
+        logerr "tsroutes has changed. Exiting..."
+        exit_safely
+    fi
+
+    if [ "$tsadvertise_tags" != "$prev_tsadvertise_tags" ]; then
+        logerr "tsadvertise_tags has changed. Exiting..."
+        exit_safely
+    fi
+
+    if [ "$tshostname" != "$prev_tshostname" ]; then
+        logerr "tshostname has changed. Exiting..."
+        exit_safely
+    fi
+
+    if [ "$tsserver" != "$prev_tsserver" ]; then
+        logerr "tsserver has changed. Exiting..."
+        exit_safely
+    fi
+}
+
+trap exit_safely SIGINT SIGTERM EXIT
+
+HOME=$(pwd) ./${tsdbinary} --socket=./tailscaled.sock --tun=userspace-networking --socks5-server=localhost:1055 2>&1 | logerr &
+sleep 2
+HOME=$(pwd) ./${tsbinary} --socket ./tailscaled.sock up --hostname="$tshostname" --auth-key="$tskey" --advertise-routes="$tsroutes" --advertise-tags="$tsadvertise_tags" --login-server="$tsserver" 2>&1 | logerr
+
+tsretcode=$?
+if [ $tsretcode -ne 0 ]; then
+  logerr "tailscale failed to run: exit code $tsretcode"
+  exit_safely
+fi
+
+logger -s -t tailscale -p 6 "tailscale should be up and running now"
+
+while true; do
+    sleep 10
+    check_tskey_change
+done

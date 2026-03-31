@@ -7,7 +7,7 @@ and you can recover logs after a reboot.  Via Remote Connect!
 Log files will be created with filenames containing the router MAC address and timestamp.  Example:
 Log - 0030443B3877.2022-11-11 09:52:25.txt
 
-When the log file reaches the maximum file size (Default 10MB) it will start a new log file.
+When the log file reaches the maximum file size (Default 100MB) it will start a new log file.
 When the number of backup logs exceeds the backup count (default 10) it will delete the oldest log.
 
 Use Remote Connect LAN Manager to connect to 127.0.0.1 port 8000 HTTP.
@@ -15,14 +15,13 @@ Or forward the LAN zone to the ROUTER zone for local access on http://{ROUTER IP
 
 """
 
-from csclient import EventingCSClient
+import cp
 from subprocess import Popen, PIPE
 import datetime
 import time
 import os
-from os.path import isfile, join
 
-max_file_size = 10485760
+max_file_size = 104857600
 backup_count = 10
 
 def write_logs():
@@ -65,16 +64,14 @@ def write_logs():
         cp.log(f'Exception! {e}')
 
 def rotate_files():
-    logfiles = [f for f in os.listdir('logs') if isfile(join('logs', f))]
-    logfiles = sorted(logfiles, reverse=True, key=lambda item: (int(item.partition(' ')[0])
-                                                  if item[0].isdigit() else float('inf'), item))
-    if len(logfiles) == backup_count:
-        os.remove(f'logs/{logfiles[-1]}')
+    logfiles = [f for f in os.listdir('logs') if os.path.isfile(os.path.join('logs', f))]
+    logfiles = sorted(logfiles, key=lambda f: os.path.getmtime(os.path.join('logs', f)), reverse=True)
+    while len(logfiles) >= backup_count:
+        os.remove(f'logs/{logfiles.pop()}')
 
-cp = EventingCSClient('logfile')
 cp.log(f'Download logs via NCM LAN Manager - HTTP 127.0.0.1 port 8000')
 mac = cp.get('status/product_info/mac0').replace(':', '').upper()
 
 while True:
-    write_logs()
     rotate_files()
+    write_logs()

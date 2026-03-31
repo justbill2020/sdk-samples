@@ -10,21 +10,27 @@ import sys
 import uuid
 import json
 import shutil
-import requests
 import subprocess
 import configparser
 import unittest
-import urllib3
 import datetime
 import hashlib
 import re
 import tarfile
 import gzip
-urllib3.disable_warnings()
+import time
 
-from requests.auth import HTTPDigestAuth
-from OpenSSL import crypto
-
+try:
+    import requests
+    import urllib3
+    urllib3.disable_warnings()
+    from requests.auth import HTTPDigestAuth
+    from OpenSSL import crypto
+except ImportError:
+    requests = None
+    HTTPDigestAuth = None
+    crypto = None
+    
 # Upgrade functionality for checking and updating files from GitHub
 def get_github_commit_timestamp(file_path):
     """
@@ -37,7 +43,7 @@ def get_github_commit_timestamp(file_path):
         datetime: Timestamp of the last commit, or None if error
     """
     url = "https://api.github.com/repos/cradlepoint/sdk-samples/commits"
-    params = {'path': file_path, 'per_page': 1,'verify':False}
+    params = {'path': file_path, 'per_page': 1}
     
     try:
         response = requests.get(url, params=params)
@@ -87,7 +93,7 @@ def download_file_from_github(file_path, output_path=None):
     raw_url = f"https://raw.githubusercontent.com/cradlepoint/sdk-samples/master/{file_path}"
     
     try:
-        response = requests.get(raw_url,verify=False)
+        response = requests.get(raw_url)
         response.raise_for_status()
         
         # If no output path specified, use the original file path
@@ -249,6 +255,46 @@ MANIFEST_FILE = 'MANIFEST.json'
 BYTE_CODE_FILES = re.compile(r'^.*/.(pyc|pyo|pyd)$')
 BYTE_CODE_FOLDERS = re.compile('^(__pycache__)$')
 
+DEFAULT_IGNORE = ['__pycache__/', 'buildignore', '.DS_Store']
+
+
+def parse_ignore_file(app_root):
+    """Parse .ignore file in app directory and return list of patterns to exclude.
+    Combines default ignore patterns with any patterns from the .ignore file.
+
+    Args:
+        app_root (str): Path to the app directory
+
+    Returns:
+        tuple: (ignored_files, ignored_dirs) - sets of filenames and directory names to ignore
+    """
+    ignored_files = set()
+    ignored_dirs = set()
+
+    # Add default ignored directories
+    for pattern in DEFAULT_IGNORE:
+        if pattern.endswith('/'):
+            ignored_dirs.add(pattern.rstrip('/'))
+        else:
+            ignored_files.add(pattern)
+
+    # Parse .ignore file if it exists
+    ignore_path = os.path.join(app_root, 'buildignore')
+    if os.path.isfile(ignore_path):
+        with open(ignore_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                if line.endswith('/'):
+                    ignored_dirs.add(line.rstrip('/'))
+                else:
+                    ignored_files.add(line)
+        print('Loaded .ignore file with {} file(s) and {} dir(s) to exclude'.format(
+            len(ignored_files), len(ignored_dirs)))
+
+    return ignored_files, ignored_dirs
+
 
 # Returns the proper HTTP Auth for the global username and password.
 # Digest Auth is used for NCOS 6.4 and below while Basic Auth is
@@ -407,10 +453,17 @@ def file_checksum(hash_func=hashlib.sha256, file=None):
     return h.hexdigest()
 
 
-def hash_dir(target, hash_func=hashlib.sha256):
+def hash_dir(target, hash_func=hashlib.sha256, ignored_files=None, ignored_dirs=None):
+    if ignored_files is None or ignored_dirs is None:
+        ignored_files, ignored_dirs = parse_ignore_file(target)
     hashed_files = {}
     for path, d, f in os.walk(target):
+        # Prune ignored directories in-place so os.walk won't descend into them
+        d[:] = [x for x in d if x not in ignored_dirs]
         for fl in f:
+            if fl in ignored_files:
+                print("Ignored file: {}".format(fl))
+                continue
             if not fl.startswith('.') and not os.path.basename(path).startswith('.'):
                 # we need this be LINUX fashion!
                 if sys.platform == "win32":
@@ -426,10 +479,21 @@ def hash_dir(target, hash_func=hashlib.sha256):
     return hashed_files
 
 
-def pack_package(app_root, app_name):
+def pack_package(app_root, app_name, ignored_files=None, ignored_dirs=None):
+    if ignored_files is None or ignored_dirs is None:
+        ignored_files, ignored_dirs = parse_ignore_file(app_root)
+
+    def tar_filter(tarinfo):
+        basename = os.path.basename(tarinfo.name)
+        if tarinfo.isdir() and basename in ignored_dirs:
+            return None
+        if tarinfo.isfile() and basename in ignored_files:
+            return None
+        return tarinfo
+
     tar_name = f"{app_name}.tar"
     with tarfile.open(tar_name, 'w') as tar:
-        tar.add(app_root, arcname=os.path.basename(app_root))
+        tar.add(app_root, arcname=os.path.basename(app_root), filter=tar_filter)
 
     gzip_name = "{}.tar.gz".format(app_name)
     with open(tar_name, 'rb') as f_in:
@@ -521,7 +585,8 @@ def package_application(app_root, pkey):
         data['pmf'] = pmf
         data['app'] = app
 
-        app['files'] = hash_dir(app_root)
+        ignored_files, ignored_dirs = parse_ignore_file(app_root)
+        app['files'] = hash_dir(app_root, ignored_files=ignored_files, ignored_dirs=ignored_dirs)
 
         with open(app_manifest_file, 'w') as f:
             f.write(json.dumps(data, indent=4, sort_keys=True))
@@ -529,7 +594,7 @@ def package_application(app_root, pkey):
         create_signature(app_metadata_folder, pkey)
 
         app_name_version = f"{section} v{app['version_major']}.{app['version_minor']}.{app['version_patch']}"
-        pack_package(app_root, app_name_version)
+        pack_package(app_root, app_name_version, ignored_files=ignored_files, ignored_dirs=ignored_dirs)
 
         print(f'Package {app_name_version}.tar.gz created')
 
@@ -538,19 +603,16 @@ def package_application(app_root, pkey):
 def package(app=None):
     app_name = app or g_app_name
     print("Packaging {}".format(app_name))
-    success = True
     app_path = os.path.join(app_name)
     scan_for_cr(app_path)
     setup_script(app_path)
 
     try:
-        # Call package_application directly instead of via subprocess
-        package_application(app_path, None)  # pkey=None for no signing
+        package_application(app_path, None)
+        return True
     except Exception as err:
         print('Error packaging {}: {}'.format(app_name, err))
-        success = False
-    finally:
-        return success
+        return False
 
 
 # Package all the app files in the directory into a tar.gz archives.
@@ -702,6 +764,63 @@ def purge():
     else:
         print('ERROR: NCOS device is not in DEV Mode! Unable to purge the app from {}.'.format(g_dev_client_ip))
 
+def deploy():
+    """Full deploy: purge, build, install, and show logs."""
+    print('Deploying {} to {}...'.format(g_app_name, g_dev_client_ip))
+    purge()
+    time.sleep(2)
+    package()
+    install()
+    time.sleep(5)
+    print('Checking logs...')
+    try:
+        log_url = 'https://{}/api/status/log/'.format(g_dev_client_ip)
+        response = requests.get(log_url, auth=get_auth(), verify=False)
+        logs = json.loads(response.text).get('data', [])
+        for entry in logs[-20:]:
+            if g_app_name in str(entry):
+                ts = datetime.datetime.fromtimestamp(entry[0]).strftime('%H:%M:%S')
+                print('{} {}'.format(ts, entry[3]))
+    except Exception as e:
+        print('Warning: Could not fetch logs: {}'.format(e))
+
+def setup():
+    """Create .venv and install requirements.txt."""
+    venv_dir = os.path.join(os.getcwd(), '.venv')
+    py = sys.executable
+
+    if not os.path.isdir(venv_dir):
+        print('Creating virtual environment in .venv...')
+        subprocess.run([py, '-m', 'venv', venv_dir], check=True)
+    else:
+        print('Virtual environment already exists in .venv')
+
+    # Determine pip and python paths inside venv
+    if sys.platform == 'win32':
+        pip = os.path.join(venv_dir, 'Scripts', 'pip')
+        venv_py = os.path.join(venv_dir, 'Scripts', 'python')
+    else:
+        pip = os.path.join(venv_dir, 'bin', 'pip')
+        venv_py = os.path.join(venv_dir, 'bin', 'python')
+
+    print('Upgrading pip...')
+    subprocess.run([venv_py, '-m', 'pip', 'install', '-U', 'pip'], check=True)
+
+    req = os.path.join(os.getcwd(), 'requirements.txt')
+    if os.path.isfile(req):
+        print('Installing dependencies...')
+        subprocess.run([pip, 'install', '-r', req], check=True)
+    else:
+        print('No requirements.txt found, skipping dependency install.')
+
+    print('\nSetup complete! Activate the venv with:')
+    if sys.platform == 'win32':
+        print('  .venv\\Scripts\\activate.bat')
+    else:
+        print('  source .venv/bin/activate')
+
+
+
 
 # Prints the help information
 def output_help():
@@ -724,6 +843,8 @@ def output_help():
     print('stop: Stop the app on the locally connected NCOS device.\n')
     print('uninstall: Uninstall the app from the locally connected NCOS device.\n')
     print('purge: Purge all apps from the locally connected NCOS device.\n')
+    print('deploy: Purge, build, install, and show logs in one step.\n')
+    print('setup: Create .venv and install requirements.txt.\n')
     print('uuid: Create a UUID for the app and save it to the package.ini file.\n')
     print('update: Check and update core SDK files from GitHub repository.\n')
     print('\tUpdates: cp.py, cp_methods_reference.md, make.py, and app_template/cp.py\n')
@@ -837,11 +958,11 @@ if __name__ == "__main__":
     if len(sys.argv) > 2:
         option = str(sys.argv[2])
 
-    if utility_name in ['clean', 'package', 'build', 'uuid', 'status', 'start', 'stop', 'install', 'uninstall', 'purge', 'update']:
+    if utility_name in ['clean', 'package', 'build', 'uuid', 'status', 'start', 'stop', 'install', 'uninstall', 'purge', 'update', 'deploy']:
         # Load the settings from the sdk_settings.ini file.
         if not init(option):
             sys.exit(0)
-        if utility_name != 'install':
+        if utility_name not in ['install', 'purge']:
             get_app_uuid()
 
     if utility_name == 'clean':
@@ -876,6 +997,12 @@ if __name__ == "__main__":
 
     elif utility_name == 'purge':
         purge()
+
+    elif utility_name == 'deploy':
+        deploy()
+
+    elif utility_name == 'setup':
+        setup()
 
     elif utility_name == 'uuid':
         # This is handled in init()
