@@ -13,8 +13,11 @@ config.ini
 settings.ini
 *.env
 .env*
+.env*/
+*ncos-env/
 secrets.json
 credentials.json
+
 
 # ==============================================
 # DEVICE/DEVELOPMENT SPECIFIC FILES

@@ -110,6 +110,7 @@ SimSelector includes a comprehensive mock testing system requiring no hardware:
 python tests/test_runner.py good          # Good signal scenario
 python tests/test_runner.py weak          # Weak signal scenario  
 python tests/test_runner.py failed        # Failed connection scenario
+python tests/test_runner.py apn           # APN validation scenario
 ```
 
 ### Advanced Tests
@@ -125,6 +126,13 @@ python tests/test_runner.py tiebreaker    # Tie-breaking logic test
 ```bash
 python tests/test_runner.py all           # Run all 12 scenarios
 python tests/test_runner.py interactive   # Interactive test mode
+```
+
+### APN Validation
+SimSelector automatically validates and updates custom APNs during startup. You can run dedicated APN tests:
+
+```bash
+python tests/test_runner.py apn           # Run APN validation tests
 ```
 
 ## 📈 Expected Results Format
@@ -244,4 +252,4 @@ This application is part of the Cradlepoint SDK samples and follows the same lic
 
 ---
 
-**SimSelector 2.5.9** - Intelligent SIM Performance Optimization for Cradlepoint Routers 
+**SimSelector 2.5.9** - Intelligent SIM Performance Optimization for Cradlepoint Routers

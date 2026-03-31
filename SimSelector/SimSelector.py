@@ -80,6 +80,9 @@ class SimSelector(object):
     def __init__(self):
         global DYN_APP_NAME
         self.client = EventingCSClient('SimSelector')
+
+        # Check and update APNs before any network operations
+        self.check_apn()
         
         # Initialize speedtest with proper error handling
         try:
@@ -293,7 +296,8 @@ class SimSelector(object):
                 break
             if timeout_counter > self.CONNECTION_STATE_TIMEOUT:
                 self.client.log(f'Timeout waiting on {self.port_sim(sim)}. Testing Alternate APNs')
-                self.update_custom(sim)
+                # Fix: Pass the correct custom APN list, not the sim UID
+                self.update_custom(self.ADV_APN['custom_apns'])
                 raise Timeout(conn_path)
             time.sleep(min(sleep_seconds, 45))
             timeout_counter += sleep_seconds
@@ -394,11 +398,20 @@ class SimSelector(object):
         if dev_apns == {}:
             try:
                 self.client.put('/config/wan/custom_apns', self.ADV_APN.get('custom_apns', {}))
-                return
+                # Return empty list and False to avoid unpack error
+                return [], False
             except Exception:
-                pass
-        new_apns = dev_apns + [item for item in self.ADV_APN.get('custom_apns', {}) if item not in dev_apns]
-        dirty_flag = len(new_apns) != len(dev_apns) + len(self.ADV_APN.get('custom_apns', {})) and new_apns != dev_apns
+                # Return empty list and False to avoid unpack error
+                return [], False
+        required_apns = set(tuple(apn.items()) for apn in self.ADV_APN['custom_apns'])
+        current_apns = set(tuple(apn.items()) for apn in dev_apns)
+        missing_apns = required_apns - current_apns
+        if missing_apns:
+            new_apns = dev_apns + [dict(apn) for apn in missing_apns]
+            dirty_flag = True
+        else:
+            new_apns = dev_apns
+            dirty_flag = False
         return new_apns, dirty_flag
 
     def check_apn(self):
