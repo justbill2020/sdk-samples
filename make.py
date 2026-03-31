@@ -22,15 +22,35 @@ import time
 
 try:
     import requests
-    import urllib3
-    urllib3.disable_warnings()
-    from requests.auth import HTTPDigestAuth
-    from OpenSSL import crypto
 except ImportError:
     requests = None
-    HTTPDigestAuth = None
+
+try:
+    import urllib3
+except ImportError:
+    urllib3 = None
+else:
+    urllib3.disable_warnings()
+
+try:
+    from OpenSSL import crypto
+except ImportError:
     crypto = None
     
+
+def ensure_requests_dependency(action_name):
+    """Validate requests dependency before running network actions."""
+    if requests is not None:
+        return True
+
+    print("ERROR: Missing required Python package: requests")
+    print("This action ('{}') needs HTTP access to the device or GitHub API.".format(action_name))
+    print("Install dependencies with one of the following:")
+    print("  {} -m pip install requests".format(g_python_cmd))
+    print("  {} make.py setup".format(g_python_cmd))
+    return False
+
+
 # Upgrade functionality for checking and updating files from GitHub
 def get_github_commit_timestamp(file_path):
     """
@@ -957,6 +977,10 @@ if __name__ == "__main__":
     option = None
     if len(sys.argv) > 2:
         option = str(sys.argv[2])
+
+    network_actions = ['status', 'start', 'stop', 'install', 'uninstall', 'purge', 'update', 'deploy']
+    if utility_name in network_actions and not ensure_requests_dependency(utility_name):
+        sys.exit(1)
 
     if utility_name in ['clean', 'package', 'build', 'uuid', 'status', 'start', 'stop', 'install', 'uninstall', 'purge', 'update', 'deploy']:
         # Load the settings from the sdk_settings.ini file.
