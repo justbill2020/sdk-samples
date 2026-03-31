@@ -2,6 +2,193 @@
 
 This document lists all available methods when importing the `cp` module for NCOS SDK applications.
 
+## Quick Index (A–Z)
+
+- cp.add_advanced_apn()
+- cp.alert()
+- cp.base64()
+- cp.clear_dns_cache()
+- cp.clear_logs()
+- cp.create_user()
+- cp.datetime()
+- cp.decrypt()
+- cp.delete()
+- cp.delete_advanced_apn()
+- cp.delete_appdata()
+- cp.delete_user()
+- cp.disable_wan_device()
+- cp.dns_lookup()
+- cp.download_packet_capture()
+- cp.enable_wan_device()
+- cp.ensure_fresh_user()
+- cp.ensure_user_exists()
+- cp.execute_cli()
+- cp.extract_cert_and_key()
+- cp.factory_reset()
+- cp.get()
+- cp.get_all_gpios()
+- cp.get_appdata()
+- cp.get_apps_status()
+- cp.get_arp_table()
+- cp.get_asset_id()
+- cp.get_available_gpios()
+- cp.get_available_interfaces()
+- cp.get_bgp_status()
+- cp.get_certificate_by_name()
+- cp.get_certificate_by_uuid()
+- cp.get_certificate_status()
+- cp.get_certificate_summary()
+- cp.get_certificates()
+- cp.get_client_usage()
+- cp.get_comprehensive_status()
+- cp.get_connected_wans()
+- cp.get_description()
+- cp.get_dhcp_client_by_ip()
+- cp.get_dhcp_client_by_mac()
+- cp.get_dhcp_clients_by_interface()
+- cp.get_dhcp_clients_by_network()
+- cp.get_dhcp_interface_summary()
+- cp.get_dhcp_leases()
+- cp.get_dhcp_status()
+- cp.get_dns_status()
+- cp.get_event_status()
+- cp.get_expiring_certificates()
+- cp.get_firewall_connections()
+- cp.get_firewall_connections_by_ip()
+- cp.get_firewall_connections_by_protocol()
+- cp.get_firewall_hitcounters()
+- cp.get_firewall_marks()
+- cp.get_firewall_state_timeouts()
+- cp.get_firewall_status()
+- cp.get_firewall_summary()
+- cp.get_firmware_version()
+- cp.get_flow_statistics()
+- cp.get_gpio()
+- cp.get_gps_status()
+- cp.get_hotspot_status()
+- cp.get_iot_status()
+- cp.get_ipv4_lan_clients()
+- cp.get_ipv4_wifi_clients()
+- cp.get_ipv4_wired_clients()
+- cp.get_lan_clients()
+- cp.get_lan_device_stats()
+- cp.get_lan_devices()
+- cp.get_lan_networks()
+- cp.get_lan_statistics()
+- cp.get_lan_status()
+- cp.get_lat_long()
+- cp.get_logger()
+- cp.get_mac()
+- cp.get_name()
+- cp.get_ncm_account_name()
+- cp.get_ncm_api_keys()
+- cp.get_ncm_group_name()
+- cp.get_ncm_router_id()
+- cp.get_ncm_status()
+- cp.get_obd_status()
+- cp.get_openvpn_status()
+- cp.get_ospf_status()
+- cp.get_packet_capture_status()
+- cp.get_poe_status()
+- cp.get_power_usage()
+- cp.get_product_type()
+- cp.get_qos_queue_by_name()
+- cp.get_qos_queues()
+- cp.get_qos_status()
+- cp.get_qos_traffic_stats()
+- cp.get_route_summary()
+- cp.get_router_model()
+- cp.get_routing_policies()
+- cp.get_routing_table()
+- cp.get_routing_table_by_name()
+- cp.get_sdwan_status()
+- cp.get_security_status()
+- cp.get_sensors_status()
+- cp.get_serial_number()
+- cp.get_services_status()
+- cp.get_signal_strength()
+- cp.get_sims()
+- cp.get_static_routes()
+- cp.get_storage_status()
+- cp.get_system_status()
+- cp.get_temperature()
+- cp.get_uptime()
+- cp.get_usb_status()
+- cp.get_users()
+- cp.get_vpn_status()
+- cp.get_wan_connection_state()
+- cp.get_wan_device_profile()
+- cp.get_wan_device_summary()
+- cp.get_wan_devices()
+- cp.get_wan_devices_status()
+- cp.get_wan_ethernet_info()
+- cp.get_wan_ip_address()
+- cp.get_wan_modem_diagnostics()
+- cp.get_wan_modem_stats()
+- cp.get_wan_primary_device()
+- cp.get_wan_profile_by_name()
+- cp.get_wan_profile_by_trigger_string()
+- cp.get_wan_profiles()
+- cp.get_wan_status()
+- cp.get_wlan_channel_info()
+- cp.get_wlan_client_count()
+- cp.get_wlan_client_count_by_band()
+- cp.get_wlan_clients()
+- cp.get_wlan_debug()
+- cp.get_wlan_events()
+- cp.get_wlan_radio_by_band()
+- cp.get_wlan_radio_status()
+- cp.get_wlan_region_config()
+- cp.get_wlan_remote_status()
+- cp.get_wlan_state()
+- cp.get_wlan_status()
+- cp.get_wlan_trace()
+- cp.log()
+- cp.make_wan_device_highest_priority()
+- cp.monitor_log()
+- cp.monitor_sms()
+- cp.network_connectivity_test()
+- cp.on()
+- cp.packet_capture()
+- cp.ping_host()
+- cp.post()
+- cp.post_appdata()
+- cp.put()
+- cp.put_appdata()
+- cp.reboot_device()
+- cp.register()
+- cp.remove_manual_apn()
+- cp.reorder_wan_profiles()
+- cp.reset_modem()
+- cp.reset_wlan()
+- cp.send_sms()
+- cp.set_asset_id()
+- cp.set_description()
+- cp.set_log_level()
+- cp.set_manual_apn()
+- cp.set_name()
+- cp.set_wan_device_bandwidth()
+- cp.set_wan_device_default_connection_state()
+- cp.set_wan_device_priority()
+- cp.speed_test()
+- cp.start_file_server()
+- cp.start_packet_capture()
+- cp.start_streaming_capture()
+- cp.stop_monitor_log()
+- cp.stop_monitor_sms()
+- cp.stop_packet_capture()
+- cp.stop_ping()
+- cp.stop_speed_test()
+- cp.time()
+- cp.traceroute_host()
+- cp.unregister()
+- cp.uptime()
+- cp.wait_for_gps_fix()
+- cp.wait_for_modem_connection()
+- cp.wait_for_ntp()
+- cp.wait_for_uptime()
+- cp.wait_for_wan_connection()
+
 ## Core Communication Methods
 
 ### Basic CRUD Operations
@@ -19,17 +206,17 @@ This document lists all available methods when importing the `cp` module for NCO
 ## Event Handling Methods
 
 - `register(action: str = 'set', path: str = '', callback: Callable = None, *args: Any)` → `Dict[str, Any]`
-- `on(action: str = 'set', path: str = '', callback: Callable = None, *args: Any)` → `Dict[str, Any]` (alias for register)
 - `unregister(eid: int = 0)` → `Dict[str, Any]`
 
 ## Device Information Methods
 
 - `get_uptime()` → `int`
-- `get_device_mac(format_with_colons: bool = False)` → `Optional[str]`
-- `get_device_serial_num()` → `Optional[str]`
-- `get_device_product_type()` → `Optional[str]`
-- `get_device_name()` → `Optional[str]`
-- `get_device_firmware(include_build_info: bool = False)` → `str`
+- `get_mac(format_with_colons: bool = False)` → `Optional[str]`
+- `get_serial_number()` → `Optional[str]`
+- `get_product_type()` → `Optional[str]`
+- `get_name()` → `Optional[str]`
+- `get_firmware_version(include_build_info: bool = False)` → `str`
+- `get_router_model()` → `Optional[str]`
 
 ## Network Status Methods
 
@@ -75,13 +262,16 @@ This document lists all available methods when importing the `cp` module for NCO
 ## System Status Methods
 
 - `get_system_status()` → `Dict[str, Any]`
-- `get_system_resources(cpu: bool = True, memory: bool = True, storage: bool = False)` → `Dict[str, str]`
-- `get_temperature(unit: str = 'celsius')` → `Optional[float]`
+- `get_temperature(unit: str = 'fahrenheit')` → `Optional[float]`
 - `get_power_usage(include_components: bool = True)` → `Optional[Dict[str, Any]]`
 - `get_ncm_status(include_details: bool = False)` → `Optional[str]`
 - `get_wan_devices_status()` → `Optional[Dict[str, Any]]`
-- `get_modem_status()` → `Optional[Dict[str, Any]]`
-- `get_signal_strength()` → `Optional[Dict[str, Any]]`
+- `get_signal_strength(uid: str, include_backlog: bool = False)` → `Optional[Dict[str, Any]]`
+- `get_description()` → `Optional[Dict[str, Any]]`
+- `get_asset_id()` → `Optional[Dict[str, Any]]`
+- `set_description(description: str)` → `Optional[Dict[str, Any]]`
+- `set_asset_id(asset_id: str)` → `Optional[Dict[str, Any]]`
+- `set_name(name: str)` → `Optional[Dict[str, Any]]`
 
 ## Configuration Management Methods
 
@@ -93,7 +283,7 @@ This document lists all available methods when importing the `cp` module for NCO
 
 ### Certificate Management
 - `get_ncm_api_keys()` → `Dict[str, Optional[str]]`
-- `extract_cert_and_key(cert_name_or_uuid: str = '')` → `Tuple[Optional[str], Optional[str]]`
+- `extract_cert_and_key(cert_name_or_uuid: str = '', return_filenames: bool = True, return_cert_content: bool = False, return_key_content: bool = False)` → `Union[Tuple[Optional[str], Optional[str]], Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]]`
 - `get_certificates()` → `List[Dict[str, Any]]`
 - `get_certificate_by_name(cert_name: str)` → `Optional[Dict[str, Any]]`
 - `get_certificate_by_uuid(cert_uuid: str)` → `Optional[Dict[str, Any]]`
@@ -216,7 +406,7 @@ This document lists all available methods when importing the `cp` module for NCO
 ### Connectivity Testing
 - `ping_host(host: str, count: int = 4, timeout: float = 15.0, interval: float = 0.5, packet_size: int = 56, interface: str = None, bind_ip: bool = False)` → `Optional[Dict[str, Any]]`
 - `traceroute_host(host: str, max_hops: int = 30, timeout: float = 5.0)` → `Optional[Dict[str, Any]]`
-- `speed_test(host: str = "", interface: str = "", duration: int = 5, packet_size: int = 0, port: int = None, protocol: str = "tcp", direction: str = "recv")` → `Optional[Dict[str, Any]]`
+- `speed_test(host: str = "", interface: str = "", duration: int = 5, packet_size: int = 0, port: int = None, protocol: str = "tcp", direction: str = "both")` → `Optional[Dict[str, Any]]`
 - `stop_speed_test()` → `Optional[Dict[str, Any]]`
 - `network_connectivity_test(host: str = "8.8.8.8", port: int = 53, timeout: float = 5.0)` → `Optional[Dict[str, Any]]`
 - `stop_ping()` → `Optional[Dict[str, Any]]`
@@ -254,6 +444,21 @@ This document lists all available methods when importing the `cp` module for NCO
 - `get_all_gpios(router_model: Optional[str] = None)` → `Dict[str, Any]`
 - `get_available_gpios(router_model: Optional[str] = None)` → `List[str]`
 - `get_raw_gpios()` → `Optional[Dict[str, Any]]`
+
+## Monitoring, SMS, and CLI Methods
+
+- `monitor_log(pattern: str = None, callback: callable = None, follow: bool = True, max_lines: int = 0, timeout: int = 0)` → `Optional[Dict[str, Any]]`
+- `stop_monitor_log(monitor_result: Dict[str, Any])` → `Optional[Dict[str, Any]]`
+- `monitor_sms(callback: callable, timeout: int = 0)` → `Optional[Dict[str, Any]]`
+- `stop_monitor_sms(monitor_result: Dict[str, Any])` → `Optional[Dict[str, Any]]`
+- `send_sms(phone_number: str = None, message: str = None, port: str = None)` → `Optional[str]`
+- `execute_cli(commands: Union[str, List[str]], timeout: int = 10, soft_timeout: int = 5, clean: bool = True)` → `Optional[str]`
+
+## NCM and Identification Methods
+
+- `get_ncm_router_id()` → `Optional[Dict[str, Any]]`
+- `get_ncm_group_name()` → `Optional[Dict[str, Any]]`
+- `get_ncm_account_name()` → `Optional[Dict[str, Any]]`
 
 ## Utility Methods
 
