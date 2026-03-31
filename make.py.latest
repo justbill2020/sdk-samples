@@ -19,101 +19,18 @@ import re
 import tarfile
 import gzip
 import time
-import ssl
 
 try:
     import requests
-except ImportError:
-    requests = None
-
-try:
     import urllib3
-except ImportError:
-    urllib3 = None
-else:
     urllib3.disable_warnings()
-
-try:
+    from requests.auth import HTTPDigestAuth
     from OpenSSL import crypto
 except ImportError:
+    requests = None
+    HTTPDigestAuth = None
     crypto = None
     
-
-def ensure_requests_dependency(action_name):
-    """Validate requests dependency before running network actions."""
-    if requests is not None:
-        return True
-
-    print("ERROR: Missing required Python package: requests")
-    print("This action ('{}') needs HTTP access to the device or GitHub API.".format(action_name))
-    print("Install dependencies with one of the following:")
-    print("  {} -m pip install requests".format(g_python_cmd))
-    print("  {} make.py setup".format(g_python_cmd))
-    return False
-
-
-_legacy_tls_session = None
-_legacy_tls_error_markers = (
-    'tlsv1 alert protocol version',
-    'unsupported protocol',
-    'wrong version number',
-    'sslv3 alert handshake failure',
-)
-
-
-def _is_legacy_tls_error(exception):
-    message = str(exception).lower()
-    return any(marker in message for marker in _legacy_tls_error_markers)
-
-
-def _create_legacy_tls_session():
-    """Build a requests session that can talk to older TLS stacks."""
-    class LegacyTLSAdapter(requests.adapters.HTTPAdapter):
-        def _get_ssl_context(self):
-            context = ssl.create_default_context()
-            context.check_hostname = False  # Disable hostname checking for legacy TLS
-            if hasattr(ssl, 'TLSVersion'):
-                try:
-                    # Allow TLS 1.2 and higher
-                    context.minimum_version = ssl.TLSVersion.TLSv1_2
-                except Exception:
-                    pass
-            try:
-                # OpenSSL 3 defaults can block legacy ciphers at security level 2.
-                context.set_ciphers('DEFAULT:@SECLEVEL=1')
-            except Exception:
-                pass
-            return context
-
-        def init_poolmanager(self, *args, **kwargs):
-            kwargs['ssl_context'] = self._get_ssl_context()
-            return super().init_poolmanager(*args, **kwargs)
-
-        def proxy_manager_for(self, *args, **kwargs):
-            kwargs['ssl_context'] = self._get_ssl_context()
-            return super().proxy_manager_for(*args, **kwargs)
-
-    session = requests.Session()
-    session.mount('https://', LegacyTLSAdapter())
-    return session
-
-
-def request_with_tls_fallback(method, url, **kwargs):
-    """Try normal requests first, then retry once with legacy TLS settings."""
-    kwargs.setdefault('verify', False)
-    kwargs.setdefault('timeout', 15)
-    try:
-        return requests.request(method, url, **kwargs)
-    except requests.exceptions.SSLError as ex:
-        if not _is_legacy_tls_error(ex):
-            raise
-        print('TLS handshake failed with default settings. Retrying with legacy TLS compatibility...')
-        global _legacy_tls_session
-        if _legacy_tls_session is None:
-            _legacy_tls_session = _create_legacy_tls_session()
-        return _legacy_tls_session.request(method, url, **kwargs)
-
-
 # Upgrade functionality for checking and updating files from GitHub
 def get_github_commit_timestamp(file_path):
     """
@@ -383,8 +300,23 @@ def parse_ignore_file(app_root):
 # Digest Auth is used for NCOS 6.4 and below while Basic Auth is
 # used for NCOS 6.5 and up.
 def get_auth():
-    # Force Basic auth since the device requires it
-    return requests.auth.HTTPBasicAuth(g_dev_client_username, g_dev_client_password)
+    from http import HTTPStatus
+
+    use_basic = False
+    device_api = 'https://{}/api/status/product_info'.format(g_dev_client_ip)
+
+    try:
+        response = requests.get(device_api, auth=requests.auth.HTTPBasicAuth(g_dev_client_username, g_dev_client_password), verify=False)
+        if response.status_code == HTTPStatus.OK:
+            use_basic = True
+
+    except:
+        use_basic = False
+
+    if use_basic:
+        return requests.auth.HTTPBasicAuth(g_dev_client_username, g_dev_client_password)
+    else:
+        return requests.auth.HTTPDigestAuth(g_dev_client_username, g_dev_client_password)
 
 
 # Returns boolean to indicate if the NCOS device is
@@ -406,10 +338,10 @@ def get_app_pack(app_name=None):
 
 # Gets data from the NCOS config store
 def get(config_tree):
-    ncos_api = 'http://{}/api{}'.format(g_dev_client_ip, config_tree)
+    ncos_api = 'https://{}/api{}'.format(g_dev_client_ip, config_tree)
 
     try:
-        response = requests.get(ncos_api, auth=get_auth())
+        response = requests.get(ncos_api, auth=get_auth(), verify=False)
 
     except (requests.exceptions.Timeout,
             requests.exceptions.ConnectionError) as ex:
@@ -439,12 +371,11 @@ def get_app_list():
 # Puts an SDK action in the NCOS device config store
 def put(value):
     try:
-        response = requests.put(
-            "http://{}/api/control/system/sdk/action".format(g_dev_client_ip),
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-            auth=get_auth(),
-            data={"data": '"{} {}"'.format(value, get_app_uuid())}
-        )
+        response = requests.put("https://{}/api/control/system/sdk/action".format(g_dev_client_ip),
+                                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                                auth=get_auth(),
+                                data={"data": '"{} {}"'.format(value, get_app_uuid())},
+                                verify=False)
 
         print('status_code: {}'.format(response.status_code))
 
@@ -764,7 +695,7 @@ def install():
             if not os.path.exists(app_archive):
                 app_archive = f"{g_app_name}.tar.gz"
         except Exception as e:
-            app_archive = f"./{g_app_name}.tar.gz"
+            app_archive = f"{g_app_name}.tar.gz"
 
         # Use sshpass for Linux or OS X
         cmd = 'sshpass -p {0} scp -O -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no "{1}" {2}@{3}:/app_upload'.format(
@@ -778,50 +709,17 @@ def install():
                    g_dev_client_username, g_dev_client_ip)
 
         print('Installing {} in NCOS device {}.'.format(app_archive, g_dev_client_ip))
-        print('Command: {}'.format(cmd))
-        
         try:
             if sys.platform == 'win32':
-                result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=30)
+                subprocess.check_output(cmd)
             else:
-                result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=30)
-            
-            print('STDOUT: {}'.format(result.stdout))
-            if result.stderr:
-                print('STDERR: {}'.format(result.stderr))
-            
-            if result.returncode != 0:
-                print('ERROR: SCP command failed with exit code {}'.format(result.returncode))
-                print('This may be due to SSH compatibility issues with the NCOS device.')
-                print('Try deploying via NetCloud Manager instead.')
-                return result.returncode
-            
-            # Check if the app was actually installed by querying the device
-            print('Verifying installation...')
-            status_response = get('/status/system/sdk')
-            if status_response:
-                status_data = json.loads(status_response)
-                apps = status_data.get('data', {}).get('apps', [])
-                app_names = [app.get('name') for app in apps]
-                if g_app_name in app_names:
-                    print('SUCCESS: {} is now installed and available.'.format(g_app_name))
-                    return 0
-                else:
-                    print('WARNING: {} may not be installed. Apps found: {}'.format(g_app_name, app_names))
-                    return 1
-            else:
-                print('WARNING: Could not verify installation status.')
-                return 1
-                
-        except subprocess.TimeoutExpired:
-            print('ERROR: SCP command timed out after 30 seconds.')
-            return 1
-        except Exception as err:
-            print('ERROR: Unexpected error during installation: {}'.format(err))
-            return 1
+                subprocess.check_output(cmd, shell=True)
+        except subprocess.CalledProcessError as err:
+            # There is always an error because the NCOS device will drop the connection.
+            # print('Error installing: {}'.format(err))
+            return 0
     else:
         print('ERROR: NCOS device is not in DEV Mode! Unable to install the app into {}.'.format(g_dev_client_ip))
-        return 1
 
 
 # Start the app in the NCOS device
@@ -833,6 +731,9 @@ def start():
         print(response)
     else:
         print('ERROR: NCOS device is not in DEV Mode! Unable to start the app from {}.'.format(g_dev_client_ip))
+
+
+# Stop the app in the NCOS device
 def stop():
     if is_NCOS_device_in_DEV_mode():
         print('Stop application {} for NCOS device at {}'.format(g_app_name, g_dev_client_ip))
@@ -869,15 +770,12 @@ def deploy():
     purge()
     time.sleep(2)
     package()
-    install_result = install()
-    if install_result == 1:
-        print('Install failed. Skipping log check.')
-        return
+    install()
     time.sleep(5)
     print('Checking logs...')
     try:
-        log_url = 'http://{}/api/status/log/'.format(g_dev_client_ip)
-        response = requests.get(log_url, auth=get_auth())
+        log_url = 'https://{}/api/status/log/'.format(g_dev_client_ip)
+        response = requests.get(log_url, auth=get_auth(), verify=False)
         logs = json.loads(response.text).get('data', [])
         for entry in logs[-20:]:
             if g_app_name in str(entry):
@@ -1059,10 +957,6 @@ if __name__ == "__main__":
     option = None
     if len(sys.argv) > 2:
         option = str(sys.argv[2])
-
-    network_actions = ['status', 'start', 'stop', 'install', 'uninstall', 'purge', 'update', 'deploy']
-    if utility_name in network_actions and not ensure_requests_dependency(utility_name):
-        sys.exit(1)
 
     if utility_name in ['clean', 'package', 'build', 'uuid', 'status', 'start', 'stop', 'install', 'uninstall', 'purge', 'update', 'deploy']:
         # Load the settings from the sdk_settings.ini file.
