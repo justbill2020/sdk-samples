@@ -19,6 +19,7 @@ import re
 import tarfile
 import gzip
 import time
+import ssl
 
 try:
     import requests
@@ -49,6 +50,71 @@ def ensure_requests_dependency(action_name):
     print("  {} -m pip install requests".format(g_python_cmd))
     print("  {} make.py setup".format(g_python_cmd))
     return False
+
+
+_legacy_tls_session = None
+_legacy_tls_error_markers = (
+    'tlsv1 alert protocol version',
+    'unsupported protocol',
+    'wrong version number',
+    'sslv3 alert handshake failure',
+)
+
+
+def _is_legacy_tls_error(exception):
+    message = str(exception).lower()
+    return any(marker in message for marker in _legacy_tls_error_markers)
+
+
+def _create_legacy_tls_session():
+    """Build a requests session that can talk to older TLS stacks."""
+    class LegacyTLSAdapter(requests.adapters.HTTPAdapter):
+        def _get_ssl_context(self):
+            context = ssl.create_default_context()
+            if hasattr(ssl, 'TLSVersion'):
+                try:
+                    context.minimum_version = ssl.TLSVersion.TLSv1
+                except Exception:
+                    pass
+            else:
+                # Older Python fallback: explicitly allow TLSv1/TLSv1.1 if supported.
+                for op in ('OP_NO_TLSv1', 'OP_NO_TLSv1_1'):
+                    if hasattr(ssl, op):
+                        context.options &= ~getattr(ssl, op)
+            try:
+                # OpenSSL 3 defaults can block legacy ciphers at security level 2.
+                context.set_ciphers('DEFAULT:@SECLEVEL=1')
+            except Exception:
+                pass
+            return context
+
+        def init_poolmanager(self, *args, **kwargs):
+            kwargs['ssl_context'] = self._get_ssl_context()
+            return super().init_poolmanager(*args, **kwargs)
+
+        def proxy_manager_for(self, *args, **kwargs):
+            kwargs['ssl_context'] = self._get_ssl_context()
+            return super().proxy_manager_for(*args, **kwargs)
+
+    session = requests.Session()
+    session.mount('https://', LegacyTLSAdapter())
+    return session
+
+
+def request_with_tls_fallback(method, url, **kwargs):
+    """Try normal requests first, then retry once with legacy TLS settings."""
+    kwargs.setdefault('verify', False)
+    kwargs.setdefault('timeout', 15)
+    try:
+        return requests.request(method, url, **kwargs)
+    except requests.exceptions.SSLError as ex:
+        if not _is_legacy_tls_error(ex):
+            raise
+        print('TLS handshake failed with default settings. Retrying with legacy TLS compatibility...')
+        global _legacy_tls_session
+        if _legacy_tls_session is None:
+            _legacy_tls_session = _create_legacy_tls_session()
+        return _legacy_tls_session.request(method, url, **kwargs)
 
 
 # Upgrade functionality for checking and updating files from GitHub
@@ -326,7 +392,11 @@ def get_auth():
     device_api = 'https://{}/api/status/product_info'.format(g_dev_client_ip)
 
     try:
-        response = requests.get(device_api, auth=requests.auth.HTTPBasicAuth(g_dev_client_username, g_dev_client_password), verify=False)
+        response = request_with_tls_fallback(
+            'get',
+            device_api,
+            auth=requests.auth.HTTPBasicAuth(g_dev_client_username, g_dev_client_password)
+        )
         if response.status_code == HTTPStatus.OK:
             use_basic = True
 
@@ -361,10 +431,11 @@ def get(config_tree):
     ncos_api = 'https://{}/api{}'.format(g_dev_client_ip, config_tree)
 
     try:
-        response = requests.get(ncos_api, auth=get_auth(), verify=False)
+        response = request_with_tls_fallback('get', ncos_api, auth=get_auth())
 
     except (requests.exceptions.Timeout,
-            requests.exceptions.ConnectionError) as ex:
+            requests.exceptions.ConnectionError,
+            requests.exceptions.SSLError) as ex:
         print("Error with get for NCOS device at {}. Exception: {}".format(g_dev_client_ip, ex))
         return None
 
@@ -391,16 +462,19 @@ def get_app_list():
 # Puts an SDK action in the NCOS device config store
 def put(value):
     try:
-        response = requests.put("https://{}/api/control/system/sdk/action".format(g_dev_client_ip),
-                                headers={"Content-Type": "application/x-www-form-urlencoded"},
-                                auth=get_auth(),
-                                data={"data": '"{} {}"'.format(value, get_app_uuid())},
-                                verify=False)
+        response = request_with_tls_fallback(
+            'put',
+            "https://{}/api/control/system/sdk/action".format(g_dev_client_ip),
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            auth=get_auth(),
+            data={"data": '"{} {}"'.format(value, get_app_uuid())}
+        )
 
         print('status_code: {}'.format(response.status_code))
 
     except (requests.exceptions.Timeout,
-            requests.exceptions.ConnectionError) as ex:
+            requests.exceptions.ConnectionError,
+            requests.exceptions.SSLError) as ex:
         print("Error with put for NCOS device at {}. Exception: {}".format(g_dev_client_ip, ex))
         return None
 
@@ -795,7 +869,7 @@ def deploy():
     print('Checking logs...')
     try:
         log_url = 'https://{}/api/status/log/'.format(g_dev_client_ip)
-        response = requests.get(log_url, auth=get_auth(), verify=False)
+        response = request_with_tls_fallback('get', log_url, auth=get_auth())
         logs = json.loads(response.text).get('data', [])
         for entry in logs[-20:]:
             if g_app_name in str(entry):
