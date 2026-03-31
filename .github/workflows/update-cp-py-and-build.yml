@@ -107,6 +107,9 @@ jobs:
         
         # Clean up the temporary script
         rm -f update_cp_py.py
+
+        chmod +x ./.github/workflows/csclient_compare.sh
+        ./.github/workflows/csclient_compare.sh
         
         if [ $UPDATED -eq 1 ]; then
           echo "Files were updated, proceeding with commit"
