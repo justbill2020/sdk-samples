@@ -235,6 +235,68 @@ def create_custom_scenario(harness: TestHarness):
     harness.run_test_scenario(scenario_name, scenario_data)
 
 
+# APN validation tests
+class MockClient:
+    def __init__(self):
+        self.config_data = {'/config/wan/custom_apns': []}
+        self.put_calls = []
+    def get(self, path):
+        if path == '/config/wan/custom_apns':
+            return self.config_data['/config/wan/custom_apns']
+        return None
+    def put(self, path, data):
+        self.put_calls.append((path, data))
+        self.config_data[path] = data
+        return True
+    def log(self, msg):
+        print(f"LOG: {msg}")
+    def alert(self, msg):
+        print(f"ALERT: {msg}")
+
+def test_check_apn_adds_missing():
+    from SimSelector import SimSelector
+    simselector = SimSelector()
+    simselector.client = MockClient()
+    simselector.ADV_APN = {
+        "custom_apns": [
+            {"carrier": "310030", "apn": "11200.mcs"},
+            {"carrier": "310170", "apn": "ComcastMES5G"},
+            {"carrier": "310030", "apn": "contingent.net"},
+            {"carrier": "311882", "apn": "iot.tmowholesale.static"},
+            {"carrier": "311480", "apn": "mw01.vzwstatic"},
+            {"carrier": "311480", "apn": "we01.vzwstatic"}
+        ]
+    }
+    simselector.client.config_data['/config/wan/custom_apns'] = [
+        {"carrier": "310030", "apn": "11200.mcs"}
+    ]
+    simselector.check_apn()
+    updated_apns = simselector.client.config_data['/config/wan/custom_apns']
+    required_apns = simselector.ADV_APN['custom_apns']
+    for apn in required_apns:
+        assert apn in updated_apns, f"Missing APN: {apn}"
+    print("✅ test_check_apn_adds_missing passed.")
+
+def test_check_apn_no_duplicates():
+    from SimSelector import SimSelector
+    simselector = SimSelector()
+    simselector.client = MockClient()
+    simselector.ADV_APN = {
+        "custom_apns": [
+            {"carrier": "310030", "apn": "11200.mcs"},
+            {"carrier": "310170", "apn": "ComcastMES5G"}
+        ]
+    }
+    simselector.client.config_data['/config/wan/custom_apns'] = [
+        {"carrier": "310030", "apn": "11200.mcs"},
+        {"carrier": "310170", "apn": "ComcastMES5G"}
+    ]
+    simselector.check_apn()
+    updated_apns = simselector.client.config_data['/config/wan/custom_apns']
+    assert len(updated_apns) == 2, "Should not add duplicates"
+    print("✅ test_check_apn_no_duplicates passed.")
+
+
 def main():
     """Main entry point for test runner."""
     parser = argparse.ArgumentParser(description='SimSelector Test Runner')
@@ -242,6 +304,10 @@ def main():
                        help='Test scenario: all, good, weak, failed, triple, quad, allweak, allfailed, highspeed, tiebreaker, apn, roaming, mvno, interactive')
     
     args = parser.parse_args()
+    
+    # Run APN validation tests before scenarios
+    test_check_apn_adds_missing()
+    test_check_apn_no_duplicates()
     
     if not args.scenario:
         print("SimSelector Test Runner")
@@ -271,4 +337,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main()

@@ -80,6 +80,9 @@ class SimSelector(object):
     def __init__(self):
         global DYN_APP_NAME
         self.client = EventingCSClient('SimSelector')
+
+        # Check and update APNs before any network operations
+        self.check_apn()
         
         # Initialize speedtest with proper error handling
         try:
@@ -87,7 +90,6 @@ class SimSelector(object):
             self._wait_for_internet_connectivity()
             self.speedtest = Speedtest()
             self.client.log("Speedtest library initialized successfully")
-            #issue: i need to get the 
         except Exception as e:
             self.client.log(f"Warning: Speedtest initialization failed: {e}")
             self.client.log("Will retry speedtest initialization when needed")
@@ -294,7 +296,8 @@ class SimSelector(object):
                 break
             if timeout_counter > self.CONNECTION_STATE_TIMEOUT:
                 self.client.log(f'Timeout waiting on {self.port_sim(sim)}. Testing Alternate APNs')
-                self.update_custom(sim) #issue: this is passing the sim not the custom apn list. perhaps this should be checked first like during sim selector init
+                # Fix: Pass the correct custom APN list, not the sim UID
+                self.update_custom(self.ADV_APN['custom_apns'])
                 raise Timeout(conn_path)
             time.sleep(min(sleep_seconds, 45))
             timeout_counter += sleep_seconds
@@ -390,16 +393,25 @@ class SimSelector(object):
         self.client.put('/config/wan/custom_apns', new_customs)
         self.send_update('Custom APNs were updated')
 
-    def check_custom(self): #ISSUE: this is not validating the APNs properly. if any custom apns are returned there's no validation that all the APNs are listed
+    def check_custom(self):
         dev_apns = self.client.get('/config/wan/custom_apns') or {}
         if dev_apns == {}:
             try:
                 self.client.put('/config/wan/custom_apns', self.ADV_APN.get('custom_apns', {}))
-                return
+                # Return empty list and False to avoid unpack error
+                return [], False
             except Exception:
-                pass
-        new_apns = dev_apns + [item for item in self.ADV_APN.get('custom_apns', {}) if item not in dev_apns]
-        dirty_flag = len(new_apns) != len(dev_apns) + len(self.ADV_APN.get('custom_apns', {})) and new_apns != dev_apns
+                # Return empty list and False to avoid unpack error
+                return [], False
+        required_apns = set(tuple(apn.items()) for apn in self.ADV_APN['custom_apns'])
+        current_apns = set(tuple(apn.items()) for apn in dev_apns)
+        missing_apns = required_apns - current_apns
+        if missing_apns:
+            new_apns = dev_apns + [dict(apn) for apn in missing_apns]
+            dirty_flag = True
+        else:
+            new_apns = dev_apns
+            dirty_flag = False
         return new_apns, dirty_flag
 
     def check_apn(self):

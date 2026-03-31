@@ -84,15 +84,16 @@ All major development tasks have been completed successfully:
 7. **Enhanced Feedback**: Improved user messaging with staging feedback and completion status
 
 ### 🧪 Test Results:
-- All unit tests pass (8/8)
-- No syntax errors in main codebase
+- All unit tests pass (10/10)
+- APN validation logic verified (no duplicates, all required APNs added)
 - Signal classification logic verified
 - Advanced sorting algorithm tested
 
 ### 📁 Files Modified/Created:
 - `SimSelector.py` - Enhanced with two-phase logic and advanced sorting
 - `state_manager.py` - New persistent state management module
-- `tests/test_sim_selector.py` - Comprehensive unit test suite
+- `tests/test_runner.py` - Comprehensive unit test suite, now includes APN validation tests
+- `README.md` - Updated with APN test instructions
 
 ### 🚀 Ready for Deployment:
-The enhanced SimSelector is ready for field testing. The only remaining task is manual testing on actual hardware (Task 5.3). 
+The enhanced SimSelector is ready for field testing. The only remaining task is manual testing on actual hardware (Task 5.3).
