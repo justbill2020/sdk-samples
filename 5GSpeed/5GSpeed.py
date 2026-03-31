@@ -34,10 +34,9 @@ Body contains blank field defined in SDK Data (default is asset_id):
 In a few minutes, new results should populate.
 """
 
-from csclient import EventingCSClient
-from speedtest import Speedtest
+import cp
+from speedtest_ookla import Speedtest
 import time
-import json
 
 default_results_path = "config/system/asset_id"
 
@@ -64,29 +63,23 @@ def results_field_check(path, results, *args):
 def speedtest():
     try:
         cp.log('Starting Speedtest...')
-        s = Speedtest()
-        server = s.get_best_server()
-        cp.log(f'Found Best Ookla Server: {server["sponsor"]}')
-        cp.log("Performing Ookla Download Test...")
-        d = s.download()
-        cp.log("Performing Ookla Upload Test...")
-        u = s.upload(pre_allocate=False)
-        download = '{:.2f}'.format(d / 1000 / 1000)
-        upload = '{:.2f}'.format(u / 1000 / 1000)
+        s = Speedtest(timeout=90)
+        s.start()
+        r = s.results
+        download = '{:.2f}'.format(r.download / 1000 / 1000)
+        upload = '{:.2f}'.format(r.upload / 1000 / 1000)
         cp.log('Ookla Speedtest Complete! Results:')
-        cp.log(f'Client ISP: {s.results.client["isp"]}')
-        cp.log(f'Ookla Server: {s.results.server["sponsor"]}')
-        cp.log(f'Ping: {s.results.ping}ms')
+        cp.log(f'Client ISP: {r.isp}')
+        cp.log(f'Ookla Server: {r.server.get("name", "Unknown")}')
+        cp.log(f'Ping: {r.ping}ms')
         cp.log(f'Download Speed: {download}Mb/s')
-        cp.log(f'Upload Speed: {upload} Mb/s')
-        cp.log(f'Ookla Results Image: {s.results.share()}')
-        text = f'DL:{download}Mbps - UL:{upload}Mbps - Ping:{s.results.ping}ms - Server:{s.results.server["sponsor"]} - ISP:{s.results.client["isp"]} - TimeGMT:{s.results.timestamp} - Img:{s.results.share()}'
+        cp.log(f'Upload Speed: {upload}Mb/s')
+        text = f'DL:{download}Mbps UL:{upload}Mbps Ping:{r.ping}ms Server:{r.server.get("name", "Unknown")} ISP:{r.isp} Time:{r.timestamp}'
         cp.put(results_path, text)
         return
     except Exception as e:
         cp.logger.exception(e)
 
-cp = EventingCSClient('5GSpeed')
 try:
     cp.log('Starting...')
     while not cp.get('status/wan/connection_state') == 'connected':
@@ -95,6 +88,7 @@ try:
     cp.on('put', results_path, results_field_check)
     boot_results = cp.get(results_path)
     results_field_check(None, boot_results, None)
-    time.sleep(999999)
+    while True:
+        time.sleep(60)
 except Exception as e:
     cp.logger.exception(e)

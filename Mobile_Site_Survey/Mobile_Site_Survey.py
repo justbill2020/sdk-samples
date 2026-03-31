@@ -1,5 +1,5 @@
-from csclient import EventingCSClient
-from threading import Thread
+import cp
+from threading import Thread, Lock
 import concurrent.futures
 from speedtest import Speedtest
 from geopy import distance
@@ -13,6 +13,7 @@ import datetime
 import configparser
 
 results_dir = 'results'
+dispatcher = None
 
 
 class TestHandler(tornado.web.RequestHandler):
@@ -30,8 +31,12 @@ class TestHandler(tornado.web.RequestHandler):
         else:
             cp.log('Manual Test Executed.')
             time.sleep(1)
+            # Set timestamp immediately for manual tests so indicator shows
+            if dispatcher:
+                dispatcher.timestamp = time.time()  # time.time() always returns UTC timestamp
 
-        dispatcher.manual = True
+        if dispatcher:
+            dispatcher.manual = True
         self.redirect('/')
         return
 
@@ -41,7 +46,8 @@ class ClearHandler(tornado.web.RequestHandler):
 
     def get(self):
         """Clear the dispatcher results"""
-        dispatcher.results = ''
+        if dispatcher:
+            dispatcher.results = ''
         self.redirect('/')
         return
 
@@ -53,12 +59,37 @@ class ConfigHandler(tornado.web.RequestHandler):
         """Return app config in JSON for web UI."""
         try:
             config = get_config('Mobile_Site_Survey')
-            config["results"] = dispatcher.results
-            config["version"] = dispatcher.version
+            if dispatcher:
+                config["results"] = dispatcher.results
+                config["version"] = dispatcher.version
+            else:
+                config["results"] = ""
+                config["version"] = "1.0.0"
+            
+            # Add GPS lock status
+            try:
+                config["gps_lock"] = cp.get('/status/gps/fix/lock')
+            except:
+                config["gps_lock"] = False
+                
+            # Add survey running status
+            if dispatcher:
+                config["survey_running"] = dispatcher.timestamp is not None
+                # Calculate total data used across all modems
+                total_data_mb = 0.0
+                if dispatcher.total_bytes:
+                    total_bytes_sum = sum(dispatcher.total_bytes.values())
+                    total_data_mb = round(total_bytes_sum / 1000 / 1000, 2)
+                config["total_data_used_mb"] = total_data_mb
+            else:
+                config["survey_running"] = False
+                config["total_data_used_mb"] = 0.0
+                
             self.write(json.dumps(config))
             return
         except Exception as e:
             cp.log(f'Exception in ConfigHandler: {e}')
+            self.write(json.dumps({"error": str(e)}))
 
 
 class SubmitHandler(tornado.web.RequestHandler):
@@ -66,6 +97,10 @@ class SubmitHandler(tornado.web.RequestHandler):
 
     def get(self):
         """Parse args and update and save config."""
+        if not dispatcher:
+            self.redirect('/')
+            return
+            
         try:
             dispatcher.config["server_url"] = self.get_argument('server_url')
             dispatcher.config["server_token"] = self.get_argument('server_token')
@@ -145,6 +180,7 @@ class Dispatcher:
         self.total_bytes = {}
         self.lat, self.long, self.accuracy = None, None, None
         self.serial_number, self.mac_address, self.router_id = None, None, None
+        self.ping_lock = Lock()  # Lock for thread-safe ping counter operations
 
         self._initialize_dispatcher()
 
@@ -195,8 +231,10 @@ class Dispatcher:
                 debug_log(json.dumps(pong))
 
                 if pong.get('tx') and pong.get('rx'):
-                    self.pings[modem]["tx"] += pong["tx"]
-                    self.pings[modem]["rx"] += pong["rx"]
+                    # Thread-safe accumulation of ping counters
+                    with self.ping_lock:
+                        self.pings[modem]["tx"] += pong["tx"]
+                        self.pings[modem]["rx"] += pong["rx"]
                 debug_log(
                     f'Cumulative ping results for {modem}: {self.pings[modem]["rx"]} of {self.pings[modem]["tx"]}')
 
@@ -224,8 +262,8 @@ class Dispatcher:
         if last_location is not None:
             dist = distance.distance(latlong, last_location).m
             if dist < self.config.get("min_distance", 0) and not self.manual:
-                cp.log(f'Vehicle within {self.config["min_distance"]}M of last location. Waiting 2 seconds!')
-                time.sleep(2)
+                # Minimum distance has not been met, wait 1 second and check again
+                time.sleep(1)
                 return True
         return False
 
@@ -233,7 +271,7 @@ class Dispatcher:
         cp.log('---> Starting Survey <---')
         self._initialize_modems()
         if self.timestamp is None:  # If not triggered remotely
-            self.timestamp = datetime.datetime.utcnow().timestamp()
+            self.timestamp = time.time()  # time.time() always returns UTC timestamp
             self._start_surveyors()
         self._run_tests_on_modems()
         cp.log('---> Survey Complete <---')
@@ -256,15 +294,15 @@ class Dispatcher:
             routing_tables = cp.get('config/routing/tables')
             with concurrent.futures.ThreadPoolExecutor(len(self.modems)) as executor:
                 executor.map(run_tests, self.modems)
-            pretty_timestamp = datetime.datetime.fromtimestamp(self.timestamp).strftime('%I:%M:%S%p  %m/%d/%Y')
-            pretty_lat = '{:.6f}'.format(float(self.lat))
-            pretty_lon = '{:.6f}'.format(float(self.long))
-            title = f' ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' \
-                    f' ┣┅➤  {pretty_timestamp}   ⌖{pretty_lat}, {pretty_lon} \n'
-            self.results = title + self.results
+            # Format UTC timestamp for display
+            pretty_timestamp = time.strftime('%H:%M:%S  %m/%d/%Y', time.gmtime(self.timestamp))
+            pretty_lat = '{:.6f}'.format(float(self.lat)) if self.lat is not None else '0.000000'
+            pretty_lon = '{:.6f}'.format(float(self.long)) if self.long is not None else '0.000000'
+            # Title will be added with the detailed results in run_tests function
 
             cp.put('config/routing/policies', routing_policies)
             cp.put('config/routing/tables', routing_tables)
+            cleanup_mss_routing()
 
 class Surveyor:
     """Sends HTTP Requests to remote router"""
@@ -437,10 +475,10 @@ def debug_log(msg):
 
 def log_all(msg, logs):
     """Write consistent messages across all logs"""
-    logstamp = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    logstamp = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())
     cp.log(msg)
     logs.append(f'{logstamp} {msg}')
-    dispatcher.results = f'{msg}\n\n' + dispatcher.results
+    dispatcher.results = f'{msg}\n\n' + dispatcher.results[:32000]
 
 
 def ping(host, iface):
@@ -484,12 +522,217 @@ def ping(host, iface):
         cp.log(f'Exception in PING: {e}')
 
 
+def _normalize_to_list(obj):
+    """Normalize API response to list for iteration. Handles dict (id-keyed) or list."""
+    if obj is None:
+        return []
+    if isinstance(obj, list):
+        return obj
+    if isinstance(obj, dict):
+        return list(obj.values()) if obj else []
+    return []
+
+
+def cleanup_mss_routing():
+    """Remove all MSS-related route tables and policies from previous runs.
+    Must delete policies that reference MSS tables first, then delete the tables."""
+    try:
+        route_tables = _normalize_to_list(cp.get('config/routing/tables'))
+        route_policies = _normalize_to_list(cp.get('config/routing/policies'))
+
+        # Find MSS route table IDs by name (e.g. MSS-mdm-75613315)
+        mss_table_ids = set()
+        for table in route_tables:
+            if not isinstance(table, dict):
+                continue
+            name = table.get("name")
+            if name and "MSS" in name:
+                table_id = table.get("_id_")
+                if table_id is not None:
+                    mss_table_ids.add(table_id)
+
+        # Delete policies that reference MSS tables first (required before deleting tables)
+        for policy in route_policies:
+            if not isinstance(policy, dict):
+                continue
+            if policy.get("table") not in mss_table_ids:
+                continue
+            policy_id = policy.get("_id_")
+            if policy_id is not None:
+                try:
+                    cp.delete(f'config/routing/policies/{policy_id}')
+                    time.sleep(0.1)
+                except Exception as e:
+                    cp.log(f'Failed to delete MSS policy {policy_id}: {e}')
+
+        # Re-get tables after policy deletion
+        route_tables = _normalize_to_list(cp.get('config/routing/tables'))
+
+        # Delete MSS route tables
+        for table in route_tables:
+            if not isinstance(table, dict):
+                continue
+            name = table.get("name")
+            if name and "MSS" in name:
+                table_id = table.get("_id_")
+                if table_id is not None:
+                    try:
+                        cp.delete(f'config/routing/tables/{table_id}')
+                        time.sleep(0.1)
+                    except Exception as e:
+                        cp.log(f'Failed to delete MSS table {table_id}: {e}')
+
+        if mss_table_ids:
+            cp.log('Cleaned up MSS route tables and policies from previous run')
+    except Exception as e:
+        cp.log(f'Exception in cleanup_mss_routing(): {e}')
+
+
+def cleanup_duplicate_routing():
+    """Clean up duplicate routing policies and tables, keeping only one per unique identifier."""
+    try:
+        route_policies = _normalize_to_list(cp.get('config/routing/policies'))
+        route_tables = _normalize_to_list(cp.get('config/routing/tables'))
+
+        # Clean up duplicate policies - keep only one per table
+        seen_tables = set()
+        policies_to_delete = []
+
+        for policy in route_policies:
+            if not isinstance(policy, dict):
+                continue
+            table_id = policy.get("table")
+            policy_id = policy.get("_id_")
+            if policy_id is None:
+                continue
+            if table_id and table_id in seen_tables:
+                policies_to_delete.append(policy_id)
+            elif table_id:
+                seen_tables.add(table_id)
+
+        for policy_id in policies_to_delete:
+            try:
+                cp.delete(f'config/routing/policies/{policy_id}')
+                time.sleep(0.1)
+            except Exception as e:
+                cp.log(f'Failed to delete policy {policy_id}: {e}')
+
+        # Clean up duplicate tables - keep only one per table name
+        seen_names = set()
+        tables_to_delete = []
+
+        for table in route_tables:
+            if not isinstance(table, dict):
+                continue
+            table_name = table.get("name")
+            table_id = table.get("_id_")
+            if table_id is None:
+                continue
+            if table_name and table_name in seen_names:
+                tables_to_delete.append(table_id)
+            elif table_name:
+                seen_names.add(table_name)
+
+        for table_id in tables_to_delete:
+            try:
+                cp.delete(f'config/routing/tables/{table_id}')
+                time.sleep(0.1)
+            except Exception as e:
+                cp.log(f'Failed to delete table {table_id}: {e}')
+
+    except Exception as e:
+        cp.log(f'Exception in cleanup_duplicate_routing(): {e}')
+
+def initialize_routing():
+    """Initialize routing by cleaning up MSS leftovers and duplicates at startup."""
+    try:
+        cleanup_mss_routing()
+        cleanup_duplicate_routing()
+        cp.log("Routing cleanup completed - ready for device-specific routing")
+    except Exception as e:
+        cp.log(f'Exception in initialize_routing(): {e}')
+
+def source_route(sim):
+    """Configure source routing for sim IP to egress through sim device.
+    Returns source IP of sim."""
+    try:
+        source_ip = cp.get(f'status/wan/devices/{sim}/status/ipinfo/ip_address')
+        cp.put('config/routing/policies/0/priority', 10)
+        
+        # First, prepare the desired route table definition
+        route_table = {
+            "name": f'MSS-{sim}',
+            "routes": [
+                {
+                    "netallow": False,
+                    "ip_network": "0.0.0.0/0",
+                    "dev": sim,
+                    "auto_gateway": True
+                }
+            ]
+        }
+
+        # Check if this route table exists by name
+        route_tables = _normalize_to_list(cp.get('config/routing/tables'))
+        route_table_id = None
+        for table in route_tables:
+            if isinstance(table, dict) and table.get("name") == f'MSS-{sim}':
+                route_table_id = table.get("_id_")
+                break
+
+        # If not found, create it
+        if not route_table_id:
+            req = cp.post('config/routing/tables/', route_table)
+            if not req:
+                raise Exception("Failed to create route table - post returned None")
+            route_table_index = req.get("data")
+            if route_table_index is None:
+                raise Exception("Failed to create route table - no data in response")
+            table_response = cp.get(f'config/routing/tables/{route_table_index}')
+            if not table_response or not isinstance(table_response, dict):
+                raise Exception("Failed to retrieve created route table")
+            route_table_id = table_response.get("_id_")
+            if route_table_id is None:
+                raise Exception("Created route table does not have _id_ field")
+            time.sleep(1)
+
+        # Now prepare the desired route policy
+        route_policy = {
+            "ip_version": "ip4",
+            "priority": 1,
+            "table": route_table_id,
+            "src_ip_network": source_ip
+        }
+
+        # Check if a policy already exists for this table and update/create as needed
+        route_policies = _normalize_to_list(cp.get('config/routing/policies'))
+        existing_policy_id = None
+        for policy in route_policies:
+            if isinstance(policy, dict) and policy.get("table") == route_table_id:
+                existing_policy_id = policy.get("_id_")
+                break
+
+        # If policy exists, update it; if not, create it
+        if existing_policy_id:
+            cp.put(f'config/routing/policies/{existing_policy_id}', route_policy)
+            time.sleep(1)
+        else:
+            cp.post('config/routing/policies/', route_policy)
+            time.sleep(1)
+        return source_ip
+    except Exception as e:
+        msg = f'Exception in source_route(): {e}'
+        log_all(msg, [])
+        return None
+
+
 def run_tests(modem):
     """Main testing function - multithreaded by Dispatcher"""
     download, upload, latency = 0.0, 0.0, 0.0
     bytes_sent, bytes_received, total_mb_used, packet_loss_percent = 0, 0, 0, 0
     share = ''
     server = None
+    cur_plmn = None  # Initialize cur_plmn to avoid "referenced before assignment" error
     source_ip = None
     ookla = None
     logs = []
@@ -497,31 +740,11 @@ def run_tests(modem):
     if dispatcher.config.get("speedtests"):
         # ROUTING - Packets sourced from modem IP egress modem device:
         try:
-            source_ip = cp.get(f'status/wan/devices/{modem}/status/ipinfo/ip_address')
-            cp.put('config/routing/policies/0/priority', 10)
-            route_tables = cp.get('config/routing/tables')
-            exists = False
-            for table in route_tables:
-                if table["name"] == f'MSS-{modem}':  # avoid duplicate routes
-                    route_table_id = table["_id_"]
-                    exists = True
-            if not exists:
-                route_table = {"name": f'MSS-{modem}', "routes": [
-                    {"netallow": False, "ip_network": "0.0.0.0/0", "dev": modem, "auto_gateway": True}]}
-                req = cp.post('config/routing/tables/', route_table)
-                route_table_index = req["data"]
-                route_table_id = cp.get(f'config/routing/tables/{route_table_index}/_id_')
-                time.sleep(1)
-            route_policies = cp.get('config/routing/policies')
-            exists = False
-            for policy in route_policies:
-                if policy["table"] == route_table_id:  # avoid duplicate policies
-                    exists = True
-            if not exists:
-                route_policy = {"ip_version": "ip4", "priority": 1, "table": route_table_id,
-                                "src_ip_network": source_ip}
-                req = cp.post(f'config/routing/policies/', route_policy)
-                time.sleep(1)
+            source_ip = source_route(modem)
+            if not source_ip:
+                msg = f'Failed to configure source routing for {modem}'
+                log_all(msg, logs)
+                return
         except Exception as e:
             msg = f'Exception in routing: {e}'
             log_all(msg, logs)
@@ -568,24 +791,31 @@ def run_tests(modem):
         product = modem
         cur_plmn = None
 
-    # Latency test:
-    pong = ping('8.8.8.8', iface)
-    if pong.get('loss') == 100.0:
-        latency = 'FAIL'
-    else:
-        latency = round(pong.get('avg'))
+    latency = None
 
     # Calculate packet loss
     try:
         if dispatcher.config.get("packet_loss"):
-            tx = dispatcher.pings[modem]["tx"]
-            rx = dispatcher.pings[modem]["rx"]
-            if tx == rx:
+            # Thread-safe atomic get and reset of ping counters
+            with dispatcher.ping_lock:
+                tx = dispatcher.pings[modem]["tx"]
+                rx = dispatcher.pings[modem]["rx"]
+                
+                # Safety check: ensure rx doesn't exceed tx (can happen due to race conditions)
+                if rx > tx:
+                    cp.log(f'Warning: Received packets ({rx}) exceed transmitted packets ({tx}) for {modem}. This indicates a race condition.')
+                    rx = tx  # Cap rx at tx to prevent negative packet loss
+                
+                # Reset counters atomically after reading
+                dispatcher.pings[modem]["rx"] = 0
+                dispatcher.pings[modem]["tx"] = 0
+            
+            if tx == 0:
+                packet_loss_percent = 0
+            elif tx == rx:
                 packet_loss_percent = 0
             else:
                 packet_loss_percent = round((tx - rx) / tx * 100)
-            dispatcher.pings[modem]["rx"] = 0
-            dispatcher.pings[modem]["tx"] = 0
         else:
             tx, rx, packet_loss_percent = 0, 0, 0
     except Exception as e:
@@ -604,17 +834,17 @@ def run_tests(modem):
                     retries += 1
                     cp.log(f'Attempt {retries} of 3 to get_best_server() failed: {e}')
 
-            logstamp = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+            logstamp = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())
             logs.append(f'{logstamp} Starting Download Test on {product} {carrier}.')
             cp.log(f'Starting Download Test on {product} {carrier}.')
             ookla.download()  # Ookla Download Test
             if wan_type == 'mdm':  # Capture CA Bands for modems
                 diagnostics = cp.get(f'status/wan/devices/{modem}/diagnostics')
-            logstamp = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+            logstamp = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())
             logs.append(f'{logstamp} Starting Upload Test on {product} {carrier}.')
             cp.log(f'Starting Upload Test on {product} {carrier}.')
             ookla.upload(pre_allocate=False)  # Ookla upload test
-            logstamp = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+            logstamp = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())
             logs.append(f'{logstamp} Speedtest Complete on {product} {carrier}.')
             cp.log(f'Speedtest Complete on {product} {carrier}.')
 
@@ -638,8 +868,9 @@ def run_tests(modem):
             log_all(msg, logs)
 
     # SEND TO SERVER:
-    pretty_timestamp = datetime.datetime.fromtimestamp(dispatcher.timestamp).strftime('%Y-%m-%d %H:%M:%S')
-    post_success = ''
+    # Use time.gmtime() to ensure UTC time regardless of system timezone
+    pretty_timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(dispatcher.timestamp))
+    post_success = '✓ Done'
     if dispatcher.config.get("send_to_server"):
         try:
             post_success = '⇪ 5g-ready:❌   '
@@ -749,6 +980,8 @@ def run_tests(modem):
             pci = diagnostics.get('PHY_CELL_ID')
             nr_cell_id = diagnostics.get('NR_CELL_ID')
             cur_plmn = diagnostics.get('CUR_PLMN')
+            if not cur_plmn:
+                cur_plmn = cp.get(f'status/wan/devices/{modem}/diagnostics/CUR_PLMN')
             tac = diagnostics.get('TAC')
             lac = diagnostics.get('LAC')
             rfband = diagnostics.get('RFBAND')
@@ -771,14 +1004,25 @@ def run_tests(modem):
                          serdis, rfband, rfband_5g, scell0, scell1, scell2, scell3]
         debug_log(f'ROW: {row}')
         text = ','.join(str(x) for x in row) + '\n'
-        logstamp = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        logstamp = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())
         logs.append(f'{logstamp} Results: {text}')
         cp.log(f'Results: {text}')
         # cp.put('config/system/desc', text[:1000])
-        pretty_results = f' ┣┅┅┅  ☏{carrier} {cur_plmn}  ⇄ {packet_loss_percent}% loss ({tx - rx} of {tx})\n' \
+        # Get timestamp and coordinates for the title
+        if dispatcher:
+            pretty_timestamp = time.strftime('%H:%M:%S  %m/%d/%Y', time.gmtime(dispatcher.timestamp))
+            pretty_lat = '{:.6f}'.format(float(dispatcher.lat)) if dispatcher.lat is not None else '0.000000'
+            pretty_lon = '{:.6f}'.format(float(dispatcher.long)) if dispatcher.long is not None else '0.000000'
+            
+            title = f' ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' \
+                    f' ┣┅➤  {pretty_timestamp}   ⌖{pretty_lat}, {pretty_lon} \n'
+        else:
+            title = ''
+            
+        pretty_results = title + f' ┣┅┅┅  ☏{carrier} {cur_plmn}  ⇄ {packet_loss_percent}% loss ({tx - rx} of {tx})\n' \
                          f' ┣┅┅┅  ↓{download}Mbps  ↑{upload}Mbps  ⏱{latency}ms\n' \
                          f' ┣┅┅┅  ⛁ {server}\n' \
-                         f' ┗┅┅┅  {post_success}⛗{total_mb_used}MB used.'
+                         f' ┗┅┅┅  {post_success}'
         log_all(pretty_results, logs)
     except Exception as e:
         msg = f'Exception formatting results: {e}'
@@ -799,7 +1043,7 @@ def run_tests(modem):
         # CREATE CSV IF IT DOESN'T EXIST:
         debug_log(' '.join(os.listdir(results_dir)))
         if not os.path.isfile(f'{results_dir}/{filename}'):
-            logstamp = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+            logstamp = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())
             logs.append(f'{logstamp} {filename} not found.')
             cp.log(f'{filename} not found.')
             with open(f'{results_dir}/{filename}', 'wt') as f:
@@ -814,7 +1058,7 @@ def run_tests(modem):
                                            'RF Band 5G', 'SCELL0', 'SCELL1', 'SCELL2', 'SCELL3']
                 line = ','.join(header) + '\n'
                 f.write(line)
-            logstamp = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+            logstamp = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())
             logs.append(f'{logstamp} Created new {filename} file.')
             cp.log(f'Created new {filename} file.')
 
@@ -830,12 +1074,11 @@ def run_tests(modem):
 
 def manual_test(path, value, *args):
     if not value:
-        debug_log('Blank Description - Executing Manual Test')
+        debug_log('Executing Manual Test')
         dispatcher.manual = True
 
 
 if __name__ == "__main__":
-    cp = EventingCSClient('Mobile Site Survey')
     cp.log('Starting...')
 
     # Wait for WAN connection
@@ -844,8 +1087,10 @@ if __name__ == "__main__":
     time.sleep(3)
 
     dispatcher = Dispatcher()
+    # Initialize routing cleanup once at startup
+    initialize_routing()
     Thread(target=dispatcher.loop, daemon=True).start()
-    cp.on('put', 'config/system/desc', manual_test)
+    cp.register('put', 'config/system/desc', manual_test)
     application = tornado.web.Application([
         (r"/config", ConfigHandler),
         (r"/submit", SubmitHandler),
@@ -855,5 +1100,22 @@ if __name__ == "__main__":
         (r"/(.*)", tornado.web.StaticFileHandler,
          {"path": os.path.dirname(__file__), "default_filename": "index.html"})
     ])
-    application.listen(8000)
+    
+    # Try ports from 8000-8100 until we find an open one
+    import socket
+    found_port = None
+    for port in range(8000, 8101):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                sock.bind(('0.0.0.0', port))
+                found_port = port
+                break
+            except OSError:
+                continue
+    if found_port is None:
+        cp.log('ERROR: No available ports found between 8000-8100!')
+        exit(1)
+    cp.log(f'Web interface available on port {found_port}')
+    application.listen(found_port)
     tornado.ioloop.IOLoop.instance().start()

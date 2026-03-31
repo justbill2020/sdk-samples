@@ -1,0 +1,201 @@
+name: Update cp.py files and build apps
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  update-cp-py:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+    
+    - name: Delete METADATA folders
+      run: |
+        find . -type d -name "METADATA" -exec rm -rf {} + 2>/dev/null || true
+        echo "Deleted all METADATA folders"
+    
+    - name: Find and update cp.py files
+      run: |
+        # Create a script to find and update cp.py files
+        cat > update_cp_py.py << 'PYTHON_EOF'
+        #!/usr/bin/env python3
+        import os
+        import shutil
+        import subprocess
+        from pathlib import Path
+        
+        def find_cp_py_files():
+            """Find all cp.py files in the repository"""
+            cp_files = []
+            for root, dirs, files in os.walk('.'):
+                # Skip .git directory
+                if '.git' in root:
+                    continue
+                if 'cp.py' in files:
+                    cp_files.append(os.path.join(root, 'cp.py'))
+            return cp_files
+        
+        def get_reference_cp_py():
+            """Get the reference cp.py from app_template"""
+            reference_path = './cp.py'
+            if os.path.exists(reference_path):
+                return reference_path
+            else:
+                print(f"Error: Reference file {reference_path} not found")
+                return None
+        
+        def update_cp_py_files():
+            """Update all cp.py files with the reference version"""
+            cp_files = find_cp_py_files()
+            print(f"Found {len(cp_files)} cp.py files")
+            
+            # Get the reference cp.py
+            reference_cp = get_reference_cp_py()
+            if not reference_cp:
+                print("Reference cp.py not found. Exiting.")
+                exit(1)
+            
+            print(f"Using reference: {reference_cp}")
+            with open(reference_cp, 'r') as f:
+                reference_content = f.read()
+            
+            updated_count = 0
+            for cp_file in cp_files:
+                try:
+                    # Skip the reference file itself
+                    if cp_file == reference_cp:
+                        print(f"Skipping reference file: {cp_file}")
+                        continue
+                    
+                    with open(cp_file, 'r') as f:
+                        current_content = f.read()
+                    
+                    # Only update if content is different
+                    if current_content != reference_content:
+                        with open(cp_file, 'w') as f:
+                            f.write(reference_content)
+                        print(f"Updated: {cp_file}")
+                        updated_count += 1
+                    else:
+                        print(f"No changes needed: {cp_file}")
+                        
+                except Exception as e:
+                    print(f"Error updating {cp_file}: {e}")
+            
+            return updated_count
+        
+        if __name__ == "__main__":
+            updated = update_cp_py_files()
+            print(f"Updated {updated} cp.py files")
+            # Exit with code 1 if files were updated (to trigger commit)
+            exit(0)
+        PYTHON_EOF
+        
+        python update_cp_py.py
+        UPDATED=$?
+        
+        # Clean up the temporary script
+        rm -f update_cp_py.py
+        
+        if [ $UPDATED -eq 1 ]; then
+          echo "Files were updated, proceeding with commit"
+        else
+          echo "No files were updated"
+          exit 0
+        fi
+    
+    - name: Commit and push changes
+      if: success()
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add -A
+        git diff --quiet && git diff --staged --quiet || git commit -m "Auto-update cp.py files across all samples"
+        git pull --rebase origin master
+        git push
+
+  run-make:
+    needs: update-cp-py
+    runs-on: ${{matrix.os}}
+    permissions:
+      contents: write  # Needed to push README updates
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check each app has a readme.txt
+        run: |
+          chmod +x ./.github/workflows/check_for_readme.sh
+          ./.github/workflows/check_for_readme.sh
+        shell: bash
+      - name: Check root readme entries
+        run: |
+           chmod +x ./.github/workflows/check_root_readme_entries.sh 
+           ./.github/workflows/check_root_readme_entries.sh 
+        shell: bash
+      - name: Run make build and clean
+        run: |
+          chmod +x ./.github/workflows/builds.sh
+          ./.github/workflows/builds.sh
+        shell: bash
+      - name: Update README with release download links
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        run: python3 .github/workflows/update_readme_links.py
+      - name: Generate release body
+        if: github.event_name == 'push'
+        run: python3 .github/workflows/generate_release_body.py
+      - name: Tag
+        if: github.event_name == 'push'
+        uses: actions/github-script@v8
+        with:
+           github-token: ${{ github.token }}
+           script: |
+             await github.rest.git.deleteRef({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               ref: "tags/built_apps"
+             })
+             await github.rest.git.createRef({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               ref: "refs/tags/built_apps",
+               sha: context.sha
+             })
+      - name: Publish
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: 'built_apps/*.tar.gz'
+          tag_name: "built_apps"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          body_path: ./built_apps/README.md
+          name: "Built Apps"
+      - name: Commit and push README updates
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        run: |
+          if git diff --quiet README.md; then
+            echo "No README changes"
+          else
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add README.md
+            git commit -m "Add release download links to app descriptions in README"
+            git stash --include-untracked
+            git pull --rebase origin ${{ github.ref_name }}
+            git stash pop || true
+            git push origin HEAD:${{ github.ref_name }}
+          fi

@@ -1,66 +1,60 @@
-![image](https://github.com/cradlepoint/sdk-samples/assets/7169690/656231d7-7b60-4670-8bd3-c7b66ae0955e)
+# Mobile Site Survey v3
 
-Application Name
-================
-Mobile Site Survey
+Professional cellular network drive testing application with modern web interface and high-performance speed testing.  
 
+[Download the built app from our releases page!](https://github.com/cradlepoint/sdk-samples/releases/tag/built_apps)
 
-Application Version
-===================
-2.6
+Light Side:
+<img width="1409" height="852" alt="image" src="https://github.com/user-attachments/assets/712a198b-4930-49f9-9e6a-0c6acb1ae96b" />
 
+Dark Side:
+<img width="1409" height="852" alt="image" src="https://github.com/user-attachments/assets/117ce0fd-7389-48cd-a995-3dfc0e619d40" />
 
-External Requirements
-=====================
-- Modem(s) with cellular connectivity
-- GPS antenna and location lock
+## Key Features
 
+### 🚀 **High-Speed Binary Testing**
+- Uses Ookla speedtest binary for accurate, high-performance speed testing
+- Real-time download/upload measurements with professional-grade accuracy
+- Optimized for cellular network testing scenarios
 
-Application Purpose
-===================
-This app is intended to perform drive testing of cellular networks but also works for testing stationary deployments.
-It will run automatic tests collecting location (GPS), interface diagnostics (including cellular signal), and speedtests (optional).
+### 🎨 **Professional Web UI**
+- Modern, responsive interface with real-time updates
+- Live survey status indicators and GPS lock monitoring
+- Tabbed configuration interface for easy setup
+- Real-time results display with 24-hour timestamp format
 
-The app is configurable through a webUI running on port 8000.  Use NCM Remote Connect to 127.0.0.1 port 8000 HTTP.
-Or locally, forward the Primary LAN Zone to the Router Zone with the Default Allow All policy.
+### 📊 **Comprehensive Testing**
+- **Distance-based testing** - Automatic tests when moving specified distances
+- **Time-based testing** - Scheduled tests at regular intervals
+- **GPS location tracking** - Precise coordinate logging with accuracy metrics
+- **Cellular diagnostics** - Signal strength, carrier info, and network details
+- **Packet loss monitoring** - Continuous connectivity testing between surveys
 
-* Execute Manual Survey - a button is provided at the top to start testing. Or delete the description field.
-* Download Results - Opens a new tab with results files (CSV) available for download.
-* Save Config - saves Mobile Site Survey configuration to router.
+### 🔧 **Advanced Configuration**
+- **Multi-interface testing** - Cellular, Ethernet, and WiFi-as-WAN support
+- **CSV data export** - Results saved to router flash storage
+- **Server integration** - Powered by 5g-ready.io for cloud data collection
+- **Multi-router coordination** - Synchronized testing across multiple devices
 
-Survey Options:
+## Quick Start
 
-* Run Distance based tests - The app will run tests when the router has moved the distance defined
-* Distance Between Tests (meters) - Set the distance for automatic testing
+1. **Access Web Interface** - Navigate to the router's IP on port 8000-8100
+2. **Configure Settings** - Set distance/time intervals and testing options
+3. **Run Survey** - Click "Run Survey Now" for manual testing or enable automatic testing
+4. **View Results** - Real-time results display with professional formatting
 
-* Run Time based tests - The app will run tests at the time interval defined
-* Time Between Tests (seconds) - Set the time interval for automatic testing
+## Requirements
 
-Both distance and timed tests can be enabled.
-Note: New tests cannot start until all current interface tests complete.
+- Cellular modem with GPS antenna
+- GPS lock for location-based testing
 
-* Test Ethernet and Wifi-as-WAN - Disabled only tests cellular modems
-* Run Speedtests - Include Ookla TCP upload and download tests (if disabled, app will ping 8.8.8.8 to measure latency)
-* Monitor Packet Loss Between Tests - Continuously ping 8.8.8.8 and track tx/rx, packet loss
-* Write to .csv - Write test results to .csv file on router flash (Accessible via FTP server)
-* Debug Logs - Additional debugging logs for application troubleshooting.
+## Default Configuration
 
-Send to Server
-Powered by https://5g-ready.io
-* Enable Send to Server - Application will send results to server using HTTP POST
-* Include Full Interface Diagnostics - send all available diagnostics (not just signal)
-* Include Application Logs - send testing logs (useful for troubleshooting)
-* Server URL - The URL of the HTTP server to send the results to (e.g. https://5g-ready.io/injector)
-* Server Token - Bearer token for server authentication
-
-Surveyors
-If you have multiple routers that you would like to synchronize testing with the app will start them at the same time.
-Be sure routers are reachable on port 8000.
-* Enable Surveyors - Trigger remote routers applications to test at the same time
-* Surveyors - Enter the IP Addresses of other routers, separated by commas.
+- **Distance testing**: Every 50 meters
+- **Speed testing**: Enabled with Ookla binary
+- **Data export**: CSV files saved to router flash
+- **Server integration**: Ready for 5g-ready.io cloud platform
 
 ---
 
-By default the app will tests every 50 meters including speedtests and write results to a .csv file.
-
-You can edit the default settings in settings.py
+*Professional cellular network testing made simple with modern web interface and high-performance binary speed testing.*

@@ -6,7 +6,7 @@ import sys
 if __name__ == "__main__":
     command = sys.argv[1]
 
-    cs = AppDataCSClient('certificate_data', encrypt_cert_name='ecc')
+    cs = AppDataCSClient('tailscale', encrypt_cert_name='ecc')
 
     if command in ["tskey", "tsversion", "tstags", "tsserver"]:
         try:
@@ -31,5 +31,7 @@ if __name__ == "__main__":
     elif command == "tshostname":
         hostname = cs.get_appdata('tshostname')
         if not hostname:
+            bad = set(r" _\/:*!?|,")
             hostname = cs.get("/config/system/system_id")
+            hostname = "".join(c if c not in bad else "-" for c in hostname)
         print(hostname)

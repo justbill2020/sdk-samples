@@ -1,34 +1,26 @@
 #!/bin/bash
-declare -a commands=("python3 make.py build" "python3 make.py build all" "cp *.tar.gz built_apps" "python3 make.py clean" "python3 make.py clean all")
-for cmds in "${commands[@]}";
-do
-	echo $cmds
-	result=$($cmds 2>&1 > output.txt)
-	if [ -n "$result" ]
-	then
+mkdir -p built_apps
+
+run_cmd() {
+	echo "$1"
+	result=$(eval "$1" 2>&1 > output.txt)
+	if [ -n "$result" ]; then
 		echo "Error with app: $result"
 		cat output.txt
 		exit 1
 	else
 		cat output.txt
-		
 	fi
-done
+}
 
-# Format the README file
-regex_pattern="## Sample Application Descriptions"
-file_path="README.md"
+run_cmd "python3 make.py build"
+run_cmd "python3 make.py build all"
 
-cat << EOF > built_apps/README.md
-These files are sample SDK Applications that are ready to use for testing and do not require modification or "building" of the app from source files.  
+# Copy tar.gz files handling spaces in filenames
+echo "Copying tar.gz files to built_apps/"
+find . -maxdepth 1 -name '*.tar.gz' -exec cp {} built_apps/ \;
 
-## How to use these files: ##
-Download the .tar.gz file, then upload to your NetCloud Manager account and assign to groups.
+run_cmd "python3 make.py clean"
+run_cmd "python3 make.py clean all"
 
-Additional documentation:
-https://customer.cradlepoint.com/s/article/NetCloud-Manager-Tools-Tab#sdk_apps
-
-----------
-EOF
-
-sed -n "/$regex_pattern/,\$p" "$file_path" >> built_apps/README.md
+# Release body (built_apps/README.md) is created by workflow after update_readme_links runs
